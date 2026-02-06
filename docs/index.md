@@ -14,7 +14,8 @@ Only API key authentication is supported.
 provider "unifi" {
   api_key = var.unifi_api_key
   site_id = var.unifi_site_id
-  # base_url = "https://api.ui.com" # optional override
+  # api_url = "https://api.ui.com" # optional override
+  # allow_insecure = true          # optional, for local/test controllers
 }
 ```
 
@@ -22,5 +23,6 @@ provider "unifi" {
 
 - `api_key` (String, Required, Sensitive) API key for UniFi Cloud.
 - `site_id` (String, Optional) Default site identifier used by resources.
-- `base_url` (String, Optional) Override the UniFi API base URL.
+- `api_url` (String, Optional) Override the UniFi API base URL.
 - `user_agent` (String, Optional) Custom user agent string.
+- `allow_insecure` (Boolean, Optional) Skip TLS certificate verification.

@@ -23,10 +23,11 @@ type unifiProvider struct {
 }
 
 type unifiProviderModel struct {
-	APIKey    types.String `tfsdk:"api_key"`
-	BaseURL   types.String `tfsdk:"base_url"`
-	SiteID    types.String `tfsdk:"site_id"`
-	UserAgent types.String `tfsdk:"user_agent"`
+	APIKey        types.String `tfsdk:"api_key"`
+	APIURL        types.String `tfsdk:"api_url"`
+	SiteID        types.String `tfsdk:"site_id"`
+	UserAgent     types.String `tfsdk:"user_agent"`
+	AllowInsecure types.Bool   `tfsdk:"allow_insecure"`
 }
 
 type providerData struct {
@@ -53,13 +54,16 @@ func (p *unifiProvider) Schema(ctx context.Context, req provider.SchemaRequest, 
 				Required:  true,
 				Sensitive: true,
 			},
-			"base_url": schema.StringAttribute{
+			"api_url": schema.StringAttribute{
 				Optional: true,
 			},
 			"site_id": schema.StringAttribute{
 				Optional: true,
 			},
 			"user_agent": schema.StringAttribute{
+				Optional: true,
+			},
+			"allow_insecure": schema.BoolAttribute{
 				Optional: true,
 			},
 		},
@@ -92,9 +96,9 @@ func (p *unifiProvider) Configure(ctx context.Context, req provider.ConfigureReq
 		return
 	}
 
-	baseURL := config.BaseURL.ValueString()
-	if baseURL == "" {
-		baseURL = sitemanager.DefaultBaseURL
+	apiURL := config.APIURL.ValueString()
+	if apiURL == "" {
+		apiURL = sitemanager.DefaultBaseURL
 	}
 
 	userAgent := config.UserAgent.ValueString()
@@ -103,9 +107,10 @@ func (p *unifiProvider) Configure(ctx context.Context, req provider.ConfigureReq
 	}
 
 	client, err := unifi.NewClient(unifi.Config{
-		APIKey:    apiKey,
-		BaseURL:   baseURL,
-		UserAgent: userAgent,
+		APIKey:        apiKey,
+		BaseURL:       apiURL,
+		UserAgent:     userAgent,
+		AllowInsecure: config.AllowInsecure.ValueBool(),
 	})
 	if err != nil {
 		resp.Diagnostics.AddError(

@@ -3,6 +3,7 @@ package unifi
 import (
 	"bytes"
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -17,10 +18,11 @@ import (
 
 // Config configures the UniFi API client.
 type Config struct {
-	APIKey    string
-	BaseURL   string
-	UserAgent string
-	Timeout   time.Duration
+	APIKey        string
+	BaseURL       string
+	UserAgent     string
+	Timeout       time.Duration
+	AllowInsecure bool
 }
 
 // Client provides a minimal API client for the UniFi cloud endpoints.
@@ -41,7 +43,9 @@ func NewClient(cfg Config) (*Client, error) {
 	if cfg.UserAgent != "" {
 		opts = append(opts, config.ConfigUserAgent(cfg.UserAgent))
 	}
-	if cfg.Timeout != 0 {
+	if cfg.AllowInsecure {
+		opts = append(opts, config.ConfigHTTPClient(insecureHTTPClient(cfg.Timeout)))
+	} else if cfg.Timeout != 0 {
 		opts = append(opts, config.ConfigTimeout(cfg.Timeout))
 	}
 	if err := sdkCfg.Init(opts); err != nil {
@@ -60,6 +64,25 @@ func NewClient(cfg Config) (*Client, error) {
 		apiKey:     sdkCfg.APIKey,
 		userAgent:  sdkCfg.UserAgent,
 	}, nil
+}
+
+func insecureHTTPClient(timeout time.Duration) *http.Client {
+	if timeout == 0 {
+		timeout = config.DefaultTimeout
+	}
+	transport, ok := http.DefaultTransport.(*http.Transport)
+	if !ok {
+		return &http.Client{Timeout: timeout}
+	}
+	cloned := transport.Clone()
+	if cloned.TLSClientConfig == nil {
+		cloned.TLSClientConfig = &tls.Config{}
+	}
+	cloned.TLSClientConfig.InsecureSkipVerify = true
+	return &http.Client{
+		Timeout:   timeout,
+		Transport: cloned,
+	}
 }
 
 // Get sends a GET request.
