@@ -61,3 +61,33 @@ func TestResourceSchemas(t *testing.T) {
 		}
 	}
 }
+
+func TestNetworkSchemaNested(t *testing.T) {
+	resp := &resource.SchemaResponse{}
+	NewNetworkResource().Schema(context.Background(), resource.SchemaRequest{}, resp)
+	if resp.Diagnostics.HasError() {
+		t.Fatalf("network schema diagnostics: %v", resp.Diagnostics)
+	}
+
+	ipv4Attr, ok := resp.Schema.Attributes["ipv4_configuration"].(schema.SingleNestedAttribute)
+	if !ok {
+		t.Fatal("ipv4_configuration attribute missing or not single nested")
+	}
+
+	dhcpAttr, ok := ipv4Attr.Attributes["dhcp_configuration"].(schema.SingleNestedAttribute)
+	if !ok {
+		t.Fatal("ipv4_configuration.dhcp_configuration attribute missing or not single nested")
+	}
+
+	if _, ok := dhcpAttr.Attributes["ip_address_range"].(schema.SingleNestedAttribute); !ok {
+		t.Fatal("ipv4_configuration.dhcp_configuration.ip_address_range attribute missing or not single nested")
+	}
+
+	if _, ok := resp.Schema.Attributes["ipv6_configuration"].(schema.SingleNestedAttribute); !ok {
+		t.Fatal("ipv6_configuration attribute missing or not single nested")
+	}
+
+	if _, ok := resp.Schema.Attributes["dhcp_guarding"].(schema.SingleNestedAttribute); !ok {
+		t.Fatal("dhcp_guarding attribute missing or not single nested")
+	}
+}

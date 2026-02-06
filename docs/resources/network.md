@@ -16,20 +16,21 @@ resource "unifi_network" "example" {
   enabled    = true
   vlan_id    = 10
 
-  ipv4_configuration_json = jsonencode({
-    hostIpAddress = "10.0.0.1"
-    prefixLength  = 24
-    dhcpConfiguration = {
+  ipv4_configuration {
+    host_ip_address = "10.0.0.1"
+    prefix_length   = 24
+
+    dhcp_configuration {
       mode = "SERVER"
-      ipAddressRange = {
+      ip_address_range {
         start = "10.0.0.10"
         stop  = "10.0.0.200"
       }
-      dnsServerIpAddressesOverride = ["1.1.1.1", "8.8.8.8"]
-      leaseTimeSeconds             = 86400
-      domainName                   = "corp.local"
+      dns_server_ip_addresses_override = ["1.1.1.1", "8.8.8.8"]
+      lease_time_seconds               = 86400
+      domain_name                      = "corp.local"
     }
-  })
+  }
 }
 ```
 
@@ -45,12 +46,73 @@ resource "unifi_network" "example" {
 - `site_id` (String) Site identifier (defaults to provider `site_id`).
 - `enabled` (Boolean) Enable or disable the network.
 - `vlan_id` (Number) VLAN ID.
-- `ipv4_configuration_json` (String) JSON-encoded IPv4 configuration (includes DHCP and DNS overrides).
-- `ipv6_configuration_json` (String) JSON-encoded IPv6 configuration.
+- `zone_id` (String) Firewall zone ID (gateway networks).
+- `device_id` (String) Switch device ID (switch networks).
+- `isolation_enabled` (Boolean) Whether the network is isolated.
+- `cellular_backup_enabled` (Boolean) Allow cellular backup.
+- `internet_access_enabled` (Boolean) Allow internet access.
+- `mdns_forwarding_enabled` (Boolean) Enable mDNS forwarding.
+- `dhcp_guarding` (Block) DHCP guarding configuration.
+- `ipv4_configuration` (Block) IPv4 configuration, including DHCP/DNS settings.
+- `ipv6_configuration` (Block) IPv6 configuration.
 
 ### Read-Only
 
 - `id` (String) Network identifier.
+
+### `dhcp_guarding` Block
+
+- `trusted_dhcp_server_ip_addresses` (List of String) Trusted DHCP server IPs.
+
+### `ipv4_configuration` Block
+
+- `auto_scale_enabled` (Boolean) Enable auto-scaling subnet sizing.
+- `host_ip_address` (String) Gateway IP.
+- `prefix_length` (Number) CIDR prefix length.
+- `additional_host_ip_subnets` (List of String) Additional subnets.
+- `dhcp_configuration` (Block) DHCP settings.
+
+### `ipv4_configuration.dhcp_configuration` Block
+
+- `mode` (String) DHCP mode (for example `SERVER` or `RELAY`).
+- `ip_address_range` (Block) DHCP pool range.
+- `gateway_ip_address_override` (String) Gateway override.
+- `dns_server_ip_addresses_override` (List of String) DNS servers.
+- `lease_time_seconds` (Number) Lease time in seconds.
+- `domain_name` (String) DNS search domain.
+
+### `ipv4_configuration.dhcp_configuration.ip_address_range` Block
+
+- `start` (String) Range start.
+- `stop` (String) Range end.
+
+### `ipv6_configuration` Block
+
+- `interface_type` (String) Interface type.
+- `prefix_delegation_wan_interface_id` (String) WAN interface for PD.
+- `dns_server_ip_addresses_override` (List of String) DNS servers.
+- `additional_host_ip_subnets` (List of String) Additional subnets.
+- `client_address_assignment` (Block) Client addressing.
+- `router_advertisement` (Block) Router advertisement.
+
+### `ipv6_configuration.client_address_assignment` Block
+
+- `slaac_enabled` (Boolean) Enable SLAAC.
+- `dhcp_configuration` (Block) DHCPv6 settings.
+
+### `ipv6_configuration.client_address_assignment.dhcp_configuration` Block
+
+- `ip_address_suffix_range` (Block) DHCPv6 suffix range.
+- `lease_time_seconds` (Number) Lease time in seconds.
+
+### `ipv6_configuration.client_address_assignment.dhcp_configuration.ip_address_suffix_range` Block
+
+- `start` (String) Range start.
+- `stop` (String) Range end.
+
+### `ipv6_configuration.router_advertisement` Block
+
+- `priority` (String) Router advertisement priority.
 
 ## Import
 
