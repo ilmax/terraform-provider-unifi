@@ -2,8 +2,10 @@ package provider
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
+	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -22,12 +24,20 @@ type networkResource struct {
 }
 
 type networkResourceModel struct {
-	ID         types.String `tfsdk:"id"`
-	SiteID     types.String `tfsdk:"site_id"`
-	Name       types.String `tfsdk:"name"`
-	Management types.String `tfsdk:"management"`
-	Enabled    types.Bool   `tfsdk:"enabled"`
-	VlanID     types.Int64  `tfsdk:"vlan_id"`
+	ID                    types.String `tfsdk:"id"`
+	SiteID                types.String `tfsdk:"site_id"`
+	Name                  types.String `tfsdk:"name"`
+	Management            types.String `tfsdk:"management"`
+	Enabled               types.Bool   `tfsdk:"enabled"`
+	VlanID                types.Int64  `tfsdk:"vlan_id"`
+	IPv4ConfigurationJSON types.String `tfsdk:"ipv4_configuration_json"`
+	IPv6ConfigurationJSON types.String `tfsdk:"ipv6_configuration_json"`
+}
+
+type networkDetailsRaw struct {
+	networks.GetNetworkDetailsResponse
+	IPv4Configuration json.RawMessage `json:"ipv4Configuration"`
+	IPv6Configuration json.RawMessage `json:"ipv6Configuration"`
 }
 
 func NewNetworkResource() resource.Resource {
@@ -65,6 +75,12 @@ func (r *networkResource) Schema(ctx context.Context, req resource.SchemaRequest
 				Optional: true,
 				Computed: true,
 			},
+			"ipv4_configuration_json": schema.StringAttribute{
+				Optional: true,
+			},
+			"ipv6_configuration_json": schema.StringAttribute{
+				Optional: true,
+			},
 		},
 	}
 }
@@ -94,27 +110,28 @@ func (r *networkResource) Create(ctx context.Context, req resource.CreateRequest
 		return
 	}
 
-	request := &networks.CreateNetworkRequest{
-		Management: plan.Management.ValueString(),
-		Name:       plan.Name.ValueString(),
-		Enabled:    plan.Enabled.ValueBool(),
-		VlanId:     plan.VlanID.ValueInt64(),
+	payload, diags := buildNetworkPayload(plan)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
 	}
 
 	var result networks.CreateNetworkResponse
 	path := fmt.Sprintf("/v1/sites/%s/networks", siteID)
-	if err := r.client.Post(ctx, path, request, &result); err != nil {
+	if err := r.client.Post(ctx, path, payload, &result); err != nil {
 		resp.Diagnostics.AddError("Unable to create network", err.Error())
 		return
 	}
 
 	state := networkResourceModel{
-		ID:         types.StringValue(result.Id),
-		SiteID:     types.StringValue(siteID),
-		Name:       types.StringValue(result.Name),
-		Management: types.StringValue(result.Management),
-		Enabled:    types.BoolValue(result.Enabled),
-		VlanID:     types.Int64Value(result.VlanId),
+		ID:                    types.StringValue(result.Id),
+		SiteID:                types.StringValue(siteID),
+		Name:                  types.StringValue(result.Name),
+		Management:            types.StringValue(result.Management),
+		Enabled:               types.BoolValue(result.Enabled),
+		VlanID:                types.Int64Value(result.VlanId),
+		IPv4ConfigurationJSON: plan.IPv4ConfigurationJSON,
+		IPv6ConfigurationJSON: plan.IPv6ConfigurationJSON,
 	}
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
@@ -137,9 +154,8 @@ func (r *networkResource) Read(ctx context.Context, req resource.ReadRequest, re
 		return
 	}
 
-	networkID := state.ID.ValueString()
-	var result networks.GetNetworkDetailsResponse
-	path := fmt.Sprintf("/v1/sites/%s/networks/%s", siteID, networkID)
+	var result networkDetailsRaw
+	path := fmt.Sprintf("/v1/sites/%s/networks/%s", siteID, state.ID.ValueString())
 	if err := r.client.Get(ctx, path, &result); err != nil {
 		if errors.IsNotFoundError(err) {
 			resp.State.RemoveResource(ctx)
@@ -154,6 +170,12 @@ func (r *networkResource) Read(ctx context.Context, req resource.ReadRequest, re
 	state.Management = types.StringValue(result.Management)
 	state.Enabled = types.BoolValue(result.Enabled)
 	state.VlanID = types.Int64Value(result.VlanId)
+	if result.IPv4Configuration != nil {
+		state.IPv4ConfigurationJSON = rawMessageToOptionalString(result.IPv4Configuration)
+	}
+	if result.IPv6Configuration != nil {
+		state.IPv6ConfigurationJSON = rawMessageToOptionalString(result.IPv6Configuration)
+	}
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
@@ -175,27 +197,28 @@ func (r *networkResource) Update(ctx context.Context, req resource.UpdateRequest
 		return
 	}
 
-	request := &networks.UpdateNetworkRequest{
-		Management: plan.Management.ValueString(),
-		Name:       plan.Name.ValueString(),
-		Enabled:    plan.Enabled.ValueBool(),
-		VlanId:     plan.VlanID.ValueInt64(),
+	payload, diags := buildNetworkPayload(plan)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
 	}
 
 	var result networks.UpdateNetworkResponse
 	path := fmt.Sprintf("/v1/sites/%s/networks/%s", siteID, plan.ID.ValueString())
-	if err := r.client.Put(ctx, path, request, &result); err != nil {
+	if err := r.client.Put(ctx, path, payload, &result); err != nil {
 		resp.Diagnostics.AddError("Unable to update network", err.Error())
 		return
 	}
 
 	state := networkResourceModel{
-		ID:         types.StringValue(result.Id),
-		SiteID:     types.StringValue(siteID),
-		Name:       types.StringValue(result.Name),
-		Management: types.StringValue(result.Management),
-		Enabled:    types.BoolValue(result.Enabled),
-		VlanID:     types.Int64Value(result.VlanId),
+		ID:                    types.StringValue(result.Id),
+		SiteID:                types.StringValue(siteID),
+		Name:                  types.StringValue(result.Name),
+		Management:            types.StringValue(result.Management),
+		Enabled:               types.BoolValue(result.Enabled),
+		VlanID:                types.Int64Value(result.VlanId),
+		IPv4ConfigurationJSON: plan.IPv4ConfigurationJSON,
+		IPv6ConfigurationJSON: plan.IPv6ConfigurationJSON,
 	}
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
@@ -233,4 +256,42 @@ func (r *networkResource) ImportState(ctx context.Context, req resource.ImportSt
 	}
 	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("site_id"), siteID)...)
 	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), networkID)...)
+}
+
+func buildNetworkPayload(plan networkResourceModel) (map[string]interface{}, diag.Diagnostics) {
+	var diags diag.Diagnostics
+	payload := map[string]interface{}{
+		"management": plan.Management.ValueString(),
+		"name":       plan.Name.ValueString(),
+		"enabled":    plan.Enabled.ValueBool(),
+		"vlanId":     plan.VlanID.ValueInt64(),
+	}
+
+	if !plan.IPv4ConfigurationJSON.IsNull() && !plan.IPv4ConfigurationJSON.IsUnknown() {
+		if err := requireValidJSON(plan.IPv4ConfigurationJSON.ValueString()); err != nil {
+			diags.AddAttributeError(path.Root("ipv4_configuration_json"), "Invalid ipv4_configuration_json", err.Error())
+			return nil, diags
+		}
+		payload["ipv4Configuration"] = json.RawMessage(plan.IPv4ConfigurationJSON.ValueString())
+	}
+
+	if !plan.IPv6ConfigurationJSON.IsNull() && !plan.IPv6ConfigurationJSON.IsUnknown() {
+		if err := requireValidJSON(plan.IPv6ConfigurationJSON.ValueString()); err != nil {
+			diags.AddAttributeError(path.Root("ipv6_configuration_json"), "Invalid ipv6_configuration_json", err.Error())
+			return nil, diags
+		}
+		payload["ipv6Configuration"] = json.RawMessage(plan.IPv6ConfigurationJSON.ValueString())
+	}
+
+	return payload, diags
+}
+
+func rawMessageToOptionalString(raw json.RawMessage) types.String {
+	if len(raw) == 0 {
+		return types.StringNull()
+	}
+	if string(raw) == "null" {
+		return types.StringNull()
+	}
+	return types.StringValue(string(raw))
 }
