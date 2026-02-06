@@ -13,6 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -128,24 +129,33 @@ func (r *networkResource) Schema(ctx context.Context, req resource.SchemaRequest
 			"vlan_id": schema.Int64Attribute{
 				Optional: true,
 				Computed: true,
+				PlanModifiers: []planmodifier.Int64{
+					int64planmodifier.UseStateForUnknown(),
+				},
 			},
 			"zone_id": schema.StringAttribute{
 				Optional: true,
+				Computed: true,
 			},
 			"device_id": schema.StringAttribute{
 				Optional: true,
+				Computed: true,
 			},
 			"isolation_enabled": schema.BoolAttribute{
 				Optional: true,
+				Computed: true,
 			},
 			"cellular_backup_enabled": schema.BoolAttribute{
 				Optional: true,
+				Computed: true,
 			},
 			"internet_access_enabled": schema.BoolAttribute{
 				Optional: true,
+				Computed: true,
 			},
 			"mdns_forwarding_enabled": schema.BoolAttribute{
 				Optional: true,
+				Computed: true,
 			},
 			"dhcp_guarding": schema.SingleNestedAttribute{
 				Optional: true,
@@ -161,9 +171,11 @@ func (r *networkResource) Schema(ctx context.Context, req resource.SchemaRequest
 				Attributes: map[string]schema.Attribute{
 					"auto_scale_enabled": schema.BoolAttribute{
 						Optional: true,
+						Computed: true,
 					},
 					"cidr": schema.StringAttribute{
 						Optional: true,
+						Computed: true,
 					},
 					"host_ip_address": schema.StringAttribute{
 						Optional: true,
@@ -180,30 +192,38 @@ func (r *networkResource) Schema(ctx context.Context, req resource.SchemaRequest
 						Attributes: map[string]schema.Attribute{
 							"mode": schema.StringAttribute{
 								Optional: true,
+								Computed: true,
 							},
 							"ip_address_range": schema.SingleNestedAttribute{
 								Optional: true,
+								Computed: true,
 								Attributes: map[string]schema.Attribute{
 									"start": schema.StringAttribute{
 										Optional: true,
+										Computed: true,
 									},
 									"stop": schema.StringAttribute{
 										Optional: true,
+										Computed: true,
 									},
 								},
 							},
 							"gateway_ip_address_override": schema.StringAttribute{
 								Optional: true,
+								Computed: true,
 							},
 							"dns_servers": schema.ListAttribute{
 								Optional:    true,
+								Computed:    true,
 								ElementType: types.StringType,
 							},
 							"lease_time_seconds": schema.Int64Attribute{
 								Optional: true,
+								Computed: true,
 							},
 							"domain_name": schema.StringAttribute{
 								Optional: true,
+								Computed: true,
 							},
 						},
 					},
@@ -214,16 +234,20 @@ func (r *networkResource) Schema(ctx context.Context, req resource.SchemaRequest
 				Attributes: map[string]schema.Attribute{
 					"interface_type": schema.StringAttribute{
 						Optional: true,
+						Computed: true,
 					},
 					"prefix_delegation_wan_interface_id": schema.StringAttribute{
 						Optional: true,
+						Computed: true,
 					},
 					"dns_servers": schema.ListAttribute{
 						Optional:    true,
+						Computed:    true,
 						ElementType: types.StringType,
 					},
 					"additional_host_ip_subnets": schema.ListAttribute{
 						Optional:    true,
+						Computed:    true,
 						ElementType: types.StringType,
 					},
 					"client_address_assignment": schema.SingleNestedAttribute{
@@ -231,23 +255,28 @@ func (r *networkResource) Schema(ctx context.Context, req resource.SchemaRequest
 						Attributes: map[string]schema.Attribute{
 							"slaac_enabled": schema.BoolAttribute{
 								Optional: true,
+								Computed: true,
 							},
 							"dhcp_configuration": schema.SingleNestedAttribute{
 								Optional: true,
 								Attributes: map[string]schema.Attribute{
 									"ip_address_suffix_range": schema.SingleNestedAttribute{
 										Optional: true,
+										Computed: true,
 										Attributes: map[string]schema.Attribute{
 											"start": schema.StringAttribute{
 												Optional: true,
+												Computed: true,
 											},
 											"stop": schema.StringAttribute{
 												Optional: true,
+												Computed: true,
 											},
 										},
 									},
 									"lease_time_seconds": schema.Int64Attribute{
 										Optional: true,
+										Computed: true,
 									},
 								},
 							},
@@ -258,6 +287,7 @@ func (r *networkResource) Schema(ctx context.Context, req resource.SchemaRequest
 						Attributes: map[string]schema.Attribute{
 							"priority": schema.StringAttribute{
 								Optional: true,
+								Computed: true,
 							},
 						},
 					},
