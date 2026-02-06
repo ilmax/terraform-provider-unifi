@@ -22,6 +22,24 @@ provider "unifi" {
 - `unifi_firewall_zone`
 - `unifi_wan` (read-only)
 
+## Versioning
+
+Provider releases use SemVer for the provider version and include the UniFi Network API
+version in build metadata. Tag format:
+
+```text
+vX.Y.Z+unifi.A.B.C
+```
+
+Example:
+
+```text
+v0.3.0+unifi.8.2.93
+```
+
+`X.Y.Z` is the provider version. `+unifi.A.B.C` records the UniFi Network API version
+the release targets; build metadata does not affect SemVer precedence.
+
 ## Import
 
 Resources that require a `site_id` use this import format:
