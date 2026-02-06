@@ -12,9 +12,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/ilmax/terraform-provider-unifi/internal/unifi"
 	"github.com/ilmax/unifi-client-go/pkg/broadcasts"
 	"github.com/ilmax/unifi-client-go/pkg/errors"
-	"github.com/massimilianodonini/terraform-provider-unifi/internal/unifi"
 )
 
 type wifiResource struct {

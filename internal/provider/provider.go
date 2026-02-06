@@ -10,8 +10,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/provider/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/ilmax/terraform-provider-unifi/internal/unifi"
 	"github.com/ilmax/unifi-client-go/pkg/sitemanager"
-	"github.com/massimilianodonini/terraform-provider-unifi/internal/unifi"
 )
 
 const (
