@@ -27,8 +27,8 @@ github.com/hashicorp/terraform-svchost v0.1.1 h1:EZZimZ1GxdqFRinZ1tpJwVxxt49xc/S
 github.com/hashicorp/terraform-svchost v0.1.1/go.mod h1:mNsjQfZyf/Jhz35v6/0LWcv26+X7JPS+buii2c9/ctc=
 github.com/hashicorp/yamux v0.1.1 h1:yrQxtgseBDrq9Y652vSRDvsKCJKOUD+GzTS4Y0Y8pvE=
 github.com/hashicorp/yamux v0.1.1/go.mod h1:CtWFDAQgb7dxtzFs4tWbplKIe2jSi3+5vKbgIO0SLnQ=
-github.com/ilmax/unifi-client-go v0.1.0 h1:IigblXWXrVnnCO71KAWrwBk88NB0A+jymKjUS0NFkUk=
-github.com/ilmax/unifi-client-go v0.1.0/go.mod h1:d3gbL7OHx2wf8gpouSogLWhWVoC0faLiv7hcnFn2eBc=
+github.com/ilmax/unifi-client-go v0.1.1 h1:QLonNVygCtGJRVLFFtGOUel0fcoGDnednPfFErJmM3s=
+github.com/ilmax/unifi-client-go v0.1.1/go.mod h1:d3gbL7OHx2wf8gpouSogLWhWVoC0faLiv7hcnFn2eBc=
 github.com/jhump/protoreflect v1.15.1 h1:HUMERORf3I3ZdX05WaQ6MIpd/NJ434hTp5YiKgfCL6c=
 github.com/jhump/protoreflect v1.15.1/go.mod h1:jD/2GMKKE6OqX8qTjhADU1e6DShO+gavG9e0Q693nKo=
 github.com/mattn/go-colorable v0.1.9/go.mod h1:u6P/XSegPjTcexA+o6vUJrdnUu04hMope9wVRipJSqc=

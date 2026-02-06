@@ -2,8 +2,10 @@ package provider
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
+	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -116,38 +118,38 @@ func (r *wifiResource) Create(ctx context.Context, req resource.CreateRequest, r
 		return
 	}
 
-	request := &broadcasts.CreateWifiBroadcastRequest{
-		Type:    plan.Type.ValueString(),
-		Name:    plan.Name.ValueString(),
-		Enabled: plan.Enabled.ValueBool(),
-		SecurityConfiguration: &broadcasts.CreateWifiBroadcastSecurityConfiguration{
-			Type: plan.SecurityType.ValueString(),
+	payload := map[string]any{
+		"type":    plan.Type.ValueString(),
+		"name":    plan.Name.ValueString(),
+		"enabled": plan.Enabled.ValueBool(),
+		"securityConfiguration": map[string]any{
+			"type": plan.SecurityType.ValueString(),
 		},
 	}
 
 	if !plan.NetworkType.IsNull() && !plan.NetworkType.IsUnknown() {
-		request.Network = &broadcasts.ClientAccess{
-			Type: plan.NetworkType.ValueString(),
+		payload["network"] = map[string]any{
+			"type": plan.NetworkType.ValueString(),
 		}
 	}
 
-	var result broadcasts.CreateWifiBroadcastResponse
+	var raw json.RawMessage
 	path := fmt.Sprintf("/v1/sites/%s/wifi/broadcasts", siteID)
-	if err := r.client.Post(ctx, path, request, &result); err != nil {
+	if err := r.client.Post(ctx, path, payload, &raw); err != nil {
 		resp.Diagnostics.AddError("Unable to create WiFi broadcast", err.Error())
 		return
 	}
 
-	state := wifiResourceModel{
-		ID:           types.StringValue(result.Id),
-		SiteID:       types.StringValue(siteID),
-		Name:         types.StringValue(result.Name),
-		Type:         types.StringValue(result.Type),
-		Enabled:      types.BoolValue(result.Enabled),
-		SecurityType: types.StringValue(result.SecurityConfiguration.Type),
+	decoded, err := broadcasts.DecodeCreateWifiBroadcastResponse(raw)
+	if err != nil {
+		resp.Diagnostics.AddError("Unable to decode WiFi broadcast", err.Error())
+		return
 	}
-	if result.Network != nil {
-		state.NetworkType = types.StringValue(result.Network.Type)
+
+	state, diags := wifiStateFromResponse(siteID, decoded)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
 	}
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
@@ -170,9 +172,9 @@ func (r *wifiResource) Read(ctx context.Context, req resource.ReadRequest, resp 
 		return
 	}
 
-	var result broadcasts.GetWifiBroadcastDetailsResponse
+	var raw json.RawMessage
 	path := fmt.Sprintf("/v1/sites/%s/wifi/broadcasts/%s", siteID, state.ID.ValueString())
-	if err := r.client.Get(ctx, path, &result); err != nil {
+	if err := r.client.Get(ctx, path, &raw); err != nil {
 		if errors.IsNotFoundError(err) {
 			resp.State.RemoveResource(ctx)
 			return
@@ -181,17 +183,16 @@ func (r *wifiResource) Read(ctx context.Context, req resource.ReadRequest, resp 
 		return
 	}
 
-	state.SiteID = types.StringValue(siteID)
-	state.Name = types.StringValue(result.Name)
-	state.Type = types.StringValue(result.Type)
-	state.Enabled = types.BoolValue(result.Enabled)
-	if result.SecurityConfiguration != nil {
-		state.SecurityType = types.StringValue(result.SecurityConfiguration.Type)
+	decoded, err := broadcasts.DecodeGetWifiBroadcastDetailsResponse(raw)
+	if err != nil {
+		resp.Diagnostics.AddError("Unable to decode WiFi broadcast", err.Error())
+		return
 	}
-	if result.Network != nil {
-		state.NetworkType = types.StringValue(result.Network.Type)
-	} else {
-		state.NetworkType = types.StringNull()
+
+	state, diags := wifiStateFromResponse(siteID, decoded)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
 	}
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
@@ -233,4 +234,44 @@ func (r *wifiResource) ImportState(ctx context.Context, req resource.ImportState
 	}
 	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("site_id"), siteID)...)
 	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), broadcastID)...)
+}
+
+func wifiStateFromResponse(siteID string, response any) (wifiResourceModel, diag.Diagnostics) {
+	var diags diag.Diagnostics
+
+	switch result := response.(type) {
+	case *broadcasts.CreateWifiBroadcastResponseStandard:
+		return wifiStateFromValues(siteID, result.Id, result.Name, result.Type, result.Enabled, result.SecurityConfiguration.Type, result.Network), diags
+	case *broadcasts.CreateWifiBroadcastResponseIotOptimized:
+		return wifiStateFromValues(siteID, result.Id, result.Name, result.Type, result.Enabled, result.SecurityConfiguration.Type, result.Network), diags
+	case *broadcasts.GetWifiBroadcastDetailsResponseStandard:
+		return wifiStateFromValues(siteID, result.Id, result.Name, result.Type, result.Enabled, result.SecurityConfiguration.Type, result.Network), diags
+	case *broadcasts.GetWifiBroadcastDetailsResponseIotOptimized:
+		return wifiStateFromValues(siteID, result.Id, result.Name, result.Type, result.Enabled, result.SecurityConfiguration.Type, result.Network), diags
+	default:
+		diags.AddError("Unsupported WiFi broadcast response", fmt.Sprintf("unexpected response type %T", response))
+		return wifiResourceModel{}, diags
+	}
+}
+
+func wifiStateFromValues(siteID, id, name, broadcastType string, enabled bool, securityType string, network *broadcasts.ClientAccess) wifiResourceModel {
+	state := wifiResourceModel{
+		ID:      types.StringValue(id),
+		SiteID:  types.StringValue(siteID),
+		Name:    types.StringValue(name),
+		Type:    types.StringValue(broadcastType),
+		Enabled: types.BoolValue(enabled),
+	}
+
+	if securityType != "" {
+		state.SecurityType = types.StringValue(securityType)
+	}
+
+	if network != nil {
+		state.NetworkType = types.StringValue(network.Type)
+	} else {
+		state.NetworkType = types.StringNull()
+	}
+
+	return state
 }

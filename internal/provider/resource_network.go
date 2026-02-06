@@ -34,10 +34,14 @@ type networkResourceModel struct {
 	IPv6ConfigurationJSON types.String `tfsdk:"ipv6_configuration_json"`
 }
 
-type networkDetailsRaw struct {
-	networks.GetNetworkDetailsResponse
-	IPv4Configuration json.RawMessage `json:"ipv4Configuration"`
-	IPv6Configuration json.RawMessage `json:"ipv6Configuration"`
+type networkBase struct {
+	id         string
+	name       string
+	management string
+	enabled    bool
+	vlanID     int64
+	ipv4       json.RawMessage
+	ipv6       json.RawMessage
 }
 
 func NewNetworkResource() resource.Resource {
@@ -116,20 +120,32 @@ func (r *networkResource) Create(ctx context.Context, req resource.CreateRequest
 		return
 	}
 
-	var result networks.CreateNetworkResponse
+	var raw json.RawMessage
 	path := fmt.Sprintf("/v1/sites/%s/networks", siteID)
-	if err := r.client.Post(ctx, path, payload, &result); err != nil {
+	if err := r.client.Post(ctx, path, payload, &raw); err != nil {
 		resp.Diagnostics.AddError("Unable to create network", err.Error())
 		return
 	}
 
+	decoded, err := networks.DecodeCreateNetworkResponse(raw)
+	if err != nil {
+		resp.Diagnostics.AddError("Unable to decode network", err.Error())
+		return
+	}
+
+	base, baseDiags := networkBaseFromAny(decoded)
+	resp.Diagnostics.Append(baseDiags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
 	state := networkResourceModel{
-		ID:                    types.StringValue(result.Id),
+		ID:                    types.StringValue(base.id),
 		SiteID:                types.StringValue(siteID),
-		Name:                  types.StringValue(result.Name),
-		Management:            types.StringValue(result.Management),
-		Enabled:               types.BoolValue(result.Enabled),
-		VlanID:                types.Int64Value(result.VlanId),
+		Name:                  types.StringValue(base.name),
+		Management:            types.StringValue(base.management),
+		Enabled:               types.BoolValue(base.enabled),
+		VlanID:                types.Int64Value(base.vlanID),
 		IPv4ConfigurationJSON: plan.IPv4ConfigurationJSON,
 		IPv6ConfigurationJSON: plan.IPv6ConfigurationJSON,
 	}
@@ -154,9 +170,9 @@ func (r *networkResource) Read(ctx context.Context, req resource.ReadRequest, re
 		return
 	}
 
-	var result networkDetailsRaw
+	var raw json.RawMessage
 	path := fmt.Sprintf("/v1/sites/%s/networks/%s", siteID, state.ID.ValueString())
-	if err := r.client.Get(ctx, path, &result); err != nil {
+	if err := r.client.Get(ctx, path, &raw); err != nil {
 		if errors.IsNotFoundError(err) {
 			resp.State.RemoveResource(ctx)
 			return
@@ -165,17 +181,25 @@ func (r *networkResource) Read(ctx context.Context, req resource.ReadRequest, re
 		return
 	}
 
+	decoded, err := networks.DecodeGetNetworkDetailsResponse(raw)
+	if err != nil {
+		resp.Diagnostics.AddError("Unable to decode network", err.Error())
+		return
+	}
+
+	base, baseDiags := networkBaseFromAny(decoded)
+	resp.Diagnostics.Append(baseDiags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
 	state.SiteID = types.StringValue(siteID)
-	state.Name = types.StringValue(result.Name)
-	state.Management = types.StringValue(result.Management)
-	state.Enabled = types.BoolValue(result.Enabled)
-	state.VlanID = types.Int64Value(result.VlanId)
-	if result.IPv4Configuration != nil {
-		state.IPv4ConfigurationJSON = rawMessageToOptionalString(result.IPv4Configuration)
-	}
-	if result.IPv6Configuration != nil {
-		state.IPv6ConfigurationJSON = rawMessageToOptionalString(result.IPv6Configuration)
-	}
+	state.Name = types.StringValue(base.name)
+	state.Management = types.StringValue(base.management)
+	state.Enabled = types.BoolValue(base.enabled)
+	state.VlanID = types.Int64Value(base.vlanID)
+	state.IPv4ConfigurationJSON = rawMessageToOptionalString(base.ipv4)
+	state.IPv6ConfigurationJSON = rawMessageToOptionalString(base.ipv6)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
@@ -203,20 +227,32 @@ func (r *networkResource) Update(ctx context.Context, req resource.UpdateRequest
 		return
 	}
 
-	var result networks.UpdateNetworkResponse
+	var raw json.RawMessage
 	path := fmt.Sprintf("/v1/sites/%s/networks/%s", siteID, plan.ID.ValueString())
-	if err := r.client.Put(ctx, path, payload, &result); err != nil {
+	if err := r.client.Put(ctx, path, payload, &raw); err != nil {
 		resp.Diagnostics.AddError("Unable to update network", err.Error())
 		return
 	}
 
+	decoded, err := networks.DecodeUpdateNetworkResponse(raw)
+	if err != nil {
+		resp.Diagnostics.AddError("Unable to decode network", err.Error())
+		return
+	}
+
+	base, baseDiags := networkBaseFromAny(decoded)
+	resp.Diagnostics.Append(baseDiags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
 	state := networkResourceModel{
-		ID:                    types.StringValue(result.Id),
+		ID:                    types.StringValue(base.id),
 		SiteID:                types.StringValue(siteID),
-		Name:                  types.StringValue(result.Name),
-		Management:            types.StringValue(result.Management),
-		Enabled:               types.BoolValue(result.Enabled),
-		VlanID:                types.Int64Value(result.VlanId),
+		Name:                  types.StringValue(base.name),
+		Management:            types.StringValue(base.management),
+		Enabled:               types.BoolValue(base.enabled),
+		VlanID:                types.Int64Value(base.vlanID),
 		IPv4ConfigurationJSON: plan.IPv4ConfigurationJSON,
 		IPv6ConfigurationJSON: plan.IPv6ConfigurationJSON,
 	}
@@ -284,6 +320,61 @@ func buildNetworkPayload(plan networkResourceModel) (map[string]interface{}, dia
 	}
 
 	return payload, diags
+}
+
+func networkBaseFromAny(response any) (networkBase, diag.Diagnostics) {
+	var diags diag.Diagnostics
+
+	switch result := response.(type) {
+	case *networks.CreateNetworkResponseGateway:
+		return networkBase{id: result.Id, name: result.Name, management: result.Management, enabled: result.Enabled, vlanID: result.VlanId}, diags
+	case *networks.CreateNetworkResponseSwitch:
+		return networkBase{id: result.Id, name: result.Name, management: result.Management, enabled: result.Enabled, vlanID: result.VlanId}, diags
+	case *networks.CreateNetworkResponseUnmanaged:
+		return networkBase{id: result.Id, name: result.Name, management: result.Management, enabled: result.Enabled, vlanID: result.VlanId}, diags
+	case *networks.UpdateNetworkResponseGateway:
+		return networkBase{id: result.Id, name: result.Name, management: result.Management, enabled: result.Enabled, vlanID: result.VlanId}, diags
+	case *networks.UpdateNetworkResponseSwitch:
+		return networkBase{id: result.Id, name: result.Name, management: result.Management, enabled: result.Enabled, vlanID: result.VlanId}, diags
+	case *networks.UpdateNetworkResponseUnmanaged:
+		return networkBase{id: result.Id, name: result.Name, management: result.Management, enabled: result.Enabled, vlanID: result.VlanId}, diags
+	case *networks.GetNetworkDetailsResponseGateway:
+		ipv4, ipv6 := marshalNetworkConfig(result.Ipv4Configuration, result.Ipv6Configuration, &diags)
+		return networkBase{id: result.Id, name: result.Name, management: result.Management, enabled: result.Enabled, vlanID: result.VlanId, ipv4: ipv4, ipv6: ipv6}, diags
+	case *networks.GetNetworkDetailsResponseSwitch:
+		ipv4, _ := marshalNetworkConfig(result.Ipv4Configuration, nil, &diags)
+		return networkBase{id: result.Id, name: result.Name, management: result.Management, enabled: result.Enabled, vlanID: result.VlanId, ipv4: ipv4}, diags
+	case *networks.GetNetworkDetailsResponseUnmanaged:
+		return networkBase{id: result.Id, name: result.Name, management: result.Management, enabled: result.Enabled, vlanID: result.VlanId}, diags
+	default:
+		diags.AddError("Unsupported network response", fmt.Sprintf("unexpected response type %T", response))
+		return networkBase{}, diags
+	}
+}
+
+func marshalNetworkConfig(ipv4 any, ipv6 any, diags *diag.Diagnostics) (json.RawMessage, json.RawMessage) {
+	var out4 json.RawMessage
+	var out6 json.RawMessage
+
+	if ipv4 != nil {
+		encoded, err := json.Marshal(ipv4)
+		if err != nil {
+			diags.AddError("Unable to encode IPv4 configuration", err.Error())
+		} else if string(encoded) != "null" {
+			out4 = encoded
+		}
+	}
+
+	if ipv6 != nil {
+		encoded, err := json.Marshal(ipv6)
+		if err != nil {
+			diags.AddError("Unable to encode IPv6 configuration", err.Error())
+		} else if string(encoded) != "null" {
+			out6 = encoded
+		}
+	}
+
+	return out4, out6
 }
 
 func rawMessageToOptionalString(raw json.RawMessage) types.String {

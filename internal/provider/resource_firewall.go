@@ -117,20 +117,31 @@ func (r *firewallResource) Create(ctx context.Context, req resource.CreateReques
 		return
 	}
 
-	reqBody, diags := buildFirewallRequest(plan)
+	payload, diags := buildFirewallPayload(plan)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	var result acl_rules.CreateACLRuleResponse
+	var raw json.RawMessage
 	path := fmt.Sprintf("/v1/sites/%s/acl-rules", siteID)
-	if err := r.client.Post(ctx, path, reqBody, &result); err != nil {
+	if err := r.client.Post(ctx, path, payload, &raw); err != nil {
 		resp.Diagnostics.AddError("Unable to create ACL rule", err.Error())
 		return
 	}
 
-	state := firewallStateFromCreate(siteID, result)
+	decoded, err := acl_rules.DecodeCreateACLRuleResponse(raw)
+	if err != nil {
+		resp.Diagnostics.AddError("Unable to decode ACL rule", err.Error())
+		return
+	}
+
+	state, stateDiags := firewallStateFromResponse(siteID, decoded)
+	resp.Diagnostics.Append(stateDiags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
@@ -151,9 +162,9 @@ func (r *firewallResource) Read(ctx context.Context, req resource.ReadRequest, r
 		return
 	}
 
-	var result acl_rules.GetACLRuleResponse
+	var raw json.RawMessage
 	path := fmt.Sprintf("/v1/sites/%s/acl-rules/%s", siteID, state.ID.ValueString())
-	if err := r.client.Get(ctx, path, &result); err != nil {
+	if err := r.client.Get(ctx, path, &raw); err != nil {
 		if errors.IsNotFoundError(err) {
 			resp.State.RemoveResource(ctx)
 			return
@@ -162,7 +173,18 @@ func (r *firewallResource) Read(ctx context.Context, req resource.ReadRequest, r
 		return
 	}
 
-	state = firewallStateFromGet(siteID, result)
+	decoded, err := acl_rules.DecodeGetACLRuleResponse(raw)
+	if err != nil {
+		resp.Diagnostics.AddError("Unable to decode ACL rule", err.Error())
+		return
+	}
+
+	state, stateDiags := firewallStateFromResponse(siteID, decoded)
+	resp.Diagnostics.Append(stateDiags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
@@ -183,20 +205,31 @@ func (r *firewallResource) Update(ctx context.Context, req resource.UpdateReques
 		return
 	}
 
-	reqBody, diags := buildFirewallUpdateRequest(plan)
+	payload, diags := buildFirewallPayload(plan)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	var result acl_rules.UpdateACLRuleResponse
+	var raw json.RawMessage
 	path := fmt.Sprintf("/v1/sites/%s/acl-rules/%s", siteID, plan.ID.ValueString())
-	if err := r.client.Put(ctx, path, reqBody, &result); err != nil {
+	if err := r.client.Put(ctx, path, payload, &raw); err != nil {
 		resp.Diagnostics.AddError("Unable to update ACL rule", err.Error())
 		return
 	}
 
-	state := firewallStateFromUpdate(siteID, result)
+	decoded, err := acl_rules.DecodeUpdateACLRuleResponse(raw)
+	if err != nil {
+		resp.Diagnostics.AddError("Unable to decode ACL rule", err.Error())
+		return
+	}
+
+	state, stateDiags := firewallStateFromResponse(siteID, decoded)
+	resp.Diagnostics.Append(stateDiags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
@@ -234,96 +267,42 @@ func (r *firewallResource) ImportState(ctx context.Context, req resource.ImportS
 	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), aclRuleID)...)
 }
 
-func buildFirewallRequest(plan firewallResourceModel) (*acl_rules.CreateACLRuleRequest, diag.Diagnostics) {
+func buildFirewallPayload(plan firewallResourceModel) (map[string]any, diag.Diagnostics) {
 	var diags diag.Diagnostics
-	request := &acl_rules.CreateACLRuleRequest{
-		Type:        plan.Type.ValueString(),
-		Enabled:     plan.Enabled.ValueBool(),
-		Name:        plan.Name.ValueString(),
-		Description: plan.Description.ValueString(),
-		Action:      plan.Action.ValueString(),
-		Index:       plan.Index.ValueInt64(),
+	payload := map[string]any{
+		"type":    plan.Type.ValueString(),
+		"enabled": plan.Enabled.ValueBool(),
+		"name":    plan.Name.ValueString(),
+		"action":  plan.Action.ValueString(),
 	}
 
-	sourceFilter, sourceDiags := decodeACLSourceFilterCreate(plan.SourceFilterJSON)
+	if !plan.Description.IsNull() && !plan.Description.IsUnknown() {
+		payload["description"] = plan.Description.ValueString()
+	}
+
+	if !plan.Index.IsNull() && !plan.Index.IsUnknown() {
+		payload["index"] = plan.Index.ValueInt64()
+	}
+
+	sourceFilter, sourceDiags := decodeJSONRaw(plan.SourceFilterJSON, path.Root("source_filter_json"))
 	diags.Append(sourceDiags...)
-	request.SourceFilter = sourceFilter
+	if sourceFilter != nil {
+		payload["sourceFilter"] = sourceFilter
+	}
 
 	destinationFilter, destDiags := decodeJSONRaw(plan.DestinationFilterJSON, path.Root("destination_filter_json"))
 	diags.Append(destDiags...)
-	request.DestinationFilter = destinationFilter
+	if destinationFilter != nil {
+		payload["destinationFilter"] = destinationFilter
+	}
 
 	protocolFilter, protoDiags := decodeProtocolFilter(plan.ProtocolFilter)
 	diags.Append(protoDiags...)
-	request.ProtocolFilter = protocolFilter
-
-	return request, diags
-}
-
-func buildFirewallUpdateRequest(plan firewallResourceModel) (*acl_rules.UpdateACLRuleRequest, diag.Diagnostics) {
-	var diags diag.Diagnostics
-	request := &acl_rules.UpdateACLRuleRequest{
-		Type:        plan.Type.ValueString(),
-		Enabled:     plan.Enabled.ValueBool(),
-		Name:        plan.Name.ValueString(),
-		Description: plan.Description.ValueString(),
-		Action:      plan.Action.ValueString(),
-		Index:       plan.Index.ValueInt64(),
+	if protocolFilter != nil {
+		payload["protocolFilter"] = protocolFilter
 	}
 
-	sourceFilter, sourceDiags := decodeACLSourceFilterUpdate(plan.SourceFilterJSON)
-	diags.Append(sourceDiags...)
-	request.SourceFilter = sourceFilter
-
-	destinationFilter, destDiags := decodeJSONRaw(plan.DestinationFilterJSON, path.Root("destination_filter_json"))
-	diags.Append(destDiags...)
-	request.DestinationFilter = destinationFilter
-
-	protocolFilter, protoDiags := decodeProtocolFilter(plan.ProtocolFilter)
-	diags.Append(protoDiags...)
-	request.ProtocolFilter = protocolFilter
-
-	return request, diags
-}
-
-func decodeACLSourceFilterCreate(raw types.String) (*acl_rules.CreateACLRuleSourceFilter, diag.Diagnostics) {
-	var diags diag.Diagnostics
-	if raw.IsNull() || raw.IsUnknown() {
-		return nil, diags
-	}
-
-	if err := requireValidJSON(raw.ValueString()); err != nil {
-		diags.AddAttributeError(path.Root("source_filter_json"), "Invalid source_filter_json", err.Error())
-		return nil, diags
-	}
-
-	var result acl_rules.CreateACLRuleSourceFilter
-	if err := json.Unmarshal([]byte(raw.ValueString()), &result); err != nil {
-		diags.AddAttributeError(path.Root("source_filter_json"), "Invalid source_filter_json", err.Error())
-		return nil, diags
-	}
-
-	return &result, diags
-}
-
-func decodeACLSourceFilterUpdate(raw types.String) (*acl_rules.UpdateACLRuleSourceFilter, diag.Diagnostics) {
-	var diags diag.Diagnostics
-	if raw.IsNull() || raw.IsUnknown() {
-		return nil, diags
-	}
-
-	if err := requireValidJSON(raw.ValueString()); err != nil {
-		diags.AddAttributeError(path.Root("source_filter_json"), "Invalid source_filter_json", err.Error())
-		return nil, diags
-	}
-
-	var result acl_rules.UpdateACLRuleSourceFilter
-	if err := json.Unmarshal([]byte(raw.ValueString()), &result); err != nil {
-		diags.AddAttributeError(path.Root("source_filter_json"), "Invalid source_filter_json", err.Error())
-		return nil, diags
-	}
-
-	return &result, diags
+	return payload, diags
 }
 
 func decodeJSONRaw(raw types.String, attrPath path.Path) (json.RawMessage, diag.Diagnostics) {
@@ -365,59 +344,50 @@ func decodeProtocolFilter(protocols types.List) ([]json.RawMessage, diag.Diagnos
 	return result, diags
 }
 
-func firewallStateFromCreate(siteID string, result acl_rules.CreateACLRuleResponse) firewallResourceModel {
-	state := firewallResourceModel{
-		ID:          types.StringValue(result.Id),
-		SiteID:      types.StringValue(siteID),
-		Type:        types.StringValue(result.Type),
-		Name:        types.StringValue(result.Name),
-		Description: types.StringValue(result.Description),
-		Action:      types.StringValue(result.Action),
-		Enabled:     types.BoolValue(result.Enabled),
-		Index:       types.Int64Value(result.Index),
+func firewallStateFromResponse(siteID string, response any) (firewallResourceModel, diag.Diagnostics) {
+	var diags diag.Diagnostics
+
+	switch result := response.(type) {
+	case *acl_rules.CreateACLRuleResponseIpv4:
+		return firewallStateFromFields(siteID, result.Id, result.Type, result.Name, result.Description, result.Action, result.Enabled, result.Index, result.SourceFilter, result.DestinationFilter, result.ProtocolFilter), diags
+	case *acl_rules.CreateACLRuleResponseMac:
+		return firewallStateFromFields(siteID, result.Id, result.Type, result.Name, result.Description, result.Action, result.Enabled, result.Index, result.SourceFilter, result.DestinationFilter, result.ProtocolFilter), diags
+	case *acl_rules.UpdateACLRuleResponseIpv4:
+		return firewallStateFromFields(siteID, result.Id, result.Type, result.Name, result.Description, result.Action, result.Enabled, result.Index, result.SourceFilter, result.DestinationFilter, result.ProtocolFilter), diags
+	case *acl_rules.UpdateACLRuleResponseMac:
+		return firewallStateFromFields(siteID, result.Id, result.Type, result.Name, result.Description, result.Action, result.Enabled, result.Index, result.SourceFilter, result.DestinationFilter, result.ProtocolFilter), diags
+	case *acl_rules.GetACLRuleResponseIpv4:
+		return firewallStateFromFields(siteID, result.Id, result.Type, result.Name, result.Description, result.Action, result.Enabled, result.Index, result.SourceFilter, result.DestinationFilter, result.ProtocolFilter), diags
+	case *acl_rules.GetACLRuleResponseMac:
+		return firewallStateFromFields(siteID, result.Id, result.Type, result.Name, result.Description, result.Action, result.Enabled, result.Index, result.SourceFilter, result.DestinationFilter, nil), diags
+	default:
+		diags.AddError("Unsupported ACL rule response", fmt.Sprintf("unexpected response type %T", response))
+		return firewallResourceModel{}, diags
 	}
-	state.SourceFilterJSON = rawMessageToString(result.SourceFilter)
-	state.DestinationFilterJSON = rawMessageToString(result.DestinationFilter)
-	state.ProtocolFilter = rawMessagesToList(result.ProtocolFilter)
-	return state
 }
 
-func firewallStateFromUpdate(siteID string, result acl_rules.UpdateACLRuleResponse) firewallResourceModel {
+func firewallStateFromFields(siteID, id, ruleType, name, description, action string, enabled bool, index int64, sourceFilter, destinationFilter json.RawMessage, protocolFilter []json.RawMessage) firewallResourceModel {
 	state := firewallResourceModel{
-		ID:          types.StringValue(result.Id),
+		ID:          types.StringValue(id),
 		SiteID:      types.StringValue(siteID),
-		Type:        types.StringValue(result.Type),
-		Name:        types.StringValue(result.Name),
-		Description: types.StringValue(result.Description),
-		Action:      types.StringValue(result.Action),
-		Enabled:     types.BoolValue(result.Enabled),
-		Index:       types.Int64Value(result.Index),
+		Type:        types.StringValue(ruleType),
+		Name:        types.StringValue(name),
+		Description: types.StringValue(description),
+		Action:      types.StringValue(action),
+		Enabled:     types.BoolValue(enabled),
+		Index:       types.Int64Value(index),
 	}
-	state.SourceFilterJSON = rawMessageToString(result.SourceFilter)
-	state.DestinationFilterJSON = rawMessageToString(result.DestinationFilter)
-	state.ProtocolFilter = rawMessagesToList(result.ProtocolFilter)
-	return state
-}
-
-func firewallStateFromGet(siteID string, result acl_rules.GetACLRuleResponse) firewallResourceModel {
-	state := firewallResourceModel{
-		ID:          types.StringValue(result.Id),
-		SiteID:      types.StringValue(siteID),
-		Type:        types.StringValue(result.Type),
-		Name:        types.StringValue(result.Name),
-		Description: types.StringValue(result.Description),
-		Action:      types.StringValue(result.Action),
-		Enabled:     types.BoolValue(result.Enabled),
-		Index:       types.Int64Value(result.Index),
-	}
-	state.SourceFilterJSON = rawMessageToString(result.SourceFilter)
-	state.DestinationFilterJSON = rawMessageToString(result.DestinationFilter)
-	state.ProtocolFilter = rawMessagesToList(result.ProtocolFilter)
+	state.SourceFilterJSON = rawMessageToString(sourceFilter)
+	state.DestinationFilterJSON = rawMessageToString(destinationFilter)
+	state.ProtocolFilter = rawMessagesToList(protocolFilter)
 	return state
 }
 
 func rawMessageToString(raw json.RawMessage) types.String {
 	if len(raw) == 0 {
+		return types.StringNull()
+	}
+	if string(raw) == "null" {
 		return types.StringNull()
 	}
 	return types.StringValue(string(raw))
