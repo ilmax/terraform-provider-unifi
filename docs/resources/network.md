@@ -34,6 +34,12 @@ resource "unifi_network" "example" {
 }
 ```
 
+## Notes
+
+- UniFi firewall zones group interfaces (VLANs, WANs, VPNs) to manage policy between zones. Networks can belong to a single zone at a time, and are placed into a built-in zone by default if you do not specify `zone_id`.
+- Zone-based policies are directional; traffic is evaluated separately in each direction and can also be filtered within the same zone.
+- The UniFi Network API provides configuration and real-time status for sites, devices, and clients. It authenticates using an `X-API-Key` header (set `api_key` in the provider).
+
 ## Schema
 
 ### Required

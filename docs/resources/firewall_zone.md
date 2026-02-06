@@ -16,6 +16,13 @@ resource "unifi_firewall_zone" "example" {
 }
 ```
 
+## Notes
+
+- Firewall zones group interfaces (VLANs, WANs, VPNs) so you can manage policies between zones instead of individual networks.
+- UniFi ships with built-in zones (such as External, Internal, Gateway, VPN, Hotspot, DMZ). Custom zones are supported, and interfaces can belong to one zone at a time.
+- Zone-based policies are directional, and can also be applied within a zone when needed.
+- The UniFi Network API provides configuration and real-time status for sites, devices, and clients. It authenticates using an `X-API-Key` header (set `api_key` in the provider).
+
 ## Schema
 
 ### Required

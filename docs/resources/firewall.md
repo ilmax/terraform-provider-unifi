@@ -31,6 +31,11 @@ resource "unifi_firewall" "example" {
 }
 ```
 
+## Notes
+
+- Rules are evaluated by index (lower numbers are evaluated first). Use `source_filter_json`, `destination_filter_json`, and `protocol_filter` together to scope the traffic.
+- The UniFi Network API provides configuration and real-time status for sites, devices, and clients. It authenticates using an `X-API-Key` header (set `api_key` in the provider).
+
 ## Schema
 
 ### Required

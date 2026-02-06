@@ -15,6 +15,11 @@ resource "unifi_device" "example" {
 }
 ```
 
+## Notes
+
+- Device details include model-specific capabilities, such as switch ports on gateways/switches or radio details on access points, when available.
+- The UniFi Network API provides configuration and real-time status for sites, devices, and clients. It authenticates using an `X-API-Key` header (set `api_key` in the provider).
+
 ## Schema
 
 ### Required

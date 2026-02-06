@@ -15,6 +15,11 @@ resource "unifi_wan" "example" {
 }
 ```
 
+## Notes
+
+- WAN interfaces are commonly associated with the External zone to represent internet-facing traffic in zone-based policies.
+- The UniFi Network API provides configuration and real-time status for sites, devices, and clients. It authenticates using an `X-API-Key` header (set `api_key` in the provider).
+
 ## Schema
 
 ### Required
