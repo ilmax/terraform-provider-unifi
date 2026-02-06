@@ -91,3 +91,19 @@ func TestNetworkSchemaNested(t *testing.T) {
 		t.Fatal("dhcp_guarding attribute missing or not single nested")
 	}
 }
+
+func TestWifiSchemaAttributes(t *testing.T) {
+	resp := &resource.SchemaResponse{}
+	NewWifiResource().Schema(context.Background(), resource.SchemaRequest{}, resp)
+	if resp.Diagnostics.HasError() {
+		t.Fatalf("wifi schema diagnostics: %v", resp.Diagnostics)
+	}
+
+	if _, ok := resp.Schema.Attributes["multicast_to_unicast_conversion_enabled"].(schema.BoolAttribute); !ok {
+		t.Fatal("multicast_to_unicast_conversion_enabled attribute missing or not bool")
+	}
+
+	if _, ok := resp.Schema.Attributes["broadcasting_frequencies_ghz"].(schema.ListAttribute); !ok {
+		t.Fatal("broadcasting_frequencies_ghz attribute missing or not list")
+	}
+}
