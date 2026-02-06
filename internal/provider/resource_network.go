@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net"
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -48,6 +49,7 @@ type networkDHCPGuardingModel struct {
 
 type networkIPv4ConfigurationModel struct {
 	AutoScaleEnabled        types.Bool                         `tfsdk:"auto_scale_enabled"`
+	CIDR                    types.String                       `tfsdk:"cidr"`
 	HostIPAddress           types.String                       `tfsdk:"host_ip_address"`
 	PrefixLength            types.Int64                        `tfsdk:"prefix_length"`
 	AdditionalHostIPSubnets types.List                         `tfsdk:"additional_host_ip_subnets"`
@@ -157,6 +159,9 @@ func (r *networkResource) Schema(ctx context.Context, req resource.SchemaRequest
 				Optional: true,
 				Attributes: map[string]schema.Attribute{
 					"auto_scale_enabled": schema.BoolAttribute{
+						Optional: true,
+					},
+					"cidr": schema.StringAttribute{
 						Optional: true,
 					},
 					"host_ip_address": schema.StringAttribute{
@@ -547,10 +552,15 @@ func buildCreateIPv4Config(model *networkIPv4ConfigurationModel, diags *diag.Dia
 	additional, listDiags := listToRawMessages(model.AdditionalHostIPSubnets, path.Root("ipv4_configuration").AtName("additional_host_ip_subnets"))
 	diags.Append(listDiags...)
 
+	hostIP, prefixLength := resolveIPv4HostPrefix(model, diags)
+	if diags.HasError() {
+		return nil
+	}
+
 	cfg := &networks.CreateNetworkIpv4Configuration{
 		AutoScaleEnabled:        model.AutoScaleEnabled.ValueBool(),
-		HostIpAddress:           model.HostIPAddress.ValueString(),
-		PrefixLength:            model.PrefixLength.ValueInt64(),
+		HostIpAddress:           hostIP,
+		PrefixLength:            prefixLength,
 		AdditionalHostIpSubnets: additional,
 	}
 	cfg.DhcpConfiguration = buildCreateIPv4DHCPConfig(model.DHCPConfiguration, diags)
@@ -565,10 +575,15 @@ func buildUpdateIPv4Config(model *networkIPv4ConfigurationModel, diags *diag.Dia
 	additional, listDiags := listToRawMessages(model.AdditionalHostIPSubnets, path.Root("ipv4_configuration").AtName("additional_host_ip_subnets"))
 	diags.Append(listDiags...)
 
+	hostIP, prefixLength := resolveIPv4HostPrefix(model, diags)
+	if diags.HasError() {
+		return nil
+	}
+
 	cfg := &networks.UpdateNetworkIpv4Configuration{
 		AutoScaleEnabled:        model.AutoScaleEnabled.ValueBool(),
-		HostIpAddress:           model.HostIPAddress.ValueString(),
-		PrefixLength:            model.PrefixLength.ValueInt64(),
+		HostIpAddress:           hostIP,
+		PrefixLength:            prefixLength,
 		AdditionalHostIpSubnets: additional,
 	}
 	cfg.DhcpConfiguration = buildUpdateIPv4DHCPConfig(model.DHCPConfiguration, diags)
@@ -829,14 +844,65 @@ func readIPv4Config(cfg *networks.GetNetworkDetailsIpv4Configuration) *networkIP
 		return nil
 	}
 
+	cidr := types.StringNull()
+	if cfg.HostIpAddress != "" && cfg.PrefixLength != 0 {
+		cidr = types.StringValue(fmt.Sprintf("%s/%d", cfg.HostIpAddress, cfg.PrefixLength))
+	}
+
 	model := &networkIPv4ConfigurationModel{
 		AutoScaleEnabled:        types.BoolValue(cfg.AutoScaleEnabled),
+		CIDR:                    cidr,
 		HostIPAddress:           types.StringValue(cfg.HostIpAddress),
 		PrefixLength:            types.Int64Value(cfg.PrefixLength),
 		AdditionalHostIPSubnets: rawMessagesToList(cfg.AdditionalHostIpSubnets),
 	}
 	model.DHCPConfiguration = readIPv4DHCPConfig(cfg.DhcpConfiguration)
 	return model
+}
+
+func resolveIPv4HostPrefix(model *networkIPv4ConfigurationModel, diags *diag.Diagnostics) (string, int64) {
+	if model == nil {
+		return "", 0
+	}
+
+	if model.CIDR.IsUnknown() {
+		return model.HostIPAddress.ValueString(), model.PrefixLength.ValueInt64()
+	}
+
+	cidrValue := strings.TrimSpace(model.CIDR.ValueString())
+	if cidrValue == "" {
+		return model.HostIPAddress.ValueString(), model.PrefixLength.ValueInt64()
+	}
+
+	if !model.HostIPAddress.IsNull() && !model.HostIPAddress.IsUnknown() && model.HostIPAddress.ValueString() != "" {
+		diags.AddAttributeError(
+			path.Root("ipv4_configuration").AtName("cidr"),
+			"Conflicting IPv4 configuration",
+			"cidr cannot be set with host_ip_address. Use cidr only.",
+		)
+		return "", 0
+	}
+	if !model.PrefixLength.IsNull() && !model.PrefixLength.IsUnknown() && model.PrefixLength.ValueInt64() != 0 {
+		diags.AddAttributeError(
+			path.Root("ipv4_configuration").AtName("cidr"),
+			"Conflicting IPv4 configuration",
+			"cidr cannot be set with prefix_length. Use cidr only.",
+		)
+		return "", 0
+	}
+
+	ip, ipNet, err := net.ParseCIDR(cidrValue)
+	if err != nil {
+		diags.AddAttributeError(
+			path.Root("ipv4_configuration").AtName("cidr"),
+			"Invalid CIDR",
+			err.Error(),
+		)
+		return "", 0
+	}
+
+	ones, _ := ipNet.Mask.Size()
+	return ip.String(), int64(ones)
 }
 
 func readIPv4DHCPConfig(cfg *networks.GetNetworkDetailsIpv4ConfigurationDhcpConfiguration) *networkIPv4DHCPConfigurationModel {

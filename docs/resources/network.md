@@ -17,8 +17,7 @@ resource "unifi_network" "example" {
   vlan_id    = 10
 
   ipv4_configuration {
-    host_ip_address = "10.0.0.1"
-    prefix_length   = 24
+    cidr = "10.0.0.1/24"
 
     dhcp_configuration {
       mode = "SERVER"
@@ -73,6 +72,7 @@ resource "unifi_network" "example" {
 ### `ipv4_configuration` Block
 
 - `auto_scale_enabled` (Boolean) Enable auto-scaling subnet sizing.
+- `cidr` (String) Gateway address in CIDR notation (for example `10.0.0.1/24`). Conflicts with `host_ip_address` and `prefix_length`.
 - `host_ip_address` (String) Gateway IP.
 - `prefix_length` (Number) CIDR prefix length.
 - `additional_host_ip_subnets` (List of String) Additional subnets.

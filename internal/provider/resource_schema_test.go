@@ -84,6 +84,10 @@ func TestNetworkSchemaNested(t *testing.T) {
 		t.Fatal("ipv4_configuration.dhcp_configuration attribute missing or not single nested")
 	}
 
+	if _, ok := ipv4Attr.Attributes["cidr"].(schema.StringAttribute); !ok {
+		t.Fatal("ipv4_configuration.cidr attribute missing or not string")
+	}
+
 	if _, ok := dhcpAttr.Attributes["ip_address_range"].(schema.SingleNestedAttribute); !ok {
 		t.Fatal("ipv4_configuration.dhcp_configuration.ip_address_range attribute missing or not single nested")
 	}
