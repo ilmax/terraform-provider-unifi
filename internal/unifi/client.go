@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/ilmax/unifi-client-go/pkg/config"
 	"github.com/ilmax/unifi-client-go/pkg/errors"
 	"github.com/ilmax/unifi-client-go/pkg/sitemanager"
@@ -107,6 +108,10 @@ func (c *Client) Delete(ctx context.Context, path string, result interface{}) er
 
 func (c *Client) do(ctx context.Context, method, path string, body, result interface{}) error {
 	url := c.baseURL + path
+	tflog.Debug(ctx, "UniFi API request", map[string]any{
+		"method": method,
+		"path":   path,
+	})
 
 	var bodyReader io.Reader
 	if body != nil {
@@ -140,11 +145,35 @@ func (c *Client) do(ctx context.Context, method, path string, body, result inter
 		return fmt.Errorf("failed to read response body: %w", err)
 	}
 
+	contentType := resp.Header.Get("Content-Type")
+	requestID := resp.Header.Get("X-Request-Id")
+	tflog.Debug(ctx, "UniFi API response", map[string]any{
+		"method":       method,
+		"path":         path,
+		"status":       resp.StatusCode,
+		"content_type": contentType,
+		"request_id":   requestID,
+		"body_bytes":   len(respBody),
+	})
+
+	if strings.Contains(strings.ToLower(contentType), "text/html") && len(respBody) > 0 {
+		tflog.Warn(ctx, "UniFi API returned HTML response", map[string]any{
+			"method":       method,
+			"path":         path,
+			"status":       resp.StatusCode,
+			"content_type": contentType,
+			"request_id":   requestID,
+		})
+		if resp.StatusCode < 400 {
+			return fmt.Errorf("unifi api returned HTML response (content-type %q). check api_url or proxy", contentType)
+		}
+	}
+
 	if resp.StatusCode >= 400 {
 		return errors.NewAPIError(
 			resp.StatusCode,
 			string(respBody),
-			resp.Header.Get("X-Request-Id"),
+			requestID,
 		)
 	}
 

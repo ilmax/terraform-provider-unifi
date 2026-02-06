@@ -10,6 +10,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/provider/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/ilmax/terraform-provider-unifi/internal/unifi"
 	"github.com/ilmax/unifi-client-go/pkg/sitemanager"
 )
@@ -101,16 +102,28 @@ func (p *unifiProvider) Configure(ctx context.Context, req provider.ConfigureReq
 		apiURL = sitemanager.DefaultBaseURL
 	}
 
+	allowInsecure := false
+	if !config.AllowInsecure.IsNull() && !config.AllowInsecure.IsUnknown() {
+		allowInsecure = config.AllowInsecure.ValueBool()
+	}
+
 	userAgent := config.UserAgent.ValueString()
 	if userAgent == "" {
 		userAgent = fmt.Sprintf("terraform-provider-unifi/%s", p.version)
 	}
 
+	tflog.Info(ctx, "Configuring UniFi provider client", map[string]any{
+		"api_url":        apiURL,
+		"allow_insecure": allowInsecure,
+		"site_id_set":    !config.SiteID.IsNull() && !config.SiteID.IsUnknown(),
+		"user_agent":     userAgent,
+	})
+
 	client, err := unifi.NewClient(unifi.Config{
 		APIKey:        apiKey,
 		BaseURL:       apiURL,
 		UserAgent:     userAgent,
-		AllowInsecure: config.AllowInsecure.ValueBool(),
+		AllowInsecure: allowInsecure,
 	})
 	if err != nil {
 		resp.Diagnostics.AddError(
