@@ -39,6 +39,6 @@ resource "unifi_device" "example" {
 
 ## Import
 
-```
+```sh
 <site_id>/<device_id>
 ```

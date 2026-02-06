@@ -32,6 +32,6 @@ resource "unifi_wan" "example" {
 
 ## Import
 
-```
+```sh
 <site_id>/<wan_id>
 ```

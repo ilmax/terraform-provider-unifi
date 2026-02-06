@@ -116,6 +116,6 @@ resource "unifi_network" "example" {
 
 ## Import
 
-```
+```sh
 <site_id>/<network_id>
 ```

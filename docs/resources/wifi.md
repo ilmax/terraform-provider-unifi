@@ -52,6 +52,6 @@ resource "unifi_wifi" "example" {
 
 ## Import
 
-```
+```sh
 <site_id>/<wifi_broadcast_id>
 ```

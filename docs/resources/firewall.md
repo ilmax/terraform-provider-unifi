@@ -55,6 +55,6 @@ resource "unifi_firewall" "example" {
 
 ## Import
 
-```
+```sh
 <site_id>/<acl_rule_id>
 ```
