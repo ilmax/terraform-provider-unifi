@@ -7,12 +7,50 @@ Terraform provider for UniFi Cloud (Site Manager API) using `github.com/ilmax/un
 Only API key authentication is supported.
 
 ```hcl
+terraform {
+  required_providers {
+    unifi = {
+      source  = "ilmax/unifi"
+      version = "~> 0.3"
+    }
+  }
+}
+```
+
+```hcl
 provider "unifi" {
   api_key = var.unifi_api_key
   site_id = var.unifi_site_id
   # api_url = "https://api.ui.com" # optional override
   # allow_insecure = true          # optional, for local/test controllers
 }
+```
+
+## Local Controller Example
+
+To connect to a local UniFi OS console (for example a UDR7), point `api_url` at
+the local integration endpoint and (if needed) enable `allow_insecure` for
+self-signed certificates:
+
+```hcl
+provider "unifi" {
+  api_key        = var.unifi_api_key
+  site_id        = var.unifi_site_id
+  api_url        = "https://<console-address>/proxy/network/integration"
+  allow_insecure = true
+}
+```
+
+## Debugging
+
+Enable debug/trace logging with Terraform environment variables. Trace logging
+includes pretty-printed request/response bodies (use only for debugging; it can
+include sensitive data).
+
+```sh
+export TF_LOG=DEBUG
+export TF_LOG_PROVIDER=TRACE
+export TF_LOG_PATH=./terraform.log
 ```
 
 ## Resources
