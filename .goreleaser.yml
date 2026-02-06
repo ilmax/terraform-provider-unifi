@@ -25,5 +25,8 @@ archives:
 checksum:
   name_template: "{{ .ProjectName }}_{{ .Version }}_SHA256SUMS"
 
+signs:
+  - artifacts: checksum
+
 release:
   draft: false
