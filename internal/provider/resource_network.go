@@ -410,13 +410,26 @@ func (r *networkResource) Create(ctx context.Context, req resource.CreateRequest
 	}
 
 	path := fmt.Sprintf("/v1/sites/%s/networks", siteID)
-	if err := r.client.Post(ctx, path, payload, nil); err != nil {
+	var raw json.RawMessage
+	if err := r.client.Post(ctx, path, payload, &raw); err != nil {
 		resp.Diagnostics.AddError("Unable to create network", err.Error())
+		return
+	}
+
+	networkID, idDiags := networkIDFromCreateResponse(raw)
+	resp.Diagnostics.Append(idDiags...)
+	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	state := plan
 	state.SiteID = types.StringValue(siteID)
+	state.ID = types.StringValue(networkID)
+
+	if !r.readNetwork(ctx, siteID, networkID, &state, &resp.Diagnostics) || resp.Diagnostics.HasError() {
+		return
+	}
+
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
@@ -437,25 +450,12 @@ func (r *networkResource) Read(ctx context.Context, req resource.ReadRequest, re
 		return
 	}
 
-	path := fmt.Sprintf("/v1/sites/%s/networks/%s", siteID, state.ID.ValueString())
-	var raw json.RawMessage
-	if err := r.client.Get(ctx, path, &raw); err != nil {
-		if errors.IsNotFoundError(err) {
-			resp.State.RemoveResource(ctx)
-			return
-		}
-		resp.Diagnostics.AddError("Unable to read network", err.Error())
-		return
-	}
-
-	decoded, err := networks.DecodeGetNetworkDetailsResponse(raw)
-	if err != nil {
-		resp.Diagnostics.AddError("Unable to decode network", err.Error())
-		return
-	}
-
-	resp.Diagnostics.Append(networkStateFromResponse(&state, siteID, decoded)...)
+	found := r.readNetwork(ctx, siteID, state.ID.ValueString(), &state, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
+		return
+	}
+	if !found {
+		resp.State.RemoveResource(ctx)
 		return
 	}
 
@@ -493,6 +493,11 @@ func (r *networkResource) Update(ctx context.Context, req resource.UpdateRequest
 
 	state := plan
 	state.SiteID = types.StringValue(siteID)
+
+	if !r.readNetwork(ctx, siteID, plan.ID.ValueString(), &state, &resp.Diagnostics) || resp.Diagnostics.HasError() {
+		return
+	}
+
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
@@ -528,6 +533,58 @@ func (r *networkResource) ImportState(ctx context.Context, req resource.ImportSt
 	}
 	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("site_id"), siteID)...)
 	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), networkID)...)
+}
+
+func (r *networkResource) readNetwork(ctx context.Context, siteID, networkID string, state *networkResourceModel, diags *diag.Diagnostics) bool {
+	if state == nil {
+		diags.AddError("Unable to read network", "state is nil")
+		return false
+	}
+
+	path := fmt.Sprintf("/v1/sites/%s/networks/%s", siteID, networkID)
+	var raw json.RawMessage
+	if err := r.client.Get(ctx, path, &raw); err != nil {
+		if errors.IsNotFoundError(err) {
+			return false
+		}
+		diags.AddError("Unable to read network", err.Error())
+		return false
+	}
+
+	decoded, err := networks.DecodeGetNetworkDetailsResponse(raw)
+	if err != nil {
+		diags.AddError("Unable to decode network", err.Error())
+		return false
+	}
+
+	diags.Append(networkStateFromResponse(state, siteID, decoded)...)
+	return !diags.HasError()
+}
+
+func networkIDFromCreateResponse(raw json.RawMessage) (string, diag.Diagnostics) {
+	var diags diag.Diagnostics
+	if len(raw) == 0 {
+		diags.AddError("Unable to determine network ID", "Create network response was empty.")
+		return "", diags
+	}
+
+	decoded, err := networks.DecodeCreateNetworkResponse(raw)
+	if err != nil {
+		diags.AddError("Unable to decode create network response", err.Error())
+		return "", diags
+	}
+
+	switch result := decoded.(type) {
+	case *networks.CreateNetworkResponseGateway:
+		return result.Id, diags
+	case *networks.CreateNetworkResponseSwitch:
+		return result.Id, diags
+	case *networks.CreateNetworkResponseUnmanaged:
+		return result.Id, diags
+	default:
+		diags.AddError("Unable to determine network ID", fmt.Sprintf("unexpected create response type %T", decoded))
+		return "", diags
+	}
 }
 
 func buildCreateNetworkRequest(plan networkResourceModel) (any, diag.Diagnostics) {
