@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
@@ -108,6 +109,7 @@ func (c *Client) Delete(ctx context.Context, path string, result interface{}) er
 
 func (c *Client) do(ctx context.Context, method, path string, body, result interface{}) error {
 	url := c.baseURL + path
+	traceEnabled := isTraceEnabled()
 	tflog.Debug(ctx, "UniFi API request", map[string]any{
 		"method": method,
 		"path":   path,
@@ -136,18 +138,20 @@ func (c *Client) do(ctx context.Context, method, path string, body, result inter
 		req.Header.Set("User-Agent", c.userAgent)
 	}
 
-	if len(requestBody) > 0 {
-		tflog.Trace(ctx, "UniFi API request body", map[string]any{
-			"method": method,
-			"path":   path,
-			"body":   prettyJSONBytes(requestBody),
-		})
-	} else {
-		tflog.Trace(ctx, "UniFi API request body", map[string]any{
-			"method": method,
-			"path":   path,
-			"body":   "",
-		})
+	if traceEnabled {
+		if len(requestBody) > 0 {
+			tflog.Trace(ctx, "UniFi API request body", map[string]any{
+				"method": method,
+				"path":   path,
+				"body":   prettyJSONBytes(requestBody),
+			})
+		} else {
+			tflog.Trace(ctx, "UniFi API request body", map[string]any{
+				"method": method,
+				"path":   path,
+				"body":   "",
+			})
+		}
 	}
 
 	resp, err := c.httpClient.Do(req)
@@ -156,27 +160,20 @@ func (c *Client) do(ctx context.Context, method, path string, body, result inter
 	}
 	defer resp.Body.Close()
 
-	respBody, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return fmt.Errorf("failed to read response body: %w", err)
-	}
-
-	if len(respBody) > 0 {
-		tflog.Trace(ctx, "UniFi API response body", map[string]any{
-			"method": method,
-			"path":   path,
-			"body":   prettyJSONBytes(respBody),
-		})
-	} else {
-		tflog.Trace(ctx, "UniFi API response body", map[string]any{
-			"method": method,
-			"path":   path,
-			"body":   "",
-		})
-	}
-
 	contentType := resp.Header.Get("Content-Type")
 	requestID := resp.Header.Get("X-Request-Id")
+
+	var respBody []byte
+	shouldReadBody := traceEnabled || result != nil || resp.StatusCode >= 400
+	if shouldReadBody {
+		respBody, err = io.ReadAll(resp.Body)
+		if err != nil {
+			return fmt.Errorf("failed to read response body: %w", err)
+		}
+	} else {
+		_, _ = io.Copy(io.Discard, resp.Body)
+	}
+
 	tflog.Debug(ctx, "UniFi API response", map[string]any{
 		"method":       method,
 		"path":         path,
@@ -186,7 +183,23 @@ func (c *Client) do(ctx context.Context, method, path string, body, result inter
 		"body_bytes":   len(respBody),
 	})
 
-	if strings.Contains(strings.ToLower(contentType), "text/html") && len(respBody) > 0 {
+	if traceEnabled {
+		if len(respBody) > 0 {
+			tflog.Trace(ctx, "UniFi API response body", map[string]any{
+				"method": method,
+				"path":   path,
+				"body":   prettyJSONBytes(respBody),
+			})
+		} else {
+			tflog.Trace(ctx, "UniFi API response body", map[string]any{
+				"method": method,
+				"path":   path,
+				"body":   "",
+			})
+		}
+	}
+
+	if strings.Contains(strings.ToLower(contentType), "text/html") {
 		tflog.Warn(ctx, "UniFi API returned HTML response", map[string]any{
 			"method":       method,
 			"path":         path,
@@ -222,4 +235,12 @@ func prettyJSONBytes(input []byte) string {
 		return string(input)
 	}
 	return out.String()
+}
+
+func isTraceEnabled() bool {
+	level := strings.TrimSpace(os.Getenv("TF_LOG_PROVIDER"))
+	if level == "" {
+		level = strings.TrimSpace(os.Getenv("TF_LOG"))
+	}
+	return strings.EqualFold(level, "TRACE")
 }
