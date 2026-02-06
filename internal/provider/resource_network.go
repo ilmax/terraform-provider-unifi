@@ -531,8 +531,22 @@ func (r *networkResource) ImportState(ctx context.Context, req resource.ImportSt
 		resp.Diagnostics.AddError("Invalid import identifier", err.Error())
 		return
 	}
-	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("site_id"), siteID)...)
-	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), networkID)...)
+
+	state := networkResourceModel{
+		SiteID: types.StringValue(siteID),
+		ID:     types.StringValue(networkID),
+	}
+
+	found := r.readNetwork(ctx, siteID, networkID, &state, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	if !found {
+		resp.Diagnostics.AddError("Network not found", "The network could not be found during import.")
+		return
+	}
+
+	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
 func (r *networkResource) readNetwork(ctx context.Context, siteID, networkID string, state *networkResourceModel, diags *diag.Diagnostics) bool {
