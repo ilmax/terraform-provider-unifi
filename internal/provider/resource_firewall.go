@@ -399,6 +399,11 @@ func rawMessagesToList(raw []json.RawMessage) types.List {
 	}
 	values := make([]string, 0, len(raw))
 	for _, item := range raw {
+		var decoded string
+		if err := json.Unmarshal(item, &decoded); err == nil {
+			values = append(values, decoded)
+			continue
+		}
 		values = append(values, string(item))
 	}
 	list, _ := types.ListValueFrom(context.Background(), types.StringType, values)
