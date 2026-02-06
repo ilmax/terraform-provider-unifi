@@ -114,11 +114,13 @@ func (c *Client) do(ctx context.Context, method, path string, body, result inter
 	})
 
 	var bodyReader io.Reader
+	var requestBody []byte
 	if body != nil {
 		jsonBody, err := json.Marshal(body)
 		if err != nil {
 			return fmt.Errorf("failed to marshal request body: %w", err)
 		}
+		requestBody = jsonBody
 		bodyReader = bytes.NewReader(jsonBody)
 	}
 
@@ -134,6 +136,20 @@ func (c *Client) do(ctx context.Context, method, path string, body, result inter
 		req.Header.Set("User-Agent", c.userAgent)
 	}
 
+	if len(requestBody) > 0 {
+		tflog.Trace(ctx, "UniFi API request body", map[string]any{
+			"method": method,
+			"path":   path,
+			"body":   prettyJSONBytes(requestBody),
+		})
+	} else {
+		tflog.Trace(ctx, "UniFi API request body", map[string]any{
+			"method": method,
+			"path":   path,
+			"body":   "",
+		})
+	}
+
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return fmt.Errorf("failed to send request: %w", err)
@@ -143,6 +159,20 @@ func (c *Client) do(ctx context.Context, method, path string, body, result inter
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return fmt.Errorf("failed to read response body: %w", err)
+	}
+
+	if len(respBody) > 0 {
+		tflog.Trace(ctx, "UniFi API response body", map[string]any{
+			"method": method,
+			"path":   path,
+			"body":   prettyJSONBytes(respBody),
+		})
+	} else {
+		tflog.Trace(ctx, "UniFi API response body", map[string]any{
+			"method": method,
+			"path":   path,
+			"body":   "",
+		})
 	}
 
 	contentType := resp.Header.Get("Content-Type")
@@ -184,4 +214,12 @@ func (c *Client) do(ctx context.Context, method, path string, body, result inter
 	}
 
 	return nil
+}
+
+func prettyJSONBytes(input []byte) string {
+	var out bytes.Buffer
+	if err := json.Indent(&out, input, "", "  "); err != nil {
+		return string(input)
+	}
+	return out.String()
 }
