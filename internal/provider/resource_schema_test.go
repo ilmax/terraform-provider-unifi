@@ -37,6 +37,11 @@ func TestResourceSchemas(t *testing.T) {
 			requiredStrings: []string{"type", "name", "action"},
 		},
 		{
+			name:            "firewall_zone",
+			resource:        NewFirewallZoneResource(),
+			requiredStrings: []string{"name"},
+		},
+		{
 			name:            "wan",
 			resource:        NewWanResource(),
 			requiredStrings: []string{"wan_id"},
@@ -105,5 +110,21 @@ func TestWifiSchemaAttributes(t *testing.T) {
 
 	if _, ok := resp.Schema.Attributes["broadcasting_frequencies_ghz"].(schema.ListAttribute); !ok {
 		t.Fatal("broadcasting_frequencies_ghz attribute missing or not list")
+	}
+}
+
+func TestFirewallZoneSchema(t *testing.T) {
+	resp := &resource.SchemaResponse{}
+	NewFirewallZoneResource().Schema(context.Background(), resource.SchemaRequest{}, resp)
+	if resp.Diagnostics.HasError() {
+		t.Fatalf("firewall zone schema diagnostics: %v", resp.Diagnostics)
+	}
+
+	attr, ok := resp.Schema.Attributes["network_ids"].(schema.ListAttribute)
+	if !ok {
+		t.Fatal("network_ids attribute missing or not list")
+	}
+	if !attr.Required {
+		t.Fatal("network_ids should be required")
 	}
 }

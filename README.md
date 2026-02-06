@@ -19,18 +19,19 @@ provider "unifi" {
 - `unifi_network`
 - `unifi_wifi` (changes force replacement)
 - `unifi_firewall`
+- `unifi_firewall_zone`
 - `unifi_wan` (read-only)
 
 ## Import
 
 Resources that require a `site_id` use this import format:
 
-```
+```sh
 <site_id>/<resource_id>
 ```
 
 Example:
 
-```
+```sh
 terraform import unifi_network.example "site-123/network-456"
 ```
