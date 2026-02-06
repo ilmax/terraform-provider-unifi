@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -399,12 +400,19 @@ func rawMessagesToList(raw []json.RawMessage) types.List {
 	}
 	values := make([]string, 0, len(raw))
 	for _, item := range raw {
+		trimmed := strings.TrimSpace(string(item))
+		if trimmed == "" || trimmed == "null" {
+			continue
+		}
 		var decoded string
 		if err := json.Unmarshal(item, &decoded); err == nil {
 			values = append(values, decoded)
 			continue
 		}
 		values = append(values, string(item))
+	}
+	if len(values) == 0 {
+		return types.ListNull(types.StringType)
 	}
 	list, _ := types.ListValueFrom(context.Background(), types.StringType, values)
 	return list
