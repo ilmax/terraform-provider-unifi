@@ -91,9 +91,16 @@ func TestNetworkSchemaNested(t *testing.T) {
 	if _, ok := dhcpAttr.Attributes["ip_address_range"].(schema.SingleNestedAttribute); !ok {
 		t.Fatal("ipv4_configuration.dhcp_configuration.ip_address_range attribute missing or not single nested")
 	}
+	if _, ok := dhcpAttr.Attributes["dns_servers"].(schema.ListAttribute); !ok {
+		t.Fatal("ipv4_configuration.dhcp_configuration.dns_servers attribute missing or not list")
+	}
 
 	if _, ok := resp.Schema.Attributes["ipv6_configuration"].(schema.SingleNestedAttribute); !ok {
 		t.Fatal("ipv6_configuration attribute missing or not single nested")
+	}
+	ipv6Attr := resp.Schema.Attributes["ipv6_configuration"].(schema.SingleNestedAttribute)
+	if _, ok := ipv6Attr.Attributes["dns_servers"].(schema.ListAttribute); !ok {
+		t.Fatal("ipv6_configuration.dns_servers attribute missing or not list")
 	}
 
 	if _, ok := resp.Schema.Attributes["dhcp_guarding"].(schema.SingleNestedAttribute); !ok {

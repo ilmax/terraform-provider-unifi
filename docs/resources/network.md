@@ -25,7 +25,7 @@ resource "unifi_network" "example" {
         start = "10.0.0.10"
         stop  = "10.0.0.200"
       }
-      dns_server_ip_addresses_override = ["1.1.1.1", "8.8.8.8"]
+      dns_servers      = ["1.1.1.1", "8.8.8.8"]
       lease_time_seconds               = 86400
       domain_name                      = "corp.local"
     }
@@ -72,7 +72,7 @@ resource "unifi_network" "example" {
 ### `ipv4_configuration` Block
 
 - `auto_scale_enabled` (Boolean) Enable auto-scaling subnet sizing.
-- `cidr` (String) Gateway address in CIDR notation (for example `10.0.0.1/24`). Conflicts with `host_ip_address` and `prefix_length`.
+- `cidr` (String) Gateway address in CIDR notation (for example `10.0.0.1/24`). Conflicts with `host_ip_address` and `prefix_length`. If a network address is provided (for example `192.168.1.0/24`), the provider uses the first host (`192.168.1.1`).
 - `host_ip_address` (String) Gateway IP.
 - `prefix_length` (Number) CIDR prefix length.
 - `additional_host_ip_subnets` (List of String) Additional subnets.
@@ -83,7 +83,7 @@ resource "unifi_network" "example" {
 - `mode` (String) DHCP mode (for example `SERVER` or `RELAY`).
 - `ip_address_range` (Block) DHCP pool range.
 - `gateway_ip_address_override` (String) Gateway override.
-- `dns_server_ip_addresses_override` (List of String) DNS servers.
+- `dns_servers` (List of String) DNS servers.
 - `lease_time_seconds` (Number) Lease time in seconds.
 - `domain_name` (String) DNS search domain.
 
@@ -96,7 +96,7 @@ resource "unifi_network" "example" {
 
 - `interface_type` (String) Interface type.
 - `prefix_delegation_wan_interface_id` (String) WAN interface for PD.
-- `dns_server_ip_addresses_override` (List of String) DNS servers.
+- `dns_servers` (List of String) DNS servers.
 - `additional_host_ip_subnets` (List of String) Additional subnets.
 - `client_address_assignment` (Block) Client addressing.
 - `router_advertisement` (Block) Router advertisement.

@@ -2,6 +2,7 @@ package provider
 
 import (
 	"context"
+	"encoding/binary"
 	"encoding/json"
 	"fmt"
 	"net"
@@ -57,18 +58,18 @@ type networkIPv4ConfigurationModel struct {
 }
 
 type networkIPv4DHCPConfigurationModel struct {
-	Mode                         types.String                `tfsdk:"mode"`
-	IPAddressRange               *networkIPAddressRangeModel `tfsdk:"ip_address_range"`
-	GatewayIPAddressOverride     types.String                `tfsdk:"gateway_ip_address_override"`
-	DNSServerIPAddressesOverride types.List                  `tfsdk:"dns_server_ip_addresses_override"`
-	LeaseTimeSeconds             types.Int64                 `tfsdk:"lease_time_seconds"`
-	DomainName                   types.String                `tfsdk:"domain_name"`
+	Mode                     types.String                `tfsdk:"mode"`
+	IPAddressRange           *networkIPAddressRangeModel `tfsdk:"ip_address_range"`
+	GatewayIPAddressOverride types.String                `tfsdk:"gateway_ip_address_override"`
+	DNSServers               types.List                  `tfsdk:"dns_servers"`
+	LeaseTimeSeconds         types.Int64                 `tfsdk:"lease_time_seconds"`
+	DomainName               types.String                `tfsdk:"domain_name"`
 }
 
 type networkIPv6ConfigurationModel struct {
 	InterfaceType                  types.String                             `tfsdk:"interface_type"`
 	PrefixDelegationWANInterfaceID types.String                             `tfsdk:"prefix_delegation_wan_interface_id"`
-	DNSServerIPAddressesOverride   types.List                               `tfsdk:"dns_server_ip_addresses_override"`
+	DNSServers                     types.List                               `tfsdk:"dns_servers"`
 	AdditionalHostIPSubnets        types.List                               `tfsdk:"additional_host_ip_subnets"`
 	ClientAddressAssignment        *networkIPv6ClientAddressAssignmentModel `tfsdk:"client_address_assignment"`
 	RouterAdvertisement            *networkIPv6RouterAdvertisementModel     `tfsdk:"router_advertisement"`
@@ -194,7 +195,7 @@ func (r *networkResource) Schema(ctx context.Context, req resource.SchemaRequest
 							"gateway_ip_address_override": schema.StringAttribute{
 								Optional: true,
 							},
-							"dns_server_ip_addresses_override": schema.ListAttribute{
+							"dns_servers": schema.ListAttribute{
 								Optional:    true,
 								ElementType: types.StringType,
 							},
@@ -217,7 +218,7 @@ func (r *networkResource) Schema(ctx context.Context, req resource.SchemaRequest
 					"prefix_delegation_wan_interface_id": schema.StringAttribute{
 						Optional: true,
 					},
-					"dns_server_ip_addresses_override": schema.ListAttribute{
+					"dns_servers": schema.ListAttribute{
 						Optional:    true,
 						ElementType: types.StringType,
 					},
@@ -595,7 +596,7 @@ func buildCreateIPv4DHCPConfig(model *networkIPv4DHCPConfigurationModel, diags *
 		return nil
 	}
 
-	dns, dnsDiags := listToRawMessages(model.DNSServerIPAddressesOverride, path.Root("ipv4_configuration").AtName("dhcp_configuration").AtName("dns_server_ip_addresses_override"))
+	dns, dnsDiags := listToRawMessages(model.DNSServers, path.Root("ipv4_configuration").AtName("dhcp_configuration").AtName("dns_servers"))
 	diags.Append(dnsDiags...)
 
 	cfg := &networks.CreateNetworkIpv4ConfigurationDhcpConfiguration{
@@ -621,7 +622,7 @@ func buildUpdateIPv4DHCPConfig(model *networkIPv4DHCPConfigurationModel, diags *
 		return nil
 	}
 
-	dns, dnsDiags := listToRawMessages(model.DNSServerIPAddressesOverride, path.Root("ipv4_configuration").AtName("dhcp_configuration").AtName("dns_server_ip_addresses_override"))
+	dns, dnsDiags := listToRawMessages(model.DNSServers, path.Root("ipv4_configuration").AtName("dhcp_configuration").AtName("dns_servers"))
 	diags.Append(dnsDiags...)
 
 	cfg := &networks.UpdateNetworkIpv4ConfigurationDhcpConfiguration{
@@ -647,7 +648,7 @@ func buildCreateIPv6Config(model *networkIPv6ConfigurationModel, diags *diag.Dia
 		return nil
 	}
 
-	dns, dnsDiags := listToRawMessages(model.DNSServerIPAddressesOverride, path.Root("ipv6_configuration").AtName("dns_server_ip_addresses_override"))
+	dns, dnsDiags := listToRawMessages(model.DNSServers, path.Root("ipv6_configuration").AtName("dns_servers"))
 	diags.Append(dnsDiags...)
 	additional, listDiags := listToRawMessages(model.AdditionalHostIPSubnets, path.Root("ipv6_configuration").AtName("additional_host_ip_subnets"))
 	diags.Append(listDiags...)
@@ -668,7 +669,7 @@ func buildUpdateIPv6Config(model *networkIPv6ConfigurationModel, diags *diag.Dia
 		return nil
 	}
 
-	dns, dnsDiags := listToRawMessages(model.DNSServerIPAddressesOverride, path.Root("ipv6_configuration").AtName("dns_server_ip_addresses_override"))
+	dns, dnsDiags := listToRawMessages(model.DNSServers, path.Root("ipv6_configuration").AtName("dns_servers"))
 	diags.Append(dnsDiags...)
 	additional, listDiags := listToRawMessages(model.AdditionalHostIPSubnets, path.Root("ipv6_configuration").AtName("additional_host_ip_subnets"))
 	diags.Append(listDiags...)
@@ -786,6 +787,7 @@ func listToRawMessages(list types.List, attrPath path.Path) ([]json.RawMessage, 
 func networkStateFromResponse(state *networkResourceModel, siteID string, response any) diag.Diagnostics {
 	var diags diag.Diagnostics
 	state.SiteID = types.StringValue(siteID)
+	prevIPv4 := state.IPv4Configuration
 
 	switch result := response.(type) {
 	case *networks.GetNetworkDetailsResponseGateway:
@@ -800,7 +802,7 @@ func networkStateFromResponse(state *networkResourceModel, siteID string, respon
 		state.InternetAccessEnabled = types.BoolValue(result.InternetAccessEnabled)
 		state.MDNSForwardingEnabled = types.BoolValue(result.MdnsForwardingEnabled)
 		state.DHCPGuarding = readDHCPGuarding(result.DhcpGuarding)
-		state.IPv4Configuration = readIPv4Config(result.Ipv4Configuration)
+		state.IPv4Configuration = readIPv4Config(result.Ipv4Configuration, prevIPv4)
 		state.IPv6Configuration = readIPv6Config(result.Ipv6Configuration)
 	case *networks.GetNetworkDetailsResponseSwitch:
 		state.ID = types.StringValue(result.Id)
@@ -812,7 +814,7 @@ func networkStateFromResponse(state *networkResourceModel, siteID string, respon
 		state.IsolationEnabled = types.BoolValue(result.IsolationEnabled)
 		state.CellularBackupEnabled = types.BoolValue(result.CellularBackupEnabled)
 		state.DHCPGuarding = readDHCPGuarding(result.DhcpGuarding)
-		state.IPv4Configuration = readIPv4Config(result.Ipv4Configuration)
+		state.IPv4Configuration = readIPv4Config(result.Ipv4Configuration, prevIPv4)
 		state.IPv6Configuration = nil
 	case *networks.GetNetworkDetailsResponseUnmanaged:
 		state.ID = types.StringValue(result.Id)
@@ -839,13 +841,15 @@ func readDHCPGuarding(guarding *networks.GetNetworkDetailsDhcpGuarding) *network
 	return &networkDHCPGuardingModel{TrustedDHCPServerIPAddresses: list}
 }
 
-func readIPv4Config(cfg *networks.GetNetworkDetailsIpv4Configuration) *networkIPv4ConfigurationModel {
+func readIPv4Config(cfg *networks.GetNetworkDetailsIpv4Configuration, prev *networkIPv4ConfigurationModel) *networkIPv4ConfigurationModel {
 	if cfg == nil {
 		return nil
 	}
 
 	cidr := types.StringNull()
-	if cfg.HostIpAddress != "" && cfg.PrefixLength != 0 {
+	if prev != nil && !prev.CIDR.IsNull() && !prev.CIDR.IsUnknown() {
+		cidr = prev.CIDR
+	} else if cfg.HostIpAddress != "" && cfg.PrefixLength != 0 {
 		cidr = types.StringValue(fmt.Sprintf("%s/%d", cfg.HostIpAddress, cfg.PrefixLength))
 	}
 
@@ -902,7 +906,58 @@ func resolveIPv4HostPrefix(model *networkIPv4ConfigurationModel, diags *diag.Dia
 	}
 
 	ones, _ := ipNet.Mask.Size()
-	return ip.String(), int64(ones)
+	ipv4 := ip.To4()
+	base := ipNet.IP.To4()
+	if ipv4 == nil || base == nil {
+		diags.AddAttributeError(
+			path.Root("ipv4_configuration").AtName("cidr"),
+			"Invalid CIDR",
+			"cidr must be an IPv4 CIDR block.",
+		)
+		return "", 0
+	}
+
+	hostIP := ipv4
+	if ipv4.Equal(base) && ones < 31 {
+		calculated, err := ipv4Host(ipNet, 1)
+		if err != nil {
+			diags.AddAttributeError(
+				path.Root("ipv4_configuration").AtName("cidr"),
+				"Invalid CIDR",
+				err.Error(),
+			)
+			return "", 0
+		}
+		hostIP = calculated
+	}
+
+	return hostIP.String(), int64(ones)
+}
+
+func ipv4Host(ipNet *net.IPNet, host uint32) (net.IP, error) {
+	if ipNet == nil {
+		return nil, fmt.Errorf("invalid CIDR")
+	}
+
+	base := ipNet.IP.To4()
+	if base == nil {
+		return nil, fmt.Errorf("cidr must be IPv4")
+	}
+
+	ones, bits := ipNet.Mask.Size()
+	if bits != 32 {
+		return nil, fmt.Errorf("cidr must be IPv4")
+	}
+
+	if host >= 1<<uint32(32-ones) {
+		return nil, fmt.Errorf("host index %d out of range for /%d", host, ones)
+	}
+
+	baseInt := binary.BigEndian.Uint32(base)
+	ipInt := baseInt + host
+	result := make(net.IP, 4)
+	binary.BigEndian.PutUint32(result, ipInt)
+	return result, nil
 }
 
 func readIPv4DHCPConfig(cfg *networks.GetNetworkDetailsIpv4ConfigurationDhcpConfiguration) *networkIPv4DHCPConfigurationModel {
@@ -911,11 +966,11 @@ func readIPv4DHCPConfig(cfg *networks.GetNetworkDetailsIpv4ConfigurationDhcpConf
 	}
 
 	model := &networkIPv4DHCPConfigurationModel{
-		Mode:                         types.StringValue(cfg.Mode),
-		GatewayIPAddressOverride:     types.StringValue(cfg.GatewayIpAddressOverride),
-		DNSServerIPAddressesOverride: rawMessagesToList(cfg.DnsServerIpAddressesOverride),
-		LeaseTimeSeconds:             types.Int64Value(cfg.LeaseTimeSeconds),
-		DomainName:                   types.StringValue(cfg.DomainName),
+		Mode:                     types.StringValue(cfg.Mode),
+		GatewayIPAddressOverride: types.StringValue(cfg.GatewayIpAddressOverride),
+		DNSServers:               rawMessagesToList(cfg.DnsServerIpAddressesOverride),
+		LeaseTimeSeconds:         types.Int64Value(cfg.LeaseTimeSeconds),
+		DomainName:               types.StringValue(cfg.DomainName),
 	}
 	if cfg.IpAddressRange != nil {
 		model.IPAddressRange = &networkIPAddressRangeModel{
@@ -934,7 +989,7 @@ func readIPv6Config(cfg *networks.GetNetworkDetailsIpv6Configuration) *networkIP
 	model := &networkIPv6ConfigurationModel{
 		InterfaceType:                  types.StringValue(cfg.InterfaceType),
 		PrefixDelegationWANInterfaceID: types.StringValue(cfg.PrefixDelegationWanInterfaceId),
-		DNSServerIPAddressesOverride:   rawMessagesToList(cfg.DnsServerIpAddressesOverride),
+		DNSServers:                     rawMessagesToList(cfg.DnsServerIpAddressesOverride),
 		AdditionalHostIPSubnets:        rawMessagesToList(cfg.AdditionalHostIpSubnets),
 	}
 	model.ClientAddressAssignment = readIPv6ClientAssignment(cfg.ClientAddressAssignment)
