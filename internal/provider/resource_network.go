@@ -180,6 +180,10 @@ func (r *networkResource) Schema(ctx context.Context, req resource.SchemaRequest
 			},
 			"dhcp_guarding": schema.SingleNestedAttribute{
 				Optional: true,
+				Computed: true,
+				PlanModifiers: []planmodifier.Object{
+					objectplanmodifier.UseStateForUnknown(),
+				},
 				Attributes: map[string]schema.Attribute{
 					"trusted_dhcp_server_ip_addresses": schema.ListAttribute{
 						Optional:    true,
@@ -189,6 +193,10 @@ func (r *networkResource) Schema(ctx context.Context, req resource.SchemaRequest
 			},
 			"ipv4_configuration": schema.SingleNestedAttribute{
 				Optional: true,
+				Computed: true,
+				PlanModifiers: []planmodifier.Object{
+					objectplanmodifier.UseStateForUnknown(),
+				},
 				Attributes: map[string]schema.Attribute{
 					"auto_scale_enabled": schema.BoolAttribute{
 						Optional: true,
@@ -206,9 +214,17 @@ func (r *networkResource) Schema(ctx context.Context, req resource.SchemaRequest
 					},
 					"host_ip_address": schema.StringAttribute{
 						Optional: true,
+						Computed: true,
+						PlanModifiers: []planmodifier.String{
+							stringplanmodifier.UseStateForUnknown(),
+						},
 					},
 					"prefix_length": schema.Int64Attribute{
 						Optional: true,
+						Computed: true,
+						PlanModifiers: []planmodifier.Int64{
+							int64planmodifier.UseStateForUnknown(),
+						},
 					},
 					"additional_host_ip_subnets": schema.ListAttribute{
 						Optional:    true,
@@ -216,6 +232,10 @@ func (r *networkResource) Schema(ctx context.Context, req resource.SchemaRequest
 					},
 					"dhcp_configuration": schema.SingleNestedAttribute{
 						Optional: true,
+						Computed: true,
+						PlanModifiers: []planmodifier.Object{
+							objectplanmodifier.UseStateForUnknown(),
+						},
 						Attributes: map[string]schema.Attribute{
 							"mode": schema.StringAttribute{
 								Optional: true,
@@ -282,6 +302,10 @@ func (r *networkResource) Schema(ctx context.Context, req resource.SchemaRequest
 			},
 			"ipv6_configuration": schema.SingleNestedAttribute{
 				Optional: true,
+				Computed: true,
+				PlanModifiers: []planmodifier.Object{
+					objectplanmodifier.UseStateForUnknown(),
+				},
 				Attributes: map[string]schema.Attribute{
 					"interface_type": schema.StringAttribute{
 						Optional: true,
@@ -315,6 +339,10 @@ func (r *networkResource) Schema(ctx context.Context, req resource.SchemaRequest
 					},
 					"client_address_assignment": schema.SingleNestedAttribute{
 						Optional: true,
+						Computed: true,
+						PlanModifiers: []planmodifier.Object{
+							objectplanmodifier.UseStateForUnknown(),
+						},
 						Attributes: map[string]schema.Attribute{
 							"slaac_enabled": schema.BoolAttribute{
 								Optional: true,
@@ -325,6 +353,10 @@ func (r *networkResource) Schema(ctx context.Context, req resource.SchemaRequest
 							},
 							"dhcp_configuration": schema.SingleNestedAttribute{
 								Optional: true,
+								Computed: true,
+								PlanModifiers: []planmodifier.Object{
+									objectplanmodifier.UseStateForUnknown(),
+								},
 								Attributes: map[string]schema.Attribute{
 									"ip_address_suffix_range": schema.SingleNestedAttribute{
 										Optional: true,
@@ -362,6 +394,10 @@ func (r *networkResource) Schema(ctx context.Context, req resource.SchemaRequest
 					},
 					"router_advertisement": schema.SingleNestedAttribute{
 						Optional: true,
+						Computed: true,
+						PlanModifiers: []planmodifier.Object{
+							objectplanmodifier.UseStateForUnknown(),
+						},
 						Attributes: map[string]schema.Attribute{
 							"priority": schema.StringAttribute{
 								Optional: true,
