@@ -968,7 +968,6 @@ func listToRawMessages(list types.List, attrPath path.Path) ([]json.RawMessage, 
 
 func networkStateFromResponse(state *networkResourceModel, siteID string, response any) diag.Diagnostics {
 	var diags diag.Diagnostics
-	prevState := *state
 	state.SiteID = types.StringValue(siteID)
 
 	switch result := response.(type) {
@@ -978,25 +977,25 @@ func networkStateFromResponse(state *networkResourceModel, siteID string, respon
 		state.Management = types.StringValue(result.Management)
 		state.Enabled = types.BoolValue(result.Enabled)
 		state.VlanID = types.Int64Value(result.VlanId)
-		state.ZoneID = optionalString(prevState.ZoneID, result.ZoneId)
-		state.IsolationEnabled = optionalBool(prevState.IsolationEnabled, result.IsolationEnabled)
-		state.CellularBackupEnabled = optionalBool(prevState.CellularBackupEnabled, result.CellularBackupEnabled)
-		state.InternetAccessEnabled = optionalBool(prevState.InternetAccessEnabled, result.InternetAccessEnabled)
-		state.MDNSForwardingEnabled = optionalBool(prevState.MDNSForwardingEnabled, result.MdnsForwardingEnabled)
-		state.DHCPGuarding = readDHCPGuarding(result.DhcpGuarding, prevState.DHCPGuarding)
-		state.IPv4Configuration = readIPv4Config(result.Ipv4Configuration, prevState.IPv4Configuration)
-		state.IPv6Configuration = readIPv6Config(result.Ipv6Configuration, prevState.IPv6Configuration)
+		state.ZoneID = stringValueOrNull(result.ZoneId)
+		state.IsolationEnabled = types.BoolValue(result.IsolationEnabled)
+		state.CellularBackupEnabled = types.BoolValue(result.CellularBackupEnabled)
+		state.InternetAccessEnabled = types.BoolValue(result.InternetAccessEnabled)
+		state.MDNSForwardingEnabled = types.BoolValue(result.MdnsForwardingEnabled)
+		state.DHCPGuarding = readDHCPGuarding(result.DhcpGuarding)
+		state.IPv4Configuration = readIPv4Config(result.Ipv4Configuration)
+		state.IPv6Configuration = readIPv6Config(result.Ipv6Configuration)
 	case *networks.GetNetworkDetailsResponseSwitch:
 		state.ID = types.StringValue(result.Id)
 		state.Name = types.StringValue(result.Name)
 		state.Management = types.StringValue(result.Management)
 		state.Enabled = types.BoolValue(result.Enabled)
 		state.VlanID = types.Int64Value(result.VlanId)
-		state.DeviceID = optionalString(prevState.DeviceID, result.DeviceId)
-		state.IsolationEnabled = optionalBool(prevState.IsolationEnabled, result.IsolationEnabled)
-		state.CellularBackupEnabled = optionalBool(prevState.CellularBackupEnabled, result.CellularBackupEnabled)
-		state.DHCPGuarding = readDHCPGuarding(result.DhcpGuarding, prevState.DHCPGuarding)
-		state.IPv4Configuration = readIPv4Config(result.Ipv4Configuration, prevState.IPv4Configuration)
+		state.DeviceID = stringValueOrNull(result.DeviceId)
+		state.IsolationEnabled = types.BoolValue(result.IsolationEnabled)
+		state.CellularBackupEnabled = types.BoolValue(result.CellularBackupEnabled)
+		state.DHCPGuarding = readDHCPGuarding(result.DhcpGuarding)
+		state.IPv4Configuration = readIPv4Config(result.Ipv4Configuration)
 		state.IPv6Configuration = nil
 	case *networks.GetNetworkDetailsResponseUnmanaged:
 		state.ID = types.StringValue(result.Id)
@@ -1004,7 +1003,7 @@ func networkStateFromResponse(state *networkResourceModel, siteID string, respon
 		state.Management = types.StringValue(result.Management)
 		state.Enabled = types.BoolValue(result.Enabled)
 		state.VlanID = types.Int64Value(result.VlanId)
-		state.DHCPGuarding = readDHCPGuarding(result.DhcpGuarding, prevState.DHCPGuarding)
+		state.DHCPGuarding = readDHCPGuarding(result.DhcpGuarding)
 		state.IPv4Configuration = nil
 		state.IPv6Configuration = nil
 	default:
@@ -1014,8 +1013,8 @@ func networkStateFromResponse(state *networkResourceModel, siteID string, respon
 	return diags
 }
 
-func readDHCPGuarding(guarding *networks.GetNetworkDetailsDhcpGuarding, prev *networkDHCPGuardingModel) *networkDHCPGuardingModel {
-	if guarding == nil || prev == nil {
+func readDHCPGuarding(guarding *networks.GetNetworkDetailsDhcpGuarding) *networkDHCPGuardingModel {
+	if guarding == nil {
 		return nil
 	}
 
@@ -1023,24 +1022,24 @@ func readDHCPGuarding(guarding *networks.GetNetworkDetailsDhcpGuarding, prev *ne
 	return &networkDHCPGuardingModel{TrustedDHCPServerIPAddresses: list}
 }
 
-func readIPv4Config(cfg *networks.GetNetworkDetailsIpv4Configuration, prev *networkIPv4ConfigurationModel) *networkIPv4ConfigurationModel {
-	if cfg == nil || prev == nil {
+func readIPv4Config(cfg *networks.GetNetworkDetailsIpv4Configuration) *networkIPv4ConfigurationModel {
+	if cfg == nil {
 		return nil
 	}
 
 	cidr := types.StringNull()
-	if prev != nil && !prev.CIDR.IsNull() && !prev.CIDR.IsUnknown() {
-		cidr = prev.CIDR
+	if cfg.HostIpAddress != "" && cfg.PrefixLength != 0 {
+		cidr = types.StringValue(fmt.Sprintf("%s/%d", cfg.HostIpAddress, cfg.PrefixLength))
 	}
 
 	model := &networkIPv4ConfigurationModel{
-		AutoScaleEnabled:        optionalBool(prev.AutoScaleEnabled, cfg.AutoScaleEnabled),
+		AutoScaleEnabled:        types.BoolValue(cfg.AutoScaleEnabled),
 		CIDR:                    cidr,
-		HostIPAddress:           optionalString(prev.HostIPAddress, cfg.HostIpAddress),
-		PrefixLength:            optionalInt64(prev.PrefixLength, cfg.PrefixLength),
-		AdditionalHostIPSubnets: optionalList(prev.AdditionalHostIPSubnets, cfg.AdditionalHostIpSubnets),
+		HostIPAddress:           types.StringValue(cfg.HostIpAddress),
+		PrefixLength:            types.Int64Value(cfg.PrefixLength),
+		AdditionalHostIPSubnets: rawMessagesToList(cfg.AdditionalHostIpSubnets),
 	}
-	model.DHCPConfiguration = readIPv4DHCPConfig(cfg.DhcpConfiguration, prev.DHCPConfiguration)
+	model.DHCPConfiguration = readIPv4DHCPConfig(cfg.DhcpConfiguration)
 	return model
 }
 
@@ -1140,19 +1139,19 @@ func ipv4Host(ipNet *net.IPNet, host uint32) (net.IP, error) {
 	return result, nil
 }
 
-func readIPv4DHCPConfig(cfg *networks.GetNetworkDetailsIpv4ConfigurationDhcpConfiguration, prev *networkIPv4DHCPConfigurationModel) *networkIPv4DHCPConfigurationModel {
-	if cfg == nil || prev == nil {
+func readIPv4DHCPConfig(cfg *networks.GetNetworkDetailsIpv4ConfigurationDhcpConfiguration) *networkIPv4DHCPConfigurationModel {
+	if cfg == nil {
 		return nil
 	}
 
 	model := &networkIPv4DHCPConfigurationModel{
-		Mode:                     optionalString(prev.Mode, cfg.Mode),
-		GatewayIPAddressOverride: optionalString(prev.GatewayIPAddressOverride, cfg.GatewayIpAddressOverride),
-		DNSServers:               optionalList(prev.DNSServers, cfg.DnsServerIpAddressesOverride),
-		LeaseTimeSeconds:         optionalInt64(prev.LeaseTimeSeconds, cfg.LeaseTimeSeconds),
-		DomainName:               optionalString(prev.DomainName, cfg.DomainName),
+		Mode:                     stringValueOrNull(cfg.Mode),
+		GatewayIPAddressOverride: stringValueOrNull(cfg.GatewayIpAddressOverride),
+		DNSServers:               rawMessagesToList(cfg.DnsServerIpAddressesOverride),
+		LeaseTimeSeconds:         types.Int64Value(cfg.LeaseTimeSeconds),
+		DomainName:               stringValueOrNull(cfg.DomainName),
 	}
-	if prev.IPAddressRange != nil && cfg.IpAddressRange != nil {
+	if cfg.IpAddressRange != nil && (cfg.IpAddressRange.Start != "" || cfg.IpAddressRange.Stop != "") {
 		model.IPAddressRange = &networkIPAddressRangeModel{
 			Start: types.StringValue(cfg.IpAddressRange.Start),
 			Stop:  types.StringValue(cfg.IpAddressRange.Stop),
@@ -1161,43 +1160,43 @@ func readIPv4DHCPConfig(cfg *networks.GetNetworkDetailsIpv4ConfigurationDhcpConf
 	return model
 }
 
-func readIPv6Config(cfg *networks.GetNetworkDetailsIpv6Configuration, prev *networkIPv6ConfigurationModel) *networkIPv6ConfigurationModel {
-	if cfg == nil || prev == nil {
+func readIPv6Config(cfg *networks.GetNetworkDetailsIpv6Configuration) *networkIPv6ConfigurationModel {
+	if cfg == nil {
 		return nil
 	}
 
 	model := &networkIPv6ConfigurationModel{
-		InterfaceType:                  optionalString(prev.InterfaceType, cfg.InterfaceType),
-		PrefixDelegationWANInterfaceID: optionalString(prev.PrefixDelegationWANInterfaceID, cfg.PrefixDelegationWanInterfaceId),
-		DNSServers:                     optionalList(prev.DNSServers, cfg.DnsServerIpAddressesOverride),
-		AdditionalHostIPSubnets:        optionalList(prev.AdditionalHostIPSubnets, cfg.AdditionalHostIpSubnets),
+		InterfaceType:                  stringValueOrNull(cfg.InterfaceType),
+		PrefixDelegationWANInterfaceID: stringValueOrNull(cfg.PrefixDelegationWanInterfaceId),
+		DNSServers:                     rawMessagesToList(cfg.DnsServerIpAddressesOverride),
+		AdditionalHostIPSubnets:        rawMessagesToList(cfg.AdditionalHostIpSubnets),
 	}
-	model.ClientAddressAssignment = readIPv6ClientAssignment(cfg.ClientAddressAssignment, prev.ClientAddressAssignment)
-	model.RouterAdvertisement = readIPv6RouterAdvertisement(cfg.RouterAdvertisement, prev.RouterAdvertisement)
+	model.ClientAddressAssignment = readIPv6ClientAssignment(cfg.ClientAddressAssignment)
+	model.RouterAdvertisement = readIPv6RouterAdvertisement(cfg.RouterAdvertisement)
 	return model
 }
 
-func readIPv6ClientAssignment(cfg *networks.GetNetworkDetailsIpv6ConfigurationClientAddressAssignment, prev *networkIPv6ClientAddressAssignmentModel) *networkIPv6ClientAddressAssignmentModel {
-	if cfg == nil || prev == nil {
+func readIPv6ClientAssignment(cfg *networks.GetNetworkDetailsIpv6ConfigurationClientAddressAssignment) *networkIPv6ClientAddressAssignmentModel {
+	if cfg == nil {
 		return nil
 	}
 
 	model := &networkIPv6ClientAddressAssignmentModel{
-		SLAACEnabled: optionalBool(prev.SLAACEnabled, cfg.SlaacEnabled),
+		SLAACEnabled: types.BoolValue(cfg.SlaacEnabled),
 	}
-	model.DHCPConfiguration = readIPv6DHCPConfig(cfg.DhcpConfiguration, prev.DHCPConfiguration)
+	model.DHCPConfiguration = readIPv6DHCPConfig(cfg.DhcpConfiguration)
 	return model
 }
 
-func readIPv6DHCPConfig(cfg *networks.GetNetworkDetailsIpv6ConfigurationClientAddressAssignmentDhcpConfiguration, prev *networkIPv6DHCPConfigurationModel) *networkIPv6DHCPConfigurationModel {
-	if cfg == nil || prev == nil {
+func readIPv6DHCPConfig(cfg *networks.GetNetworkDetailsIpv6ConfigurationClientAddressAssignmentDhcpConfiguration) *networkIPv6DHCPConfigurationModel {
+	if cfg == nil {
 		return nil
 	}
 
 	model := &networkIPv6DHCPConfigurationModel{
-		LeaseTimeSeconds: optionalInt64(prev.LeaseTimeSeconds, cfg.LeaseTimeSeconds),
+		LeaseTimeSeconds: types.Int64Value(cfg.LeaseTimeSeconds),
 	}
-	if prev.IPAddressSuffixRange != nil && cfg.IpAddressSuffixRange != nil {
+	if cfg.IpAddressSuffixRange != nil && (cfg.IpAddressSuffixRange.Start != "" || cfg.IpAddressSuffixRange.Stop != "") {
 		model.IPAddressSuffixRange = &networkIPAddressRangeModel{
 			Start: types.StringValue(cfg.IpAddressSuffixRange.Start),
 			Stop:  types.StringValue(cfg.IpAddressSuffixRange.Stop),
@@ -1206,38 +1205,16 @@ func readIPv6DHCPConfig(cfg *networks.GetNetworkDetailsIpv6ConfigurationClientAd
 	return model
 }
 
-func readIPv6RouterAdvertisement(cfg *networks.GetNetworkDetailsIpv6ConfigurationRouterAdvertisement, prev *networkIPv6RouterAdvertisementModel) *networkIPv6RouterAdvertisementModel {
-	if cfg == nil || prev == nil {
+func readIPv6RouterAdvertisement(cfg *networks.GetNetworkDetailsIpv6ConfigurationRouterAdvertisement) *networkIPv6RouterAdvertisementModel {
+	if cfg == nil {
 		return nil
 	}
 
-	return &networkIPv6RouterAdvertisementModel{Priority: optionalString(prev.Priority, cfg.Priority)}
+	return &networkIPv6RouterAdvertisementModel{Priority: stringValueOrNull(cfg.Priority)}
 }
-
-func optionalBool(prev types.Bool, value bool) types.Bool {
-	if prev.IsNull() || prev.IsUnknown() {
-		return types.BoolNull()
-	}
-	return types.BoolValue(value)
-}
-
-func optionalString(prev types.String, value string) types.String {
-	if prev.IsNull() || prev.IsUnknown() {
+func stringValueOrNull(value string) types.String {
+	if value == "" {
 		return types.StringNull()
 	}
 	return types.StringValue(value)
-}
-
-func optionalInt64(prev types.Int64, value int64) types.Int64 {
-	if prev.IsNull() || prev.IsUnknown() {
-		return types.Int64Null()
-	}
-	return types.Int64Value(value)
-}
-
-func optionalList(prev types.List, raw []json.RawMessage) types.List {
-	if prev.IsNull() || prev.IsUnknown() {
-		return types.ListNull(types.StringType)
-	}
-	return rawMessagesToList(raw)
 }
