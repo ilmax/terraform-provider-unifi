@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/hashicorp/terraform-plugin-framework/action"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/provider"
@@ -142,6 +143,7 @@ func (p *unifiProvider) Configure(ctx context.Context, req provider.ConfigureReq
 
 	resp.ResourceData = data
 	resp.DataSourceData = data
+	resp.ActionData = data
 }
 
 func (p *unifiProvider) Resources(ctx context.Context) []func() resource.Resource {
@@ -157,5 +159,12 @@ func (p *unifiProvider) DataSources(ctx context.Context) []func() datasource.Dat
 	return []func() datasource.DataSource{
 		NewDeviceDataSource,
 		NewWanDataSource,
+	}
+}
+
+func (p *unifiProvider) Actions(ctx context.Context) []func() action.Action {
+	return []func() action.Action{
+		NewExecutePortAction,
+		NewExecuteAdoptedDeviceAction,
 	}
 }

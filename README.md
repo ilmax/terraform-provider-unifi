@@ -65,6 +65,11 @@ export TF_LOG_PATH=./terraform.log
 - `unifi_device`
 - `unifi_wan`
 
+## Actions
+
+- `unifi_execute_port_action`
+- `unifi_execute_adopted_device_action`
+
 ## Versioning
 
 Provider releases use SemVer for the provider version and include the UniFi Network API

@@ -31,3 +31,8 @@ provider "unifi" {
 
 - `unifi_device`
 - `unifi_wan`
+
+## Actions
+
+- `unifi_execute_port_action`
+- `unifi_execute_adopted_device_action`
