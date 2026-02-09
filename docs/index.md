@@ -26,3 +26,8 @@ provider "unifi" {
 - `api_url` (String, Optional) Override the UniFi API base URL.
 - `user_agent` (String, Optional) Custom user agent string.
 - `allow_insecure` (Boolean, Optional) Skip TLS certificate verification.
+
+## Data Sources
+
+- `unifi_device`
+- `unifi_wan`

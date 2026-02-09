@@ -1,15 +1,15 @@
 ---
-page_title: "unifi_device Resource"
+page_title: "unifi_device Data Source"
 ---
 
-# unifi_device (Resource)
+# unifi_device (Data Source)
 
-Read-only resource that reads details about an adopted device.
+Reads details about an adopted device.
 
 ## Example Usage
 
 ```hcl
-resource "unifi_device" "example" {
+data "unifi_device" "example" {
   site_id   = var.unifi_site_id
   device_id = "device-123"
 }
@@ -41,9 +41,3 @@ resource "unifi_device" "example" {
 - `firmware_version` (String) Firmware version.
 - `firmware_updatable` (Boolean) Firmware update available.
 - `supported` (Boolean) Device support status.
-
-## Import
-
-```sh
-<site_id>/<device_id>
-```

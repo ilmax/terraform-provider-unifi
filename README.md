@@ -55,12 +55,15 @@ export TF_LOG_PATH=./terraform.log
 
 ## Resources
 
-- `unifi_device` (read-only)
 - `unifi_network`
 - `unifi_wifi` (changes force replacement)
 - `unifi_firewall`
 - `unifi_firewall_zone`
-- `unifi_wan` (read-only)
+
+## Data Sources
+
+- `unifi_device`
+- `unifi_wan`
 
 ## Versioning
 

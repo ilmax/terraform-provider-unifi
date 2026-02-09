@@ -1,15 +1,15 @@
 ---
-page_title: "unifi_wan Resource"
+page_title: "unifi_wan Data Source"
 ---
 
-# unifi_wan (Resource)
+# unifi_wan (Data Source)
 
-Read-only resource for WAN interfaces.
+Reads WAN interface details.
 
 ## Example Usage
 
 ```hcl
-resource "unifi_wan" "example" {
+data "unifi_wan" "example" {
   site_id = var.unifi_site_id
   wan_id  = "wan-123"
 }
@@ -34,9 +34,3 @@ resource "unifi_wan" "example" {
 
 - `id` (String) WAN identifier.
 - `name` (String) WAN interface name.
-
-## Import
-
-```sh
-<site_id>/<wan_id>
-```
