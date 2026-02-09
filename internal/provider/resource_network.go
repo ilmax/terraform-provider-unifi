@@ -15,8 +15,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/listplanmodifier"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/objectplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -186,10 +184,6 @@ func (r *networkResource) Schema(ctx context.Context, req resource.SchemaRequest
 			},
 			"dhcp_guarding": schema.SingleNestedAttribute{
 				Optional: true,
-				Computed: true,
-				PlanModifiers: []planmodifier.Object{
-					objectplanmodifier.UseStateForUnknown(),
-				},
 				Attributes: map[string]schema.Attribute{
 					"trusted_dhcp_server_ip_addresses": schema.ListAttribute{
 						Optional:    true,
@@ -199,38 +193,18 @@ func (r *networkResource) Schema(ctx context.Context, req resource.SchemaRequest
 			},
 			"ipv4_configuration": schema.SingleNestedAttribute{
 				Optional: true,
-				Computed: true,
-				PlanModifiers: []planmodifier.Object{
-					objectplanmodifier.UseStateForUnknown(),
-				},
 				Attributes: map[string]schema.Attribute{
 					"auto_scale_enabled": schema.BoolAttribute{
 						Optional: true,
-						Computed: true,
-						PlanModifiers: []planmodifier.Bool{
-							boolplanmodifier.UseStateForUnknown(),
-						},
 					},
 					"cidr": schema.StringAttribute{
 						Optional: true,
-						Computed: true,
-						PlanModifiers: []planmodifier.String{
-							stringplanmodifier.UseStateForUnknown(),
-						},
 					},
 					"host_ip_address": schema.StringAttribute{
 						Optional: true,
-						Computed: true,
-						PlanModifiers: []planmodifier.String{
-							stringplanmodifier.UseStateForUnknown(),
-						},
 					},
 					"prefix_length": schema.Int64Attribute{
 						Optional: true,
-						Computed: true,
-						PlanModifiers: []planmodifier.Int64{
-							int64planmodifier.UseStateForUnknown(),
-						},
 					},
 					"additional_host_ip_subnets": schema.ListAttribute{
 						Optional:    true,
@@ -238,69 +212,33 @@ func (r *networkResource) Schema(ctx context.Context, req resource.SchemaRequest
 					},
 					"dhcp_configuration": schema.SingleNestedAttribute{
 						Optional: true,
-						Computed: true,
-						PlanModifiers: []planmodifier.Object{
-							objectplanmodifier.UseStateForUnknown(),
-						},
 						Attributes: map[string]schema.Attribute{
 							"mode": schema.StringAttribute{
 								Optional: true,
-								Computed: true,
-								PlanModifiers: []planmodifier.String{
-									stringplanmodifier.UseStateForUnknown(),
-								},
 							},
 							"ip_address_range": schema.SingleNestedAttribute{
 								Optional: true,
-								Computed: true,
-								PlanModifiers: []planmodifier.Object{
-									objectplanmodifier.UseStateForUnknown(),
-								},
 								Attributes: map[string]schema.Attribute{
 									"start": schema.StringAttribute{
 										Optional: true,
-										Computed: true,
-										PlanModifiers: []planmodifier.String{
-											stringplanmodifier.UseStateForUnknown(),
-										},
 									},
 									"stop": schema.StringAttribute{
 										Optional: true,
-										Computed: true,
-										PlanModifiers: []planmodifier.String{
-											stringplanmodifier.UseStateForUnknown(),
-										},
 									},
 								},
 							},
 							"gateway_ip_address_override": schema.StringAttribute{
 								Optional: true,
-								Computed: true,
-								PlanModifiers: []planmodifier.String{
-									stringplanmodifier.UseStateForUnknown(),
-								},
 							},
 							"dns_servers": schema.ListAttribute{
 								Optional:    true,
-								Computed:    true,
 								ElementType: types.StringType,
-								PlanModifiers: []planmodifier.List{
-									listplanmodifier.UseStateForUnknown(),
-								},
 							},
 							"lease_time_seconds": schema.Int64Attribute{
 								Optional: true,
-								Computed: true,
-								PlanModifiers: []planmodifier.Int64{
-									int64planmodifier.UseStateForUnknown(),
-								},
 							},
 							"domain_name": schema.StringAttribute{
 								Optional: true,
-								Computed: true,
-								PlanModifiers: []planmodifier.String{
-									stringplanmodifier.UseStateForUnknown(),
-								},
 							},
 						},
 					},
@@ -308,91 +246,43 @@ func (r *networkResource) Schema(ctx context.Context, req resource.SchemaRequest
 			},
 			"ipv6_configuration": schema.SingleNestedAttribute{
 				Optional: true,
-				Computed: true,
-				PlanModifiers: []planmodifier.Object{
-					objectplanmodifier.UseStateForUnknown(),
-				},
 				Attributes: map[string]schema.Attribute{
 					"interface_type": schema.StringAttribute{
 						Optional: true,
-						Computed: true,
-						PlanModifiers: []planmodifier.String{
-							stringplanmodifier.UseStateForUnknown(),
-						},
 					},
 					"prefix_delegation_wan_interface_id": schema.StringAttribute{
 						Optional: true,
-						Computed: true,
-						PlanModifiers: []planmodifier.String{
-							stringplanmodifier.UseStateForUnknown(),
-						},
 					},
 					"dns_servers": schema.ListAttribute{
 						Optional:    true,
-						Computed:    true,
 						ElementType: types.StringType,
-						PlanModifiers: []planmodifier.List{
-							listplanmodifier.UseStateForUnknown(),
-						},
 					},
 					"additional_host_ip_subnets": schema.ListAttribute{
 						Optional:    true,
-						Computed:    true,
 						ElementType: types.StringType,
-						PlanModifiers: []planmodifier.List{
-							listplanmodifier.UseStateForUnknown(),
-						},
 					},
 					"client_address_assignment": schema.SingleNestedAttribute{
 						Optional: true,
-						Computed: true,
-						PlanModifiers: []planmodifier.Object{
-							objectplanmodifier.UseStateForUnknown(),
-						},
 						Attributes: map[string]schema.Attribute{
 							"slaac_enabled": schema.BoolAttribute{
 								Optional: true,
-								Computed: true,
-								PlanModifiers: []planmodifier.Bool{
-									boolplanmodifier.UseStateForUnknown(),
-								},
 							},
 							"dhcp_configuration": schema.SingleNestedAttribute{
 								Optional: true,
-								Computed: true,
-								PlanModifiers: []planmodifier.Object{
-									objectplanmodifier.UseStateForUnknown(),
-								},
 								Attributes: map[string]schema.Attribute{
 									"ip_address_suffix_range": schema.SingleNestedAttribute{
 										Optional: true,
-										Computed: true,
-										PlanModifiers: []planmodifier.Object{
-											objectplanmodifier.UseStateForUnknown(),
-										},
 										Attributes: map[string]schema.Attribute{
 											"start": schema.StringAttribute{
 												Optional: true,
-												Computed: true,
-												PlanModifiers: []planmodifier.String{
-													stringplanmodifier.UseStateForUnknown(),
-												},
 											},
 											"stop": schema.StringAttribute{
 												Optional: true,
-												Computed: true,
-												PlanModifiers: []planmodifier.String{
-													stringplanmodifier.UseStateForUnknown(),
-												},
 											},
 										},
 									},
 									"lease_time_seconds": schema.Int64Attribute{
 										Optional: true,
-										Computed: true,
-										PlanModifiers: []planmodifier.Int64{
-											int64planmodifier.UseStateForUnknown(),
-										},
 									},
 								},
 							},
@@ -400,17 +290,9 @@ func (r *networkResource) Schema(ctx context.Context, req resource.SchemaRequest
 					},
 					"router_advertisement": schema.SingleNestedAttribute{
 						Optional: true,
-						Computed: true,
-						PlanModifiers: []planmodifier.Object{
-							objectplanmodifier.UseStateForUnknown(),
-						},
 						Attributes: map[string]schema.Attribute{
 							"priority": schema.StringAttribute{
 								Optional: true,
-								Computed: true,
-								PlanModifiers: []planmodifier.String{
-									stringplanmodifier.UseStateForUnknown(),
-								},
 							},
 						},
 					},
