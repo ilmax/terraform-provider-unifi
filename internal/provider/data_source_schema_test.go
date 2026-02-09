@@ -12,6 +12,7 @@ type dataSourceSchemaCheck struct {
 	name            string
 	dataSource      datasource.DataSource
 	requiredStrings []string
+	optionalStrings []string
 }
 
 func TestDataSourceSchemas(t *testing.T) {
@@ -19,7 +20,7 @@ func TestDataSourceSchemas(t *testing.T) {
 		{
 			name:            "client",
 			dataSource:      NewClientDataSource(),
-			requiredStrings: []string{"client_id"},
+			optionalStrings: []string{"client_id", "mac_address"},
 		},
 		{
 			name:            "device",
@@ -47,6 +48,19 @@ func TestDataSourceSchemas(t *testing.T) {
 			}
 			if !attr.Required {
 				t.Fatalf("%s: %s should be required", check.name, attrName)
+			}
+		}
+
+		for _, attrName := range check.optionalStrings {
+			attr, ok := resp.Schema.Attributes[attrName].(schema.StringAttribute)
+			if !ok {
+				t.Fatalf("%s: %s attribute missing or not string", check.name, attrName)
+			}
+			if !attr.Optional {
+				t.Fatalf("%s: %s should be optional", check.name, attrName)
+			}
+			if attr.Required {
+				t.Fatalf("%s: %s should not be required", check.name, attrName)
 			}
 		}
 	}
