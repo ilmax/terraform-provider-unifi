@@ -1,19 +1,18 @@
 # Todo
 
 ## Working Notes
-- Fix prefix_length default to avoid invalid planned values.
+- Require `ipv4_configuration.prefix_length` when ipv4_configuration is set.
 
 ## Plan
-- [x] Replace plan modifier with computed default for prefix_length.
-- [x] Remove unused helper/default plan modifier.
+- [x] Remove computed default and enforce prefix_length.
+- [x] Update tests and docs.
 - [x] Run go test ./... and commit.
 
 ## Acceptance Criteria
-- `unifi_network.ipv4_configuration.prefix_length` defaults to 24 when omitted.
-- No invalid plan errors from Terraform.
+- `unifi_network.ipv4_configuration.prefix_length` is required when ipv4_configuration is set.
 - Tests pass.
 
 ## Results
-- Defaulted `prefix_length` via computed default to avoid invalid plan errors.
-- Removed unused plan modifier helper.
+- Enforced explicit `prefix_length` and removed defaults.
+- Updated tests and docs.
 - Verified with `go test ./...`.
