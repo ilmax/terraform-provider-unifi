@@ -1,21 +1,19 @@
 # Todo
 
 ## Working Notes
-- Support `unifi_client` lookup by `client_id` or `mac_address`.
+- Default `ipv4_configuration.prefix_length` to 24.
 
 ## Plan
-- [x] Inspect SDK client list endpoint for MAC lookup options.
-- [x] Update `unifi_client` schema and read logic to allow `client_id` or `mac_address`.
-- [x] Add tests for identifier validation/normalization.
-- [x] Update docs/README.
+- [x] Update schema/defaults and resolve logic to allow default prefix length.
+- [x] Update tests and docs.
 - [x] Run go test ./... and commit.
 
 ## Acceptance Criteria
-- `unifi_client` supports lookup by `client_id` or `mac_address` (exactly one required).
-- Docs and README updated.
+- `unifi_network.ipv4_configuration.prefix_length` defaults to 24 when omitted.
+- Docs updated.
 - Tests pass.
 
 ## Results
-- `unifi_client` supports lookup by MAC address via client list search.
-- Added validation tests and updated docs/README.
+- Defaulted `prefix_length` to 24 in schema and resolution logic.
+- Updated docs and tests.
 - Verified with `go test ./...`.
