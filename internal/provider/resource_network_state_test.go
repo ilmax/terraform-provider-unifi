@@ -21,7 +21,7 @@ func TestNetworkStateFromResponseGateway(t *testing.T) {
   "cellularBackupEnabled": true,
   "zoneId": "ed426e98-252f-4ff2-982b-d475007f085f",
   "internetAccessEnabled": true,
-  "mdnsForwardingEnabled": true,
+  "multicastDnsEnable": true,
   "ipv4Configuration": {
     "autoScaleEnabled": false,
     "hostIpAddress": "192.168.20.1",
@@ -56,6 +56,7 @@ func TestNetworkStateFromResponseGateway(t *testing.T) {
 	if diags.HasError() {
 		t.Fatalf("network state diagnostics: %v", diags)
 	}
+	state.MulticastDNSEnable = readMulticastDNSEnable(raw)
 
 	if state.IPv4Configuration == nil {
 		t.Fatal("expected ipv4_configuration to be populated")
@@ -65,6 +66,9 @@ func TestNetworkStateFromResponseGateway(t *testing.T) {
 	}
 	if state.IPv4Configuration.DHCPConfiguration.Mode.IsNull() || state.IPv4Configuration.DHCPConfiguration.Mode.ValueString() != "SERVER" {
 		t.Fatalf("expected DHCP mode SERVER, got %q", state.IPv4Configuration.DHCPConfiguration.Mode.ValueString())
+	}
+	if state.MulticastDNSEnable.IsNull() || !state.MulticastDNSEnable.ValueBool() {
+		t.Fatal("expected multicast_dns_enable to be true")
 	}
 
 	var dns []string

@@ -38,7 +38,7 @@ type networkResourceModel struct {
 	IsolationEnabled      types.Bool                     `tfsdk:"isolation_enabled"`
 	CellularBackupEnabled types.Bool                     `tfsdk:"cellular_backup_enabled"`
 	InternetAccessEnabled types.Bool                     `tfsdk:"internet_access_enabled"`
-	MDNSForwardingEnabled types.Bool                     `tfsdk:"mdns_forwarding_enabled"`
+	MulticastDNSEnable    types.Bool                     `tfsdk:"multicast_dns_enable"`
 	DHCPGuarding          *networkDHCPGuardingModel      `tfsdk:"dhcp_guarding"`
 	IPv4Configuration     *networkIPv4ConfigurationModel `tfsdk:"ipv4_configuration"`
 	IPv6Configuration     *networkIPv6ConfigurationModel `tfsdk:"ipv6_configuration"`
@@ -172,7 +172,7 @@ func (r *networkResource) Schema(ctx context.Context, req resource.SchemaRequest
 					boolplanmodifier.UseStateForUnknown(),
 				},
 			},
-			"mdns_forwarding_enabled": schema.BoolAttribute{
+			"multicast_dns_enable": schema.BoolAttribute{
 				Optional: true,
 				Computed: true,
 				PlanModifiers: []planmodifier.Bool{
@@ -490,6 +490,7 @@ func (r *networkResource) readNetwork(ctx context.Context, siteID, networkID str
 	}
 
 	diags.Append(networkStateFromResponse(state, siteID, decoded)...)
+	state.MulticastDNSEnable = readMulticastDNSEnable(raw)
 	return !diags.HasError()
 }
 
@@ -534,12 +535,12 @@ func buildCreateNetworkRequest(plan networkResourceModel) (any, diag.Diagnostics
 			CellularBackupEnabled: plan.CellularBackupEnabled.ValueBool(),
 			ZoneId:                plan.ZoneID.ValueString(),
 			InternetAccessEnabled: plan.InternetAccessEnabled.ValueBool(),
-			MdnsForwardingEnabled: plan.MDNSForwardingEnabled.ValueBool(),
+			MdnsForwardingEnabled: plan.MulticastDNSEnable.ValueBool(),
 		}
 		request.DhcpGuarding = buildCreateDHCPGuarding(plan.DHCPGuarding, &diags)
 		request.Ipv4Configuration = buildCreateIPv4Config(plan.IPv4Configuration, &diags)
 		request.Ipv6Configuration = buildCreateIPv6Config(plan.IPv6Configuration, &diags)
-		return request, diags
+		return applyMulticastDNSEnable(request, plan.MulticastDNSEnable, &diags), diags
 	case "SWITCH":
 		request := &networks.CreateNetworkRequestSwitch{
 			Management:            management,
@@ -583,12 +584,12 @@ func buildUpdateNetworkRequest(plan networkResourceModel) (any, diag.Diagnostics
 			CellularBackupEnabled: plan.CellularBackupEnabled.ValueBool(),
 			ZoneId:                plan.ZoneID.ValueString(),
 			InternetAccessEnabled: plan.InternetAccessEnabled.ValueBool(),
-			MdnsForwardingEnabled: plan.MDNSForwardingEnabled.ValueBool(),
+			MdnsForwardingEnabled: plan.MulticastDNSEnable.ValueBool(),
 		}
 		request.DhcpGuarding = buildUpdateDHCPGuarding(plan.DHCPGuarding, &diags)
 		request.Ipv4Configuration = buildUpdateIPv4Config(plan.IPv4Configuration, &diags)
 		request.Ipv6Configuration = buildUpdateIPv6Config(plan.IPv6Configuration, &diags)
-		return request, diags
+		return applyMulticastDNSEnable(request, plan.MulticastDNSEnable, &diags), diags
 	case "SWITCH":
 		request := &networks.UpdateNetworkRequestSwitch{
 			Management:            management,
@@ -615,6 +616,28 @@ func buildUpdateNetworkRequest(plan networkResourceModel) (any, diag.Diagnostics
 		diags.AddAttributeError(path.Root("management"), "Invalid management type", "Supported values are GATEWAY, SWITCH, or UNMANAGED.")
 		return nil, diags
 	}
+}
+
+func applyMulticastDNSEnable(payload any, value types.Bool, diags *diag.Diagnostics) any {
+	if value.IsNull() || value.IsUnknown() {
+		return payload
+	}
+
+	raw, err := json.Marshal(payload)
+	if err != nil {
+		diags.AddError("Unable to encode network request", err.Error())
+		return payload
+	}
+
+	var out map[string]any
+	if err := json.Unmarshal(raw, &out); err != nil {
+		diags.AddError("Unable to encode network request", err.Error())
+		return payload
+	}
+
+	out["multicastDnsEnable"] = value.ValueBool()
+	delete(out, "mdnsForwardingEnabled")
+	return out
 }
 
 func buildCreateDHCPGuarding(model *networkDHCPGuardingModel, diags *diag.Diagnostics) *networks.CreateNetworkDhcpGuarding {
@@ -899,7 +922,6 @@ func networkStateFromResponse(state *networkResourceModel, siteID string, respon
 		state.IsolationEnabled = types.BoolValue(result.IsolationEnabled)
 		state.CellularBackupEnabled = types.BoolValue(result.CellularBackupEnabled)
 		state.InternetAccessEnabled = types.BoolValue(result.InternetAccessEnabled)
-		state.MDNSForwardingEnabled = types.BoolValue(result.MdnsForwardingEnabled)
 		state.DHCPGuarding = readDHCPGuarding(result.DhcpGuarding)
 		state.IPv4Configuration = readIPv4Config(result.Ipv4Configuration)
 		state.IPv6Configuration = readIPv6Config(result.Ipv6Configuration)
@@ -1058,4 +1080,24 @@ func stringValueOrNull(value string) types.String {
 		return types.StringNull()
 	}
 	return types.StringValue(value)
+}
+
+func readMulticastDNSEnable(raw json.RawMessage) types.Bool {
+	if len(raw) == 0 {
+		return types.BoolNull()
+	}
+	var payload struct {
+		MulticastDnsEnable    *bool `json:"multicastDnsEnable"`
+		MdnsForwardingEnabled *bool `json:"mdnsForwardingEnabled"`
+	}
+	if err := json.Unmarshal(raw, &payload); err != nil {
+		return types.BoolNull()
+	}
+	if payload.MulticastDnsEnable != nil {
+		return types.BoolValue(*payload.MulticastDnsEnable)
+	}
+	if payload.MdnsForwardingEnabled != nil {
+		return types.BoolValue(*payload.MdnsForwardingEnabled)
+	}
+	return types.BoolNull()
 }

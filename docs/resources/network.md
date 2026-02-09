@@ -57,7 +57,7 @@ resource "unifi_network" "example" {
 - `isolation_enabled` (Boolean) Whether the network is isolated.
 - `cellular_backup_enabled` (Boolean) Allow cellular backup.
 - `internet_access_enabled` (Boolean) Allow internet access.
-- `mdns_forwarding_enabled` (Boolean) Enable mDNS forwarding.
+- `multicast_dns_enable` (Boolean) Enable multicast DNS forwarding.
 - `dhcp_guarding` (Block) DHCP guarding configuration.
 - `ipv4_configuration` (Block) IPv4 configuration, including DHCP/DNS settings.
 - `ipv6_configuration` (Block) IPv6 configuration.
