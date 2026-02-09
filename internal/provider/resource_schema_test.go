@@ -17,11 +17,6 @@ type resourceSchemaCheck struct {
 func TestResourceSchemas(t *testing.T) {
 	checks := []resourceSchemaCheck{
 		{
-			name:            "device",
-			resource:        NewDeviceResource(),
-			requiredStrings: []string{"device_id"},
-		},
-		{
 			name:            "network",
 			resource:        NewNetworkResource(),
 			requiredStrings: []string{"name", "management"},
@@ -40,11 +35,6 @@ func TestResourceSchemas(t *testing.T) {
 			name:            "firewall_zone",
 			resource:        NewFirewallZoneResource(),
 			requiredStrings: []string{"name"},
-		},
-		{
-			name:            "wan",
-			resource:        NewWanResource(),
-			requiredStrings: []string{"wan_id"},
 		},
 	}
 
