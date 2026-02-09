@@ -42,9 +42,12 @@ func TestResolveIPv4HostPrefix(t *testing.T) {
 			HostIPAddress: types.StringValue("10.0.0.1"),
 		}
 		var diags diag.Diagnostics
-		resolveIPv4HostPrefix(model, &diags)
-		if !diags.HasError() {
-			t.Fatal("expected diagnostics for missing prefix_length")
+		_, prefix := resolveIPv4HostPrefix(model, &diags)
+		if diags.HasError() {
+			t.Fatalf("unexpected diagnostics: %v", diags)
+		}
+		if prefix != 24 {
+			t.Fatalf("expected default prefix 24, got %d", prefix)
 		}
 	})
 }

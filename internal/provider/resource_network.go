@@ -12,6 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64default"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
@@ -199,6 +200,7 @@ func (r *networkResource) Schema(ctx context.Context, req resource.SchemaRequest
 					},
 					"prefix_length": schema.Int64Attribute{
 						Optional: true,
+						Default:  int64default.StaticInt64(24),
 					},
 					"additional_host_ip_subnets": schema.ListAttribute{
 						Optional:    true,
@@ -990,16 +992,21 @@ func resolveIPv4HostPrefix(model *networkIPv4ConfigurationModel, diags *diag.Dia
 		)
 		return "", 0
 	}
-	if model.PrefixLength.IsNull() || model.PrefixLength.IsUnknown() || model.PrefixLength.ValueInt64() == 0 {
+	if model.PrefixLength.IsUnknown() {
 		diags.AddAttributeError(
 			path.Root("ipv4_configuration").AtName("prefix_length"),
-			"Missing prefix_length",
-			"prefix_length must be set when ipv4_configuration is configured.",
+			"Unknown prefix_length",
+			"prefix_length must be known when ipv4_configuration is configured.",
 		)
 		return "", 0
 	}
 
-	return model.HostIPAddress.ValueString(), model.PrefixLength.ValueInt64()
+	prefix := model.PrefixLength.ValueInt64()
+	if prefix == 0 {
+		prefix = 24
+	}
+
+	return model.HostIPAddress.ValueString(), prefix
 }
 
 func readIPv4DHCPConfig(cfg *networks.GetNetworkDetailsIpv4ConfigurationDhcpConfiguration) *networkIPv4DHCPConfigurationModel {
