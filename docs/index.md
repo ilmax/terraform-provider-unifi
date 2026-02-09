@@ -29,6 +29,7 @@ provider "unifi" {
 
 ## Data Sources
 
+- `unifi_client`
 - `unifi_device`
 - `unifi_wan`
 
