@@ -62,7 +62,7 @@ export TF_LOG_PATH=./terraform.log
 
 ## Data Sources
 
-- `unifi_client`
+- `unifi_client` (lookup by `client_id` or `mac_address`)
 - `unifi_device`
 - `unifi_wan`
 

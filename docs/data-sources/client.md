@@ -15,6 +15,13 @@ data "unifi_client" "example" {
 }
 ```
 
+```hcl
+data "unifi_client" "by_mac" {
+  site_id     = var.unifi_site_id
+  mac_address = "aa:bb:cc:dd:ee:ff"
+}
+```
+
 ## Notes
 
 - Clients can represent wired, wireless, VPN, or teleport connections depending on the UniFi Network API response.
@@ -24,7 +31,9 @@ data "unifi_client" "example" {
 
 ### Required
 
+- Exactly one of:
 - `client_id` (String) Client identifier.
+- `mac_address` (String) Client MAC address.
 
 ### Optional
 
