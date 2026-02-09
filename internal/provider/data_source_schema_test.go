@@ -17,6 +17,11 @@ type dataSourceSchemaCheck struct {
 func TestDataSourceSchemas(t *testing.T) {
 	checks := []dataSourceSchemaCheck{
 		{
+			name:            "client",
+			dataSource:      NewClientDataSource(),
+			requiredStrings: []string{"client_id"},
+		},
+		{
 			name:            "device",
 			dataSource:      NewDeviceDataSource(),
 			requiredStrings: []string{"device_id"},
