@@ -74,7 +74,7 @@ resource "unifi_network" "example" {
 
 - `auto_scale_enabled` (Boolean) Enable auto-scaling subnet sizing.
 - `host_ip_address` (String) Gateway IP.
-- `prefix_length` (Number) CIDR prefix length.
+- `prefix_length` (Number) CIDR prefix length. Defaults to `24`.
 - `additional_host_ip_subnets` (List of String) Additional subnets.
 - `dhcp_configuration` (Block) DHCP settings.
 
