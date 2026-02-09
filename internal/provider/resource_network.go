@@ -12,7 +12,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64default"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
@@ -200,7 +199,9 @@ func (r *networkResource) Schema(ctx context.Context, req resource.SchemaRequest
 					},
 					"prefix_length": schema.Int64Attribute{
 						Optional: true,
-						Default:  int64default.StaticInt64(24),
+						PlanModifiers: []planmodifier.Int64{
+							defaultInt64WhenNull(24),
+						},
 					},
 					"additional_host_ip_subnets": schema.ListAttribute{
 						Optional:    true,
