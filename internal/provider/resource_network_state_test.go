@@ -56,7 +56,7 @@ func TestNetworkStateFromResponseGateway(t *testing.T) {
 	if diags.HasError() {
 		t.Fatalf("network state diagnostics: %v", diags)
 	}
-	state.MulticastDNSEnable = readMulticastDNSEnable(raw)
+	state.MulticastDNSEnabled = readMulticastDNSEnable(raw)
 
 	if state.IPv4Configuration == nil {
 		t.Fatal("expected ipv4_configuration to be populated")
@@ -67,8 +67,8 @@ func TestNetworkStateFromResponseGateway(t *testing.T) {
 	if state.IPv4Configuration.DHCPConfiguration.Mode.IsNull() || state.IPv4Configuration.DHCPConfiguration.Mode.ValueString() != "SERVER" {
 		t.Fatalf("expected DHCP mode SERVER, got %q", state.IPv4Configuration.DHCPConfiguration.Mode.ValueString())
 	}
-	if state.MulticastDNSEnable.IsNull() || !state.MulticastDNSEnable.ValueBool() {
-		t.Fatal("expected multicast_dns_enable to be true")
+	if state.MulticastDNSEnabled.IsNull() || !state.MulticastDNSEnabled.ValueBool() {
+		t.Fatal("expected multicast_dns_enabled to be true")
 	}
 
 	var dns []string
