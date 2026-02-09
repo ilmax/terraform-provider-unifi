@@ -63,9 +63,6 @@ func TestNetworkStateFromResponseGateway(t *testing.T) {
 	if state.IPv4Configuration.DHCPConfiguration == nil {
 		t.Fatal("expected ipv4_configuration.dhcp_configuration to be populated")
 	}
-	if state.IPv4Configuration.CIDR.IsNull() || state.IPv4Configuration.CIDR.ValueString() != "192.168.20.1/24" {
-		t.Fatalf("expected cidr 192.168.20.1/24, got %q", state.IPv4Configuration.CIDR.ValueString())
-	}
 	if state.IPv4Configuration.DHCPConfiguration.Mode.IsNull() || state.IPv4Configuration.DHCPConfiguration.Mode.ValueString() != "SERVER" {
 		t.Fatalf("expected DHCP mode SERVER, got %q", state.IPv4Configuration.DHCPConfiguration.Mode.ValueString())
 	}

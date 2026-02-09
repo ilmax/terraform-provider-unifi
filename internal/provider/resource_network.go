@@ -2,10 +2,8 @@ package provider
 
 import (
 	"context"
-	"encoding/binary"
 	"encoding/json"
 	"fmt"
-	"net"
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -52,7 +50,6 @@ type networkDHCPGuardingModel struct {
 
 type networkIPv4ConfigurationModel struct {
 	AutoScaleEnabled        types.Bool                         `tfsdk:"auto_scale_enabled"`
-	CIDR                    types.String                       `tfsdk:"cidr"`
 	HostIPAddress           types.String                       `tfsdk:"host_ip_address"`
 	PrefixLength            types.Int64                        `tfsdk:"prefix_length"`
 	AdditionalHostIPSubnets types.List                         `tfsdk:"additional_host_ip_subnets"`
@@ -195,9 +192,6 @@ func (r *networkResource) Schema(ctx context.Context, req resource.SchemaRequest
 				Optional: true,
 				Attributes: map[string]schema.Attribute{
 					"auto_scale_enabled": schema.BoolAttribute{
-						Optional: true,
-					},
-					"cidr": schema.StringAttribute{
 						Optional: true,
 					},
 					"host_ip_address": schema.StringAttribute{
@@ -951,14 +945,8 @@ func readIPv4Config(cfg *networks.GetNetworkDetailsIpv4Configuration) *networkIP
 		return nil
 	}
 
-	cidr := types.StringNull()
-	if cfg.HostIpAddress != "" && cfg.PrefixLength != 0 {
-		cidr = types.StringValue(fmt.Sprintf("%s/%d", cfg.HostIpAddress, cfg.PrefixLength))
-	}
-
 	model := &networkIPv4ConfigurationModel{
 		AutoScaleEnabled:        types.BoolValue(cfg.AutoScaleEnabled),
-		CIDR:                    cidr,
 		HostIPAddress:           types.StringValue(cfg.HostIpAddress),
 		PrefixLength:            types.Int64Value(cfg.PrefixLength),
 		AdditionalHostIPSubnets: rawMessagesToList(cfg.AdditionalHostIpSubnets),
@@ -972,95 +960,24 @@ func resolveIPv4HostPrefix(model *networkIPv4ConfigurationModel, diags *diag.Dia
 		return "", 0
 	}
 
-	if model.CIDR.IsUnknown() {
-		return model.HostIPAddress.ValueString(), model.PrefixLength.ValueInt64()
-	}
-
-	cidrValue := strings.TrimSpace(model.CIDR.ValueString())
-	if cidrValue == "" {
-		return model.HostIPAddress.ValueString(), model.PrefixLength.ValueInt64()
-	}
-
-	if !model.HostIPAddress.IsNull() && !model.HostIPAddress.IsUnknown() && model.HostIPAddress.ValueString() != "" {
+	if model.HostIPAddress.IsNull() || model.HostIPAddress.IsUnknown() || strings.TrimSpace(model.HostIPAddress.ValueString()) == "" {
 		diags.AddAttributeError(
-			path.Root("ipv4_configuration").AtName("cidr"),
-			"Conflicting IPv4 configuration",
-			"cidr cannot be set with host_ip_address. Use cidr only.",
+			path.Root("ipv4_configuration").AtName("host_ip_address"),
+			"Missing host_ip_address",
+			"host_ip_address must be set when ipv4_configuration is configured.",
 		)
 		return "", 0
 	}
-	if !model.PrefixLength.IsNull() && !model.PrefixLength.IsUnknown() && model.PrefixLength.ValueInt64() != 0 {
+	if model.PrefixLength.IsNull() || model.PrefixLength.IsUnknown() || model.PrefixLength.ValueInt64() == 0 {
 		diags.AddAttributeError(
-			path.Root("ipv4_configuration").AtName("cidr"),
-			"Conflicting IPv4 configuration",
-			"cidr cannot be set with prefix_length. Use cidr only.",
+			path.Root("ipv4_configuration").AtName("prefix_length"),
+			"Missing prefix_length",
+			"prefix_length must be set when ipv4_configuration is configured.",
 		)
 		return "", 0
 	}
 
-	ip, ipNet, err := net.ParseCIDR(cidrValue)
-	if err != nil {
-		diags.AddAttributeError(
-			path.Root("ipv4_configuration").AtName("cidr"),
-			"Invalid CIDR",
-			err.Error(),
-		)
-		return "", 0
-	}
-
-	ones, _ := ipNet.Mask.Size()
-	ipv4 := ip.To4()
-	base := ipNet.IP.To4()
-	if ipv4 == nil || base == nil {
-		diags.AddAttributeError(
-			path.Root("ipv4_configuration").AtName("cidr"),
-			"Invalid CIDR",
-			"cidr must be an IPv4 CIDR block.",
-		)
-		return "", 0
-	}
-
-	hostIP := ipv4
-	if ipv4.Equal(base) && ones < 31 {
-		calculated, err := ipv4Host(ipNet, 1)
-		if err != nil {
-			diags.AddAttributeError(
-				path.Root("ipv4_configuration").AtName("cidr"),
-				"Invalid CIDR",
-				err.Error(),
-			)
-			return "", 0
-		}
-		hostIP = calculated
-	}
-
-	return hostIP.String(), int64(ones)
-}
-
-func ipv4Host(ipNet *net.IPNet, host uint32) (net.IP, error) {
-	if ipNet == nil {
-		return nil, fmt.Errorf("invalid CIDR")
-	}
-
-	base := ipNet.IP.To4()
-	if base == nil {
-		return nil, fmt.Errorf("cidr must be IPv4")
-	}
-
-	ones, bits := ipNet.Mask.Size()
-	if bits != 32 {
-		return nil, fmt.Errorf("cidr must be IPv4")
-	}
-
-	if host >= 1<<uint32(32-ones) {
-		return nil, fmt.Errorf("host index %d out of range for /%d", host, ones)
-	}
-
-	baseInt := binary.BigEndian.Uint32(base)
-	ipInt := baseInt + host
-	result := make(net.IP, 4)
-	binary.BigEndian.PutUint32(result, ipInt)
-	return result, nil
+	return model.HostIPAddress.ValueString(), model.PrefixLength.ValueInt64()
 }
 
 func readIPv4DHCPConfig(cfg *networks.GetNetworkDetailsIpv4ConfigurationDhcpConfiguration) *networkIPv4DHCPConfigurationModel {
