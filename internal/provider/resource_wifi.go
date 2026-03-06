@@ -13,6 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/listplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/objectplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -27,22 +28,44 @@ type wifiResource struct {
 }
 
 type wifiResourceModel struct {
-	ID                                  types.String `tfsdk:"id"`
-	SiteID                              types.String `tfsdk:"site_id"`
-	Name                                types.String `tfsdk:"name"`
-	Type                                types.String `tfsdk:"type"`
-	Enabled                             types.Bool   `tfsdk:"enabled"`
-	SecurityType                        types.String `tfsdk:"security_type"`
-	NetworkType                         types.String `tfsdk:"network_type"`
-	MulticastToUnicastConversionEnabled types.Bool   `tfsdk:"multicast_to_unicast_conversion_enabled"`
-	ClientIsolationEnabled              types.Bool   `tfsdk:"client_isolation_enabled"`
-	HideName                            types.Bool   `tfsdk:"hide_name"`
-	UapsdEnabled                        types.Bool   `tfsdk:"uapsd_enabled"`
-	BroadcastingFrequenciesGHz          types.List   `tfsdk:"broadcasting_frequencies_ghz"`
-	MloEnabled                          types.Bool   `tfsdk:"mlo_enabled"`
-	BandSteeringEnabled                 types.Bool   `tfsdk:"band_steering_enabled"`
-	ArpProxyEnabled                     types.Bool   `tfsdk:"arp_proxy_enabled"`
-	BssTransitionEnabled                types.Bool   `tfsdk:"bss_transition_enabled"`
+	ID                                  types.String                            `tfsdk:"id"`
+	SiteID                              types.String                            `tfsdk:"site_id"`
+	Name                                types.String                            `tfsdk:"name"`
+	Type                                types.String                            `tfsdk:"type"`
+	Enabled                             types.Bool                              `tfsdk:"enabled"`
+	SecurityType                        types.String                            `tfsdk:"security_type"`
+	NetworkType                         types.String                            `tfsdk:"network_type"`
+	MulticastToUnicastConversionEnabled types.Bool                              `tfsdk:"multicast_to_unicast_conversion_enabled"`
+	ClientIsolationEnabled              types.Bool                              `tfsdk:"client_isolation_enabled"`
+	HideName                            types.Bool                              `tfsdk:"hide_name"`
+	UapsdEnabled                        types.Bool                              `tfsdk:"uapsd_enabled"`
+	BroadcastingFrequenciesGHz          types.List                              `tfsdk:"broadcasting_frequencies_ghz"`
+	MloEnabled                          types.Bool                              `tfsdk:"mlo_enabled"`
+	BandSteeringEnabled                 types.Bool                              `tfsdk:"band_steering_enabled"`
+	ArpProxyEnabled                     types.Bool                              `tfsdk:"arp_proxy_enabled"`
+	BssTransitionEnabled                types.Bool                              `tfsdk:"bss_transition_enabled"`
+	BasicDataRateKbpsByFrequencyGHz     *wifiBasicDataRateModel                 `tfsdk:"basic_data_rate_kbps_by_frequency_ghz"`
+	ClientFilteringPolicy               *wifiClientFilteringPolicyModel         `tfsdk:"client_filtering_policy"`
+	BlackoutScheduleConfiguration       *wifiBlackoutScheduleConfigurationModel `tfsdk:"blackout_schedule_configuration"`
+}
+
+type wifiBasicDataRateModel struct {
+	Rate24Kbps types.Int64 `tfsdk:"rate_2_4_kbps"`
+	Rate5Kbps  types.Int64 `tfsdk:"rate_5_kbps"`
+}
+
+type wifiClientFilteringPolicyModel struct {
+	Action           types.String `tfsdk:"action"`
+	MacAddressFilter types.List   `tfsdk:"mac_address_filter"`
+}
+
+type wifiBlackoutScheduleConfigurationModel struct {
+	Days []wifiBlackoutDayModel `tfsdk:"days"`
+}
+
+type wifiBlackoutDayModel struct {
+	Day  types.String `tfsdk:"day"`
+	Type types.String `tfsdk:"type"`
 }
 
 func NewWifiResource() resource.Resource {
@@ -153,6 +176,56 @@ func (r *wifiResource) Schema(ctx context.Context, req resource.SchemaRequest, r
 				Optional: true,
 				PlanModifiers: []planmodifier.Bool{
 					boolplanmodifier.RequiresReplace(),
+				},
+			},
+			"basic_data_rate_kbps_by_frequency_ghz": schema.SingleNestedAttribute{
+				Optional: true,
+				PlanModifiers: []planmodifier.Object{
+					objectplanmodifier.RequiresReplace(),
+				},
+				Attributes: map[string]schema.Attribute{
+					"rate_2_4_kbps": schema.Int64Attribute{
+						Optional: true,
+					},
+					"rate_5_kbps": schema.Int64Attribute{
+						Optional: true,
+					},
+				},
+			},
+			"client_filtering_policy": schema.SingleNestedAttribute{
+				Optional: true,
+				PlanModifiers: []planmodifier.Object{
+					objectplanmodifier.RequiresReplace(),
+				},
+				Attributes: map[string]schema.Attribute{
+					"action": schema.StringAttribute{
+						Required: true,
+					},
+					"mac_address_filter": schema.ListAttribute{
+						Optional:    true,
+						ElementType: types.StringType,
+					},
+				},
+			},
+			"blackout_schedule_configuration": schema.SingleNestedAttribute{
+				Optional: true,
+				PlanModifiers: []planmodifier.Object{
+					objectplanmodifier.RequiresReplace(),
+				},
+				Attributes: map[string]schema.Attribute{
+					"days": schema.ListNestedAttribute{
+						Optional: true,
+						NestedObject: schema.NestedAttributeObject{
+							Attributes: map[string]schema.Attribute{
+								"day": schema.StringAttribute{
+									Required: true,
+								},
+								"type": schema.StringAttribute{
+									Required: true,
+								},
+							},
+						},
+					},
 				},
 			},
 		},
@@ -340,6 +413,69 @@ func buildWifiPayload(plan wifiResourceModel) (map[string]any, diag.Diagnostics)
 	setBoolIfKnown(payload, "arpProxyEnabled", plan.ArpProxyEnabled)
 	setBoolIfKnown(payload, "bssTransitionEnabled", plan.BssTransitionEnabled)
 
+	if plan.BasicDataRateKbpsByFrequencyGHz != nil {
+		rates := map[string]any{}
+		if !plan.BasicDataRateKbpsByFrequencyGHz.Rate24Kbps.IsNull() && !plan.BasicDataRateKbpsByFrequencyGHz.Rate24Kbps.IsUnknown() {
+			rates["2.4"] = plan.BasicDataRateKbpsByFrequencyGHz.Rate24Kbps.ValueInt64()
+		}
+		if !plan.BasicDataRateKbpsByFrequencyGHz.Rate5Kbps.IsNull() && !plan.BasicDataRateKbpsByFrequencyGHz.Rate5Kbps.IsUnknown() {
+			rates["5"] = plan.BasicDataRateKbpsByFrequencyGHz.Rate5Kbps.ValueInt64()
+		}
+		if len(rates) == 0 {
+			diags.AddAttributeError(
+				path.Root("basic_data_rate_kbps_by_frequency_ghz"),
+				"Missing basic data rates",
+				"At least one of rate_2_4_kbps or rate_5_kbps must be set when basic_data_rate_kbps_by_frequency_ghz is configured.",
+			)
+			return nil, diags
+		}
+		payload["basicDataRateKbpsByFrequencyGHz"] = rates
+	}
+
+	if plan.ClientFilteringPolicy != nil {
+		clientFiltering := map[string]any{
+			"action": plan.ClientFilteringPolicy.Action.ValueString(),
+		}
+		if !plan.ClientFilteringPolicy.MacAddressFilter.IsNull() && !plan.ClientFilteringPolicy.MacAddressFilter.IsUnknown() {
+			macs, listDiags := listToStrings(plan.ClientFilteringPolicy.MacAddressFilter, path.Root("client_filtering_policy").AtName("mac_address_filter"))
+			diags.Append(listDiags...)
+			if diags.HasError() {
+				return nil, diags
+			}
+			clientFiltering["macAddressFilter"] = macs
+		}
+		payload["clientFilteringPolicy"] = clientFiltering
+	}
+
+	if plan.BlackoutScheduleConfiguration != nil {
+		days := make([]map[string]any, 0, len(plan.BlackoutScheduleConfiguration.Days))
+		for idx, day := range plan.BlackoutScheduleConfiguration.Days {
+			if day.Day.IsNull() || day.Day.IsUnknown() || strings.TrimSpace(day.Day.ValueString()) == "" {
+				diags.AddAttributeError(
+					path.Root("blackout_schedule_configuration").AtName("days").AtListIndex(idx).AtName("day"),
+					"Missing blackout day",
+					"day must be set for blackout_schedule_configuration.days entries.",
+				)
+				return nil, diags
+			}
+			if day.Type.IsNull() || day.Type.IsUnknown() || strings.TrimSpace(day.Type.ValueString()) == "" {
+				diags.AddAttributeError(
+					path.Root("blackout_schedule_configuration").AtName("days").AtListIndex(idx).AtName("type"),
+					"Missing blackout type",
+					"type must be set for blackout_schedule_configuration.days entries.",
+				)
+				return nil, diags
+			}
+			days = append(days, map[string]any{
+				"day":  day.Day.ValueString(),
+				"type": day.Type.ValueString(),
+			})
+		}
+		payload["blackoutScheduleConfiguration"] = map[string]any{
+			"days": days,
+		}
+	}
+
 	return payload, diags
 }
 
@@ -399,6 +535,9 @@ func wifiStateFromResponse(siteID string, response any) (wifiResourceModel, diag
 			result.BandSteeringEnabled,
 			result.ArpProxyEnabled,
 			result.BssTransitionEnabled,
+			readCreateWifiBasicDataRate(result.BasicDataRateKbpsByFrequencyGHz),
+			readCreateWifiClientFilteringPolicy(result.ClientFilteringPolicy),
+			readCreateWifiBlackoutSchedule(result.BlackoutScheduleConfiguration),
 		), diags
 	case *broadcasts.CreateWifiBroadcastResponseIotOptimized:
 		return wifiStateFromIot(
@@ -413,6 +552,9 @@ func wifiStateFromResponse(siteID string, response any) (wifiResourceModel, diag
 			result.ClientIsolationEnabled,
 			result.HideName,
 			result.UapsdEnabled,
+			readCreateWifiBasicDataRate(result.BasicDataRateKbpsByFrequencyGHz),
+			readCreateWifiClientFilteringPolicy(result.ClientFilteringPolicy),
+			readCreateWifiBlackoutSchedule(result.BlackoutScheduleConfiguration),
 		), diags
 	case *broadcasts.GetWifiBroadcastDetailsResponseStandard:
 		return wifiStateFromStandard(
@@ -432,6 +574,9 @@ func wifiStateFromResponse(siteID string, response any) (wifiResourceModel, diag
 			result.BandSteeringEnabled,
 			result.ArpProxyEnabled,
 			result.BssTransitionEnabled,
+			readGetWifiBasicDataRate(result.BasicDataRateKbpsByFrequencyGHz),
+			readGetWifiClientFilteringPolicy(result.ClientFilteringPolicy),
+			readGetWifiBlackoutSchedule(result.BlackoutScheduleConfiguration),
 		), diags
 	case *broadcasts.GetWifiBroadcastDetailsResponseIotOptimized:
 		return wifiStateFromIot(
@@ -446,6 +591,9 @@ func wifiStateFromResponse(siteID string, response any) (wifiResourceModel, diag
 			result.ClientIsolationEnabled,
 			result.HideName,
 			result.UapsdEnabled,
+			readGetWifiBasicDataRate(result.BasicDataRateKbpsByFrequencyGHz),
+			readGetWifiClientFilteringPolicy(result.ClientFilteringPolicy),
+			readGetWifiBlackoutSchedule(result.BlackoutScheduleConfiguration),
 		), diags
 	default:
 		diags.AddError("Unsupported WiFi broadcast response", fmt.Sprintf("unexpected response type %T", response))
@@ -481,11 +629,14 @@ func wifiStateCommon(siteID, id, name, broadcastType string, enabled bool, secur
 	state.BandSteeringEnabled = types.BoolNull()
 	state.ArpProxyEnabled = types.BoolNull()
 	state.BssTransitionEnabled = types.BoolNull()
+	state.BasicDataRateKbpsByFrequencyGHz = nil
+	state.ClientFilteringPolicy = nil
+	state.BlackoutScheduleConfiguration = nil
 
 	return state
 }
 
-func wifiStateFromStandard(siteID, id, name, broadcastType string, enabled bool, securityType string, network *broadcasts.ClientAccess, multicastToUnicast bool, clientIsolation bool, hideName bool, uapsdEnabled bool, frequencies []json.RawMessage, mloEnabled bool, bandSteering bool, arpProxy bool, bssTransition bool) wifiResourceModel {
+func wifiStateFromStandard(siteID, id, name, broadcastType string, enabled bool, securityType string, network *broadcasts.ClientAccess, multicastToUnicast bool, clientIsolation bool, hideName bool, uapsdEnabled bool, frequencies []json.RawMessage, mloEnabled bool, bandSteering bool, arpProxy bool, bssTransition bool, basicDataRate *wifiBasicDataRateModel, clientFilteringPolicy *wifiClientFilteringPolicyModel, blackoutSchedule *wifiBlackoutScheduleConfigurationModel) wifiResourceModel {
 	state := wifiStateCommon(siteID, id, name, broadcastType, enabled, securityType, network)
 	state.MulticastToUnicastConversionEnabled = types.BoolValue(multicastToUnicast)
 	state.ClientIsolationEnabled = types.BoolValue(clientIsolation)
@@ -496,16 +647,90 @@ func wifiStateFromStandard(siteID, id, name, broadcastType string, enabled bool,
 	state.BandSteeringEnabled = types.BoolValue(bandSteering)
 	state.ArpProxyEnabled = types.BoolValue(arpProxy)
 	state.BssTransitionEnabled = types.BoolValue(bssTransition)
+	state.BasicDataRateKbpsByFrequencyGHz = basicDataRate
+	state.ClientFilteringPolicy = clientFilteringPolicy
+	state.BlackoutScheduleConfiguration = blackoutSchedule
 	return state
 }
 
-func wifiStateFromIot(siteID, id, name, broadcastType string, enabled bool, securityType string, network *broadcasts.ClientAccess, multicastToUnicast bool, clientIsolation bool, hideName bool, uapsdEnabled bool) wifiResourceModel {
+func wifiStateFromIot(siteID, id, name, broadcastType string, enabled bool, securityType string, network *broadcasts.ClientAccess, multicastToUnicast bool, clientIsolation bool, hideName bool, uapsdEnabled bool, basicDataRate *wifiBasicDataRateModel, clientFilteringPolicy *wifiClientFilteringPolicyModel, blackoutSchedule *wifiBlackoutScheduleConfigurationModel) wifiResourceModel {
 	state := wifiStateCommon(siteID, id, name, broadcastType, enabled, securityType, network)
 	state.MulticastToUnicastConversionEnabled = types.BoolValue(multicastToUnicast)
 	state.ClientIsolationEnabled = types.BoolValue(clientIsolation)
 	state.HideName = types.BoolValue(hideName)
 	state.UapsdEnabled = types.BoolValue(uapsdEnabled)
+	state.BasicDataRateKbpsByFrequencyGHz = basicDataRate
+	state.ClientFilteringPolicy = clientFilteringPolicy
+	state.BlackoutScheduleConfiguration = blackoutSchedule
 	return state
+}
+
+func readCreateWifiBasicDataRate(value *broadcasts.CreateWifiBroadcastBasicDataRateKbpsByFrequencyGHz) *wifiBasicDataRateModel {
+	if value == nil {
+		return nil
+	}
+	return &wifiBasicDataRateModel{
+		Rate24Kbps: types.Int64Value(value.N24),
+		Rate5Kbps:  types.Int64Value(value.N5),
+	}
+}
+
+func readGetWifiBasicDataRate(value *broadcasts.GetWifiBroadcastDetailsBasicDataRateKbpsByFrequencyGHz) *wifiBasicDataRateModel {
+	if value == nil {
+		return nil
+	}
+	return &wifiBasicDataRateModel{
+		Rate24Kbps: types.Int64Value(value.N24),
+		Rate5Kbps:  types.Int64Value(value.N5),
+	}
+}
+
+func readCreateWifiClientFilteringPolicy(value *broadcasts.CreateWifiBroadcastClientFilteringPolicy) *wifiClientFilteringPolicyModel {
+	if value == nil {
+		return nil
+	}
+	return &wifiClientFilteringPolicyModel{
+		Action:           types.StringValue(value.Action),
+		MacAddressFilter: rawMessagesToStringList(value.MacAddressFilter),
+	}
+}
+
+func readGetWifiClientFilteringPolicy(value *broadcasts.GetWifiBroadcastDetailsClientFilteringPolicy) *wifiClientFilteringPolicyModel {
+	if value == nil {
+		return nil
+	}
+	return &wifiClientFilteringPolicyModel{
+		Action:           types.StringValue(value.Action),
+		MacAddressFilter: rawMessagesToStringList(value.MacAddressFilter),
+	}
+}
+
+func readCreateWifiBlackoutSchedule(value *broadcasts.CreateWifiBroadcastBlackoutScheduleConfiguration) *wifiBlackoutScheduleConfigurationModel {
+	if value == nil {
+		return nil
+	}
+	days := make([]wifiBlackoutDayModel, 0, len(value.Days))
+	for _, day := range value.Days {
+		days = append(days, wifiBlackoutDayModel{
+			Day:  stringValueOrNull(day.Day),
+			Type: stringValueOrNull(day.Type),
+		})
+	}
+	return &wifiBlackoutScheduleConfigurationModel{Days: days}
+}
+
+func readGetWifiBlackoutSchedule(value *broadcasts.GetWifiBroadcastDetailsBlackoutScheduleConfiguration) *wifiBlackoutScheduleConfigurationModel {
+	if value == nil {
+		return nil
+	}
+	days := make([]wifiBlackoutDayModel, 0, len(value.Days))
+	for _, day := range value.Days {
+		days = append(days, wifiBlackoutDayModel{
+			Day:  stringValueOrNull(day.Day),
+			Type: stringValueOrNull(day.Type),
+		})
+	}
+	return &wifiBlackoutScheduleConfigurationModel{Days: days}
 }
 
 func rawMessagesToStringList(raw []json.RawMessage) types.List {

@@ -108,6 +108,23 @@ func TestWifiSchemaAttributes(t *testing.T) {
 	if _, ok := resp.Schema.Attributes["broadcasting_frequencies_ghz"].(schema.ListAttribute); !ok {
 		t.Fatal("broadcasting_frequencies_ghz attribute missing or not list")
 	}
+
+	if _, ok := resp.Schema.Attributes["basic_data_rate_kbps_by_frequency_ghz"].(schema.SingleNestedAttribute); !ok {
+		t.Fatal("basic_data_rate_kbps_by_frequency_ghz attribute missing or not single nested")
+	}
+
+	if _, ok := resp.Schema.Attributes["client_filtering_policy"].(schema.SingleNestedAttribute); !ok {
+		t.Fatal("client_filtering_policy attribute missing or not single nested")
+	}
+
+	blackoutAttr, ok := resp.Schema.Attributes["blackout_schedule_configuration"].(schema.SingleNestedAttribute)
+	if !ok {
+		t.Fatal("blackout_schedule_configuration attribute missing or not single nested")
+	}
+
+	if _, ok := blackoutAttr.Attributes["days"].(schema.ListNestedAttribute); !ok {
+		t.Fatal("blackout_schedule_configuration.days attribute missing or not list nested")
+	}
 }
 
 func TestFirewallZoneSchema(t *testing.T) {
