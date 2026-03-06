@@ -60,6 +60,7 @@ export TF_LOG_PATH=./terraform.log
 - `unifi_firewall_policy_ordering`
 - `unifi_firewall_rule`
 - `unifi_firewall_zone`
+- `unifi_firewall_zone_networks`
 - `unifi_network`
 - `unifi_wifi` (changes force replacement)
 
