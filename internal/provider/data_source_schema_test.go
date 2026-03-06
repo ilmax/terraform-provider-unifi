@@ -18,6 +18,10 @@ type dataSourceSchemaCheck struct {
 func TestDataSourceSchemas(t *testing.T) {
 	checks := []dataSourceSchemaCheck{
 		{
+			name:       "countries",
+			dataSource: NewCountriesDataSource(),
+		},
+		{
 			name:            "dns_policy",
 			dataSource:      NewDNSPolicyDataSource(),
 			requiredStrings: []string{"policy_id"},
@@ -117,5 +121,25 @@ func TestDNSPoliciesDataSourceSchema(t *testing.T) {
 
 	if _, ok := attr.NestedObject.Attributes["domain"].(schema.StringAttribute); !ok {
 		t.Fatal("policies.domain attribute missing or not string")
+	}
+}
+
+func TestCountriesDataSourceSchema(t *testing.T) {
+	resp := &datasource.SchemaResponse{}
+	NewCountriesDataSource().Schema(context.Background(), datasource.SchemaRequest{}, resp)
+	if resp.Diagnostics.HasError() {
+		t.Fatalf("countries schema diagnostics: %v", resp.Diagnostics)
+	}
+
+	attr, ok := resp.Schema.Attributes["countries"].(schema.ListNestedAttribute)
+	if !ok {
+		t.Fatal("countries attribute missing or not list nested")
+	}
+
+	if _, ok := attr.NestedObject.Attributes["code"].(schema.StringAttribute); !ok {
+		t.Fatal("countries.code attribute missing or not string")
+	}
+	if _, ok := attr.NestedObject.Attributes["name"].(schema.StringAttribute); !ok {
+		t.Fatal("countries.name attribute missing or not string")
 	}
 }
