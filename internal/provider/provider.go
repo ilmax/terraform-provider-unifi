@@ -160,6 +160,8 @@ func (p *unifiProvider) Resources(ctx context.Context) []func() resource.Resourc
 
 func (p *unifiProvider) DataSources(ctx context.Context) []func() datasource.DataSource {
 	return []func() datasource.DataSource{
+		NewDNSPoliciesDataSource,
+		NewDNSPolicyDataSource,
 		NewClientDataSource,
 		NewDeviceDataSource,
 		NewFirewallZoneDataSource,
