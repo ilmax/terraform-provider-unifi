@@ -1,27 +1,22 @@
 # Todo
 
 ## Working Notes
-- Add DNS policies support as focused Terraform entities:
-- `unifi_dns_policy` resource
-- `unifi_dns_policy` data source (single lookup)
-- `unifi_dns_policies` data source (list/filter)
+- Split firewall zone concerns:
+- `unifi_firewall_zone` manages zone lifecycle/metadata only.
+- `unifi_firewall_zone_networks` manages network assignments for a zone.
 
 ## Plan
-- [x] Implement `unifi_dns_policy` resource (CRUD + import + state mapping).
-- [x] Implement `unifi_dns_policy` and `unifi_dns_policies` data sources.
-- [x] Register provider entries and extend schema/unit tests.
-- [x] Add docs for resource/data sources and update provider index/README.
-- [x] Verify with `go test ./...`.
+- [ ] Refactor `unifi_firewall_zone` schema/CRUD so `network_ids` is no longer configurable.
+- [ ] Add `unifi_firewall_zone_networks` resource (assign one or more networks to a zone).
+- [ ] Register new resource and add/adjust unit/schema tests.
+- [ ] Update docs for both zone resources and provider index/README.
+- [ ] Verify with `go test ./...`.
 
 ## Acceptance Criteria
-- DNS policies can be managed via Terraform with create/read/update/delete/import.
-- DNS policy can be looked up as a single data source and listed via collection data source.
-- Provider/docs expose new DNS entities.
+- `unifi_firewall_zone` no longer takes assignment input (`network_ids`) and does not overwrite assignments on rename/update.
+- `unifi_firewall_zone_networks` can manage zone assignments by `zone_id` + `network_ids`.
+- Docs clearly describe separation of concerns between resources.
 - Tests pass.
 
 ## Results
-- Added `unifi_dns_policy` resource with CRUD/import support and state mapping for `domain` and `origin`.
-- Added `unifi_dns_policy` and `unifi_dns_policies` data sources with optional type/domain filters for list reads.
-- Registered DNS entities in provider resource/data source registries and extended schema/unit tests.
-- Added DNS docs in `README.md`, provider index, and dedicated resource/data source pages.
-- Verified with `go test ./...`.
+- In progress.
