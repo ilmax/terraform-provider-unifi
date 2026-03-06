@@ -55,10 +55,12 @@ export TF_LOG_PATH=./terraform.log
 
 ## Resources
 
-- `unifi_network`
-- `unifi_wifi` (changes force replacement)
+- `unifi_acl_rule_ordering`
+- `unifi_firewall_policy_ordering`
 - `unifi_firewall_rule`
 - `unifi_firewall_zone`
+- `unifi_network`
+- `unifi_wifi` (changes force replacement)
 
 ## Data Sources
 

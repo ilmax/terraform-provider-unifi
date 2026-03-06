@@ -34,6 +34,7 @@ resource "unifi_firewall_rule" "example" {
 ## Notes
 
 - Rules are evaluated by index (lower numbers are evaluated first). Use `source_filter_json`, `destination_filter_json`, and `protocol_filter` together to scope the traffic.
+- For explicit ordering management, use `unifi_acl_rule_ordering`.
 - The UniFi Network API provides configuration and real-time status for sites, devices, and clients. It authenticates using an `X-API-Key` header (set `api_key` in the provider).
 
 ## Schema

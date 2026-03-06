@@ -27,6 +27,15 @@ provider "unifi" {
 - `user_agent` (String, Optional) Custom user agent string.
 - `allow_insecure` (Boolean, Optional) Skip TLS certificate verification.
 
+## Resources
+
+- `unifi_acl_rule_ordering`
+- `unifi_firewall_policy_ordering`
+- `unifi_firewall_rule`
+- `unifi_firewall_zone`
+- `unifi_network`
+- `unifi_wifi`
+
 ## Data Sources
 
 - `unifi_client`
