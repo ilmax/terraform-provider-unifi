@@ -20,6 +20,24 @@ resource "unifi_wifi" "example" {
   client_isolation_enabled              = false
   multicast_to_unicast_conversion_enabled = true
   broadcasting_frequencies_ghz          = ["2.4", "5"]
+  basic_data_rate_kbps_by_frequency_ghz = {
+    rate_2_4_kbps = 6000
+    rate_5_kbps   = 12000
+  }
+
+  client_filtering_policy = {
+    action             = "ALLOW"
+    mac_address_filter = ["aa:bb:cc:dd:ee:ff"]
+  }
+
+  blackout_schedule_configuration = {
+    days = [
+      {
+        day  = "MONDAY"
+        type = "ALL_DAY"
+      }
+    ]
+  }
 }
 ```
 
@@ -52,10 +70,32 @@ resource "unifi_wifi" "example" {
 - `band_steering_enabled` (Boolean) Enable band steering (STANDARD only).
 - `arp_proxy_enabled` (Boolean) Enable ARP proxy (STANDARD only).
 - `bss_transition_enabled` (Boolean) Enable BSS transition (STANDARD only).
+- `basic_data_rate_kbps_by_frequency_ghz` (Block) Basic data rate overrides by band.
+- `client_filtering_policy` (Block) WiFi client filtering policy.
+- `blackout_schedule_configuration` (Block) Blackout schedule per day.
 
 ### Read-Only
 
 - `id` (String) WiFi broadcast identifier.
+
+### `basic_data_rate_kbps_by_frequency_ghz` Block
+
+- `rate_2_4_kbps` (Number) Basic data rate for 2.4 GHz in Kbps.
+- `rate_5_kbps` (Number) Basic data rate for 5 GHz in Kbps.
+
+### `client_filtering_policy` Block
+
+- `action` (String) Filter policy action (for example `ALLOW` or `DENY`).
+- `mac_address_filter` (List of String) MAC addresses used by the filter.
+
+### `blackout_schedule_configuration` Block
+
+- `days` (List of Object) Day schedule entries.
+
+### `blackout_schedule_configuration.days` Object
+
+- `day` (String) Day name (for example `MONDAY`).
+- `type` (String) Day schedule type (for example `ALL_DAY`).
 
 ## Import
 
