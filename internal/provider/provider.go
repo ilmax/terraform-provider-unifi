@@ -159,6 +159,8 @@ func (p *unifiProvider) DataSources(ctx context.Context) []func() datasource.Dat
 	return []func() datasource.DataSource{
 		NewClientDataSource,
 		NewDeviceDataSource,
+		NewFirewallZoneDataSource,
+		NewFirewallZonesDataSource,
 		NewWanDataSource,
 	}
 }
