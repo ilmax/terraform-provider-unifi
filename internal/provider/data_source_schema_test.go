@@ -18,6 +18,10 @@ type dataSourceSchemaCheck struct {
 func TestDataSourceSchemas(t *testing.T) {
 	checks := []dataSourceSchemaCheck{
 		{
+			name:       "acl_rules",
+			dataSource: NewACLRulesDataSource(),
+		},
+		{
 			name:       "countries",
 			dataSource: NewCountriesDataSource(),
 		},
@@ -141,5 +145,24 @@ func TestCountriesDataSourceSchema(t *testing.T) {
 	}
 	if _, ok := attr.NestedObject.Attributes["name"].(schema.StringAttribute); !ok {
 		t.Fatal("countries.name attribute missing or not string")
+	}
+}
+
+func TestACLRulesDataSourceSchema(t *testing.T) {
+	resp := &datasource.SchemaResponse{}
+	NewACLRulesDataSource().Schema(context.Background(), datasource.SchemaRequest{}, resp)
+	if resp.Diagnostics.HasError() {
+		t.Fatalf("acl_rules schema diagnostics: %v", resp.Diagnostics)
+	}
+
+	attr, ok := resp.Schema.Attributes["acl_rules"].(schema.ListNestedAttribute)
+	if !ok {
+		t.Fatal("acl_rules attribute missing or not list nested")
+	}
+	if _, ok := attr.NestedObject.Attributes["id"].(schema.StringAttribute); !ok {
+		t.Fatal("acl_rules.id attribute missing or not string")
+	}
+	if _, ok := attr.NestedObject.Attributes["index"].(schema.Int64Attribute); !ok {
+		t.Fatal("acl_rules.index attribute missing or not int64")
 	}
 }
