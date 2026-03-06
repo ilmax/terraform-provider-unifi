@@ -56,6 +56,7 @@ export TF_LOG_PATH=./terraform.log
 ## Resources
 
 - `unifi_acl_rule_ordering`
+- `unifi_dns_policy`
 - `unifi_firewall_policy_ordering`
 - `unifi_firewall_rule`
 - `unifi_firewall_zone`
@@ -65,6 +66,8 @@ export TF_LOG_PATH=./terraform.log
 ## Data Sources
 
 - `unifi_client` (lookup by `client_id` or `mac_address`)
+- `unifi_dns_policy`
+- `unifi_dns_policies`
 - `unifi_device`
 - `unifi_firewall_zone`
 - `unifi_firewall_zones`

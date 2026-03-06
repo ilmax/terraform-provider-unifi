@@ -7,11 +7,11 @@
 - `unifi_dns_policies` data source (list/filter)
 
 ## Plan
-- [ ] Implement `unifi_dns_policy` resource (CRUD + import + state mapping).
-- [ ] Implement `unifi_dns_policy` and `unifi_dns_policies` data sources.
-- [ ] Register provider entries and extend schema/unit tests.
-- [ ] Add docs for resource/data sources and update provider index/README.
-- [ ] Verify with `go test ./...`.
+- [x] Implement `unifi_dns_policy` resource (CRUD + import + state mapping).
+- [x] Implement `unifi_dns_policy` and `unifi_dns_policies` data sources.
+- [x] Register provider entries and extend schema/unit tests.
+- [x] Add docs for resource/data sources and update provider index/README.
+- [x] Verify with `go test ./...`.
 
 ## Acceptance Criteria
 - DNS policies can be managed via Terraform with create/read/update/delete/import.
@@ -20,4 +20,8 @@
 - Tests pass.
 
 ## Results
-- In progress.
+- Added `unifi_dns_policy` resource with CRUD/import support and state mapping for `domain` and `origin`.
+- Added `unifi_dns_policy` and `unifi_dns_policies` data sources with optional type/domain filters for list reads.
+- Registered DNS entities in provider resource/data source registries and extended schema/unit tests.
+- Added DNS docs in `README.md`, provider index, and dedicated resource/data source pages.
+- Verified with `go test ./...`.

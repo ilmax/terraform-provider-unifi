@@ -30,6 +30,7 @@ provider "unifi" {
 ## Resources
 
 - `unifi_acl_rule_ordering`
+- `unifi_dns_policy`
 - `unifi_firewall_policy_ordering`
 - `unifi_firewall_rule`
 - `unifi_firewall_zone`
@@ -38,6 +39,8 @@ provider "unifi" {
 
 ## Data Sources
 
+- `unifi_dns_policy`
+- `unifi_dns_policies`
 - `unifi_client`
 - `unifi_device`
 - `unifi_firewall_zone`
