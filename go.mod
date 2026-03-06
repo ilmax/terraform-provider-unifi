@@ -5,7 +5,7 @@ go 1.25.0
 require (
 	github.com/hashicorp/terraform-plugin-framework v1.16.0
 	github.com/hashicorp/terraform-plugin-log v0.9.0
-	github.com/ilmax/unifi-client-go v0.1.2
+	github.com/ilmax/unifi-client-go v0.1.3
 )
 
 require (
