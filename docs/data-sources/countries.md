@@ -16,7 +16,7 @@ data "unifi_countries" "all" {}
 
 locals {
   country_code_by_name = {
-    for c in data.unifi_countries.all.countries :
+    for c in data.unifi_countries.all.items :
     c.name => c.code
   }
 }
@@ -27,9 +27,9 @@ locals {
 ### Read-Only
 
 - `id` (String) Constant data source identifier (`countries`).
-- `countries` (List of Object) Full list of countries.
+- `items` (List of Object) Full list of countries.
 
-### `countries` Object
+### `items` Object
 
 - `code` (String) Country code in ISO 3166-1 alpha-2 format.
 - `name` (String) Country display name.
