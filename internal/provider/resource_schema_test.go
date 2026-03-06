@@ -12,10 +12,22 @@ type resourceSchemaCheck struct {
 	name            string
 	resource        resource.Resource
 	requiredStrings []string
+	requiredLists   []string
 }
 
 func TestResourceSchemas(t *testing.T) {
 	checks := []resourceSchemaCheck{
+		{
+			name:          "acl_rule_ordering",
+			resource:      NewACLRuleOrderingResource(),
+			requiredLists: []string{"ordered_acl_rule_ids"},
+		},
+		{
+			name:            "firewall_policy_ordering",
+			resource:        NewFirewallPolicyOrderingResource(),
+			requiredStrings: []string{"source_firewall_zone_id", "destination_firewall_zone_id"},
+			requiredLists:   []string{"before_system_defined", "after_system_defined"},
+		},
 		{
 			name:            "network",
 			resource:        NewNetworkResource(),
@@ -49,6 +61,16 @@ func TestResourceSchemas(t *testing.T) {
 			attr, ok := resp.Schema.Attributes[attrName].(schema.StringAttribute)
 			if !ok {
 				t.Fatalf("%s: %s attribute missing or not string", check.name, attrName)
+			}
+			if !attr.Required {
+				t.Fatalf("%s: %s should be required", check.name, attrName)
+			}
+		}
+
+		for _, attrName := range check.requiredLists {
+			attr, ok := resp.Schema.Attributes[attrName].(schema.ListAttribute)
+			if !ok {
+				t.Fatalf("%s: %s attribute missing or not list", check.name, attrName)
 			}
 			if !attr.Required {
 				t.Fatalf("%s: %s should be required", check.name, attrName)

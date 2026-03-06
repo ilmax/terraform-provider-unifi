@@ -47,6 +47,17 @@ func splitImportID(id string) (string, string, error) {
 	return parts[0], parts[1], nil
 }
 
+func splitImportID3(id string) (string, string, string, error) {
+	parts := strings.Split(id, "/")
+	if len(parts) != 3 {
+		return "", "", "", fmt.Errorf("expected import identifier to be in the format <site_id>/<part_one>/<part_two>")
+	}
+	if parts[0] == "" || parts[1] == "" || parts[2] == "" {
+		return "", "", "", fmt.Errorf("site_id, part_one, and part_two must be non-empty")
+	}
+	return parts[0], parts[1], parts[2], nil
+}
+
 func requireValidJSON(raw string) error {
 	if !json.Valid([]byte(raw)) {
 		return fmt.Errorf("invalid JSON value")
