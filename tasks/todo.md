@@ -18,7 +18,7 @@
 - Tests pass.
 
 ## Results
-- Changed `unifi_countries` output from `countries` to `items` (list of `{name, code}`).
-- Updated schema tests to assert the new `items` attribute.
-- Updated docs/examples to consume `data.unifi_countries.<name>.items`.
+- `unifi_countries` output uses `countries` (list of `{name, code}`).
+- Updated schema tests to assert the `countries` attribute.
+- Updated docs/examples to consume `data.unifi_countries.<name>.countries`.
 - Verified with `go test ./...`.
