@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/ilmax/unifi-client-go/pkg/networks"
+	"github.com/ilmax/terraform-provider-unifi/internal/sdkcompat/networks"
 )
 
 func TestNetworkStateFromResponseGateway(t *testing.T) {

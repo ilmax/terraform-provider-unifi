@@ -14,8 +14,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/ilmax/terraform-provider-unifi/internal/sdkcompat/acl_rules"
 	"github.com/ilmax/terraform-provider-unifi/internal/unifi"
-	"github.com/ilmax/unifi-client-go/pkg/acl_rules"
 	"github.com/ilmax/unifi-client-go/pkg/errors"
 )
 

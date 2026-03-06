@@ -8,8 +8,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/ilmax/terraform-provider-unifi/internal/sdkcompat/devices"
 	"github.com/ilmax/terraform-provider-unifi/internal/unifi"
-	"github.com/ilmax/unifi-client-go/pkg/devices"
 	"github.com/ilmax/unifi-client-go/pkg/errors"
 )
 
