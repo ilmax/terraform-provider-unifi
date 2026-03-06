@@ -165,8 +165,11 @@ func TestFirewallZoneSchema(t *testing.T) {
 	if !ok {
 		t.Fatal("network_ids attribute missing or not list")
 	}
-	if !attr.Required {
-		t.Fatal("network_ids should be required")
+	if !attr.Computed {
+		t.Fatal("network_ids should be computed")
+	}
+	if attr.Required {
+		t.Fatal("network_ids should not be required")
 	}
 }
 

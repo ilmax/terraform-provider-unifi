@@ -2,9 +2,9 @@ package provider
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
-	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -55,7 +55,7 @@ func (r *firewallZoneResource) Schema(ctx context.Context, req resource.SchemaRe
 				Required: true,
 			},
 			"network_ids": schema.ListAttribute{
-				Required:    true,
+				Computed:    true,
 				ElementType: types.StringType,
 			},
 		},
@@ -87,11 +87,7 @@ func (r *firewallZoneResource) Create(ctx context.Context, req resource.CreateRe
 		return
 	}
 
-	reqBody, diags := buildFirewallZoneCreateRequest(plan)
-	resp.Diagnostics.Append(diags...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
+	reqBody := buildFirewallZoneCreateRequest(plan)
 
 	path := fmt.Sprintf("/v1/sites/%s/firewall/zones", siteID)
 	var result zones.CreateCustomFirewallZoneResponse
@@ -162,11 +158,18 @@ func (r *firewallZoneResource) Update(ctx context.Context, req resource.UpdateRe
 		return
 	}
 
-	reqBody, diags := buildFirewallZoneUpdateRequest(plan)
-	resp.Diagnostics.Append(diags...)
-	if resp.Diagnostics.HasError() {
+	getPath := fmt.Sprintf("/v1/sites/%s/firewall/zones/%s", siteID, plan.ID.ValueString())
+	var current zones.GetFirewallZoneResponse
+	if err := r.client.Get(ctx, getPath, &current); err != nil {
+		if errors.IsNotFoundError(err) {
+			resp.State.RemoveResource(ctx)
+			return
+		}
+		resp.Diagnostics.AddError("Unable to read firewall zone before update", err.Error())
 		return
 	}
+
+	reqBody := buildFirewallZoneUpdateRequest(plan, current.NetworkIds)
 
 	path := fmt.Sprintf("/v1/sites/%s/firewall/zones/%s", siteID, plan.ID.ValueString())
 	var result zones.UpdateFirewallZoneResponse
@@ -219,30 +222,20 @@ func (r *firewallZoneResource) ImportState(ctx context.Context, req resource.Imp
 	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), zoneID)...)
 }
 
-func buildFirewallZoneCreateRequest(plan firewallZoneResourceModel) (*zones.CreateCustomFirewallZoneRequest, diag.Diagnostics) {
-	var diags diag.Diagnostics
-	ids, listDiags := listToRawMessages(plan.NetworkIDs, path.Root("network_ids"))
-	diags.Append(listDiags...)
-	if diags.HasError() {
-		return nil, diags
-	}
-
+func buildFirewallZoneCreateRequest(plan firewallZoneResourceModel) *zones.CreateCustomFirewallZoneRequest {
 	return &zones.CreateCustomFirewallZoneRequest{
 		Name:       plan.Name.ValueString(),
-		NetworkIds: ids,
-	}, diags
+		NetworkIds: []json.RawMessage{},
+	}
 }
 
-func buildFirewallZoneUpdateRequest(plan firewallZoneResourceModel) (*zones.UpdateFirewallZoneRequest, diag.Diagnostics) {
-	var diags diag.Diagnostics
-	ids, listDiags := listToRawMessages(plan.NetworkIDs, path.Root("network_ids"))
-	diags.Append(listDiags...)
-	if diags.HasError() {
-		return nil, diags
+func buildFirewallZoneUpdateRequest(plan firewallZoneResourceModel, existingNetworkIDs []json.RawMessage) *zones.UpdateFirewallZoneRequest {
+	networkIDs := existingNetworkIDs
+	if networkIDs == nil {
+		networkIDs = []json.RawMessage{}
 	}
-
 	return &zones.UpdateFirewallZoneRequest{
 		Name:       plan.Name.ValueString(),
-		NetworkIds: ids,
-	}, diags
+		NetworkIds: networkIDs,
+	}
 }
