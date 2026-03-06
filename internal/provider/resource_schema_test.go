@@ -53,6 +53,12 @@ func TestResourceSchemas(t *testing.T) {
 			resource:        NewFirewallZoneResource(),
 			requiredStrings: []string{"name"},
 		},
+		{
+			name:            "firewall_zone_networks",
+			resource:        NewFirewallZoneNetworksResource(),
+			requiredStrings: []string{"zone_id"},
+			requiredLists:   []string{"network_ids"},
+		},
 	}
 
 	for _, check := range checks {
