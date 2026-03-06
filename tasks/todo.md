@@ -1,21 +1,21 @@
 # Todo
 
 ## Working Notes
-- Upgrade SDK to `v0.1.3` and expose new WiFi fields from release notes.
+- Rename ACL resource to `unifi_firewall_rule` and add firewall zone data sources.
 
 ## Plan
-- [x] Upgrade dependency to `github.com/ilmax/unifi-client-go@v0.1.3`.
-- [x] Expose new WiFi fields (`basic_data_rate_kbps_by_frequency_ghz`, `client_filtering_policy`, `blackout_schedule_configuration`) in schema, payload, and state mapping.
-- [x] Add tests and update docs.
+- [x] Rename resource type to `unifi_firewall_rule` and remove `unifi_firewall`.
+- [x] Add `unifi_firewall_zone` and `unifi_firewall_zones` data sources.
+- [x] Update tests and docs.
 - [x] Run go test ./... and commit.
 
 ## Acceptance Criteria
-- Provider uses `github.com/ilmax/unifi-client-go@v0.1.3`.
-- `unifi_wifi` exposes fields introduced in release notes where applicable.
+- Provider exposes `unifi_firewall_rule` and no longer exposes `unifi_firewall`.
+- Firewall zone data sources are available for single and list lookups.
 - Tests pass.
 
 ## Results
-- Upgraded dependency to `v0.1.3`.
-- Exposed new WiFi fields with read/create/state support.
-- Added WiFi tests and docs coverage for new fields.
+- Resource renamed to `unifi_firewall_rule`.
+- Added `unifi_firewall_zone` and `unifi_firewall_zones` data sources.
+- Updated docs and schema tests for new names and data sources.
 - Verified with `go test ./...`.
