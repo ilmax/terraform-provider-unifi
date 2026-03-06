@@ -18,10 +18,10 @@ type dnsPoliciesDataSource struct {
 }
 
 type dnsPoliciesDataSourceModel struct {
-	ID       types.String                    `tfsdk:"id"`
-	SiteID   types.String                    `tfsdk:"site_id"`
-	Type     types.String                    `tfsdk:"type"`
-	Domain   types.String                    `tfsdk:"domain"`
+	ID       types.String                     `tfsdk:"id"`
+	SiteID   types.String                     `tfsdk:"site_id"`
+	Type     types.String                     `tfsdk:"type"`
+	Domain   types.String                     `tfsdk:"domain"`
 	Policies []dnsPoliciesDataSourceItemModel `tfsdk:"policies"`
 }
 
