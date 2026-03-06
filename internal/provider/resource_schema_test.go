@@ -27,8 +27,8 @@ func TestResourceSchemas(t *testing.T) {
 			requiredStrings: []string{"name", "type", "security_type"},
 		},
 		{
-			name:            "firewall",
-			resource:        NewFirewallResource(),
+			name:            "firewall_rule",
+			resource:        NewFirewallRuleResource(),
 			requiredStrings: []string{"type", "name", "action"},
 		},
 		{
