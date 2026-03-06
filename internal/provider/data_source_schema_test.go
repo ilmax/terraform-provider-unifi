@@ -131,15 +131,15 @@ func TestCountriesDataSourceSchema(t *testing.T) {
 		t.Fatalf("countries schema diagnostics: %v", resp.Diagnostics)
 	}
 
-	attr, ok := resp.Schema.Attributes["countries"].(schema.ListNestedAttribute)
+	attr, ok := resp.Schema.Attributes["items"].(schema.ListNestedAttribute)
 	if !ok {
-		t.Fatal("countries attribute missing or not list nested")
+		t.Fatal("items attribute missing or not list nested")
 	}
 
 	if _, ok := attr.NestedObject.Attributes["code"].(schema.StringAttribute); !ok {
-		t.Fatal("countries.code attribute missing or not string")
+		t.Fatal("items.code attribute missing or not string")
 	}
 	if _, ok := attr.NestedObject.Attributes["name"].(schema.StringAttribute); !ok {
-		t.Fatal("countries.name attribute missing or not string")
+		t.Fatal("items.name attribute missing or not string")
 	}
 }

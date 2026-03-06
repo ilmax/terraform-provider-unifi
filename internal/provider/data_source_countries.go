@@ -18,8 +18,8 @@ type countriesDataSource struct {
 }
 
 type countriesDataSourceModel struct {
-	ID        types.String                   `tfsdk:"id"`
-	Countries []countriesDataSourceItemModel `tfsdk:"countries"`
+	ID    types.String                   `tfsdk:"id"`
+	Items []countriesDataSourceItemModel `tfsdk:"items"`
 }
 
 type countriesDataSourceItemModel struct {
@@ -46,7 +46,7 @@ func (d *countriesDataSource) Schema(ctx context.Context, req datasource.SchemaR
 			"id": schema.StringAttribute{
 				Computed: true,
 			},
-			"countries": schema.ListNestedAttribute{
+			"items": schema.ListNestedAttribute{
 				Computed: true,
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
@@ -89,7 +89,7 @@ func (d *countriesDataSource) Read(ctx context.Context, req datasource.ReadReque
 	}
 
 	state.ID = types.StringValue("countries")
-	state.Countries = countriesFromAPI(allCountries)
+	state.Items = countriesFromAPI(allCountries)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
