@@ -5,3 +5,4 @@
 - Plugin Framework defaults require `Computed=true`; prefer plan modifiers for optional defaults.
 - Plan modifiers cannot inject non-computed defaults without triggering invalid plan errors.
 - When consuming list endpoints, do not assume one request returns all results; verify pagination metadata (`offset`, `limit`, `totalCount`) and add regression tests for multi-page reads.
+- Keep Terraform resource/data source naming discoverable by aligning file names with exposed type names (for example `unifi_firewall_rule` -> `resource_firewall_rule.go`), and verify this during reviews.
