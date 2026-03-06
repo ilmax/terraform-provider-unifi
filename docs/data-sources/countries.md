@@ -6,6 +6,9 @@ page_title: "unifi_countries Data Source"
 
 Reads the full UniFi country catalog (ISO code + display name).
 
+The provider automatically paginates the `/v1/countries` endpoint to return
+all available countries, not only the first page.
+
 ## Example Usage
 
 ```hcl
