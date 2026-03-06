@@ -41,6 +41,7 @@ provider "unifi" {
 ## Data Sources
 
 - `unifi_countries`
+- `unifi_acl_rules`
 - `unifi_dns_policy`
 - `unifi_dns_policies`
 - `unifi_client`

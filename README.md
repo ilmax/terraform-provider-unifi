@@ -67,6 +67,7 @@ export TF_LOG_PATH=./terraform.log
 ## Data Sources
 
 - `unifi_client` (lookup by `client_id` or `mac_address`)
+- `unifi_acl_rules`
 - `unifi_countries`
 - `unifi_dns_policy`
 - `unifi_dns_policies`
