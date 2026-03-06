@@ -57,13 +57,15 @@ export TF_LOG_PATH=./terraform.log
 
 - `unifi_network`
 - `unifi_wifi` (changes force replacement)
-- `unifi_firewall`
+- `unifi_firewall_rule`
 - `unifi_firewall_zone`
 
 ## Data Sources
 
 - `unifi_client` (lookup by `client_id` or `mac_address`)
 - `unifi_device`
+- `unifi_firewall_zone`
+- `unifi_firewall_zones`
 - `unifi_wan`
 
 ## Actions

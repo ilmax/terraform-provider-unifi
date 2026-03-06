@@ -31,6 +31,8 @@ provider "unifi" {
 
 - `unifi_client`
 - `unifi_device`
+- `unifi_firewall_zone`
+- `unifi_firewall_zones`
 - `unifi_wan`
 
 ## Actions

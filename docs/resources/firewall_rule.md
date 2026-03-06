@@ -1,15 +1,15 @@
 ---
-page_title: "unifi_firewall Resource"
+page_title: "unifi_firewall_rule Resource"
 ---
 
-# unifi_firewall (Resource)
+# unifi_firewall_rule (Resource)
 
 Manages an ACL firewall rule.
 
 ## Example Usage
 
 ```hcl
-resource "unifi_firewall" "example" {
+resource "unifi_firewall_rule" "example" {
   site_id  = var.unifi_site_id
   type     = "IPV4"
   name     = "allow-dns"
@@ -18,12 +18,12 @@ resource "unifi_firewall" "example" {
   index    = 100
 
   source_filter_json = jsonencode({
-    type = "SUBNETS"
+    type                 = "SUBNETS"
     ipAddressesOrSubnets = ["10.0.0.0/24"]
   })
 
   destination_filter_json = jsonencode({
-    type = "PORTS"
+    type  = "PORTS"
     ports = [53]
   })
 
