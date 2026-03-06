@@ -23,6 +23,11 @@ func TestResourceSchemas(t *testing.T) {
 			requiredLists: []string{"ordered_acl_rule_ids"},
 		},
 		{
+			name:            "dns_policy",
+			resource:        NewDNSPolicyResource(),
+			requiredStrings: []string{"type"},
+		},
+		{
 			name:            "firewall_policy_ordering",
 			resource:        NewFirewallPolicyOrderingResource(),
 			requiredStrings: []string{"source_firewall_zone_id", "destination_firewall_zone_id"},
@@ -162,5 +167,29 @@ func TestFirewallZoneSchema(t *testing.T) {
 	}
 	if !attr.Required {
 		t.Fatal("network_ids should be required")
+	}
+}
+
+func TestDNSPolicySchema(t *testing.T) {
+	resp := &resource.SchemaResponse{}
+	NewDNSPolicyResource().Schema(context.Background(), resource.SchemaRequest{}, resp)
+	if resp.Diagnostics.HasError() {
+		t.Fatalf("dns policy schema diagnostics: %v", resp.Diagnostics)
+	}
+
+	enabledAttr, ok := resp.Schema.Attributes["enabled"].(schema.BoolAttribute)
+	if !ok {
+		t.Fatal("enabled attribute missing or not bool")
+	}
+	if !enabledAttr.Required {
+		t.Fatal("enabled should be required")
+	}
+
+	domainAttr, ok := resp.Schema.Attributes["domain"].(schema.StringAttribute)
+	if !ok {
+		t.Fatal("domain attribute missing or not string")
+	}
+	if !domainAttr.Computed {
+		t.Fatal("domain should be computed")
 	}
 }
