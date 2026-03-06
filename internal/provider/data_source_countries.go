@@ -2,6 +2,8 @@ package provider
 
 import (
 	"context"
+	"fmt"
+	"math"
 	"sort"
 
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
@@ -24,6 +26,11 @@ type countriesDataSourceItemModel struct {
 	Code types.String `tfsdk:"code"`
 	Name types.String `tfsdk:"name"`
 }
+
+const (
+	countriesPageSize = int32(200)
+	countriesMaxPages = 1000
+)
 
 func NewCountriesDataSource() datasource.DataSource {
 	return &countriesDataSource{}
@@ -75,15 +82,60 @@ func (d *countriesDataSource) Read(ctx context.Context, req datasource.ReadReque
 		return
 	}
 
-	var result networkapi.CountryDefinitionPage
-	if err := d.client.Get(ctx, "/v1/countries", &result); err != nil {
+	allCountries, err := d.listAllCountries(ctx)
+	if err != nil {
 		resp.Diagnostics.AddError("Unable to list countries", err.Error())
 		return
 	}
 
 	state.ID = types.StringValue("countries")
-	state.Countries = countriesFromAPI(result.Data)
+	state.Countries = countriesFromAPI(allCountries)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
+}
+
+func (d *countriesDataSource) listAllCountries(ctx context.Context) ([]networkapi.CountryDefinition, error) {
+	return collectCountriesPages(countriesPageSize, countriesMaxPages, func(offset, limit int32) (networkapi.CountryDefinitionPage, error) {
+		apiPath := fmt.Sprintf("/v1/countries?offset=%d&limit=%d", offset, limit)
+		var page networkapi.CountryDefinitionPage
+		if err := d.client.Get(ctx, apiPath, &page); err != nil {
+			return networkapi.CountryDefinitionPage{}, err
+		}
+		return page, nil
+	})
+}
+
+func collectCountriesPages(pageSize int32, maxPages int, fetch func(offset, limit int32) (networkapi.CountryDefinitionPage, error)) ([]networkapi.CountryDefinition, error) {
+	offset := int32(0)
+	allCountries := make([]networkapi.CountryDefinition, 0)
+
+	for page := 0; page < maxPages; page++ {
+		result, err := fetch(offset, pageSize)
+		if err != nil {
+			return nil, err
+		}
+
+		pageCount := len(result.Data)
+		if pageCount == 0 {
+			return allCountries, nil
+		}
+
+		allCountries = append(allCountries, result.Data...)
+		nextOffset := int64(offset) + int64(pageCount)
+		if nextOffset > math.MaxInt32 {
+			return nil, fmt.Errorf("countries pagination offset exceeded int32: %d", nextOffset)
+		}
+
+		if result.TotalCount > 0 && nextOffset >= result.TotalCount {
+			return allCountries, nil
+		}
+		if int32(pageCount) < pageSize {
+			return allCountries, nil
+		}
+
+		offset = int32(nextOffset)
+	}
+
+	return nil, fmt.Errorf("countries pagination exceeded %d pages", maxPages)
 }
 
 func countriesFromAPI(items []networkapi.CountryDefinition) []countriesDataSourceItemModel {
