@@ -37,6 +37,4 @@ resource "unifi_network" "lan" {
 
 - `id` (String) The resolved site ID.
 - `site_id` (String) The resolved site ID.
-- `host_id` (String) The host ID for the site.
-- `description` (String) Site description.
-- `timezone` (String) Site timezone.
+- `internal_reference` (String) Internal unique site name used in older APIs.
