@@ -28,6 +28,21 @@ func TestResourceSchemas(t *testing.T) {
 			requiredStrings: []string{"type"},
 		},
 		{
+			name:            "dns_a_record",
+			resource:        NewDNSARecordResource(),
+			requiredStrings: []string{"ipv4_address"},
+		},
+		{
+			name:            "dns_aaaa_record",
+			resource:        NewDNSAAAARecordResource(),
+			requiredStrings: []string{"ipv6_address"},
+		},
+		{
+			name:            "dns_cname_record",
+			resource:        NewDNSCNAMERecordResource(),
+			requiredStrings: []string{"target_domain"},
+		},
+		{
 			name:            "firewall_policy_ordering",
 			resource:        NewFirewallPolicyOrderingResource(),
 			requiredStrings: []string{"source_firewall_zone_id", "destination_firewall_zone_id"},

@@ -14,7 +14,7 @@
 - Prefer the smallest stable scope: split the managed resources first, then adapt docs/tests around them.
 
 ## Plan
-- [ ] Define the Terraform resource model for each DNS policy variant and decide what happens to the generic `unifi_dns_policy` resource.
+- [x] Define the Terraform resource model for each DNS policy variant and decide what happens to the generic `unifi_dns_policy` resource.
 - [ ] Implement shared DNS policy CRUD helpers plus one resource per DNS policy type.
 - [ ] Add schema/unit tests for each new resource and regression coverage for mapping/state handling.
 - [ ] Update provider registration and remove or deprecate the generic resource as decided.
@@ -28,4 +28,5 @@
 - Tests pass with `go test ./...`.
 
 ## Results
-- In planning.
+- Added shared typed DNS policy helper code and the first typed resources for `A_RECORD`, `AAAA_RECORD`, and `CNAME_RECORD`.
+- Added unit coverage for the new record payload/state mapping.
