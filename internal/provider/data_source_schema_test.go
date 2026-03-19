@@ -53,7 +53,7 @@ func TestDataSourceSchemas(t *testing.T) {
 		{
 			name:            "firewall_zone",
 			dataSource:      NewFirewallZoneDataSource(),
-			requiredStrings: []string{"zone_id"},
+			requiredStrings: []string{"name"},
 		},
 		{
 			name:            "firewall_zones",
@@ -148,6 +148,30 @@ func TestFirewallZonesDataSourceSchema(t *testing.T) {
 
 	if _, ok := attr.NestedObject.Attributes["network_ids"].(schema.ListAttribute); !ok {
 		t.Fatal("zones.network_ids attribute missing or not list")
+	}
+}
+
+func TestFirewallZoneDataSourceSchema(t *testing.T) {
+	resp := &datasource.SchemaResponse{}
+	NewFirewallZoneDataSource().Schema(context.Background(), datasource.SchemaRequest{}, resp)
+	if resp.Diagnostics.HasError() {
+		t.Fatalf("firewall_zone schema diagnostics: %v", resp.Diagnostics)
+	}
+
+	nameAttr, ok := resp.Schema.Attributes["name"].(schema.StringAttribute)
+	if !ok {
+		t.Fatal("name attribute missing or not string")
+	}
+	if !nameAttr.Required {
+		t.Fatal("name should be required")
+	}
+
+	zoneIDAttr, ok := resp.Schema.Attributes["zone_id"].(schema.StringAttribute)
+	if !ok {
+		t.Fatal("zone_id attribute missing or not string")
+	}
+	if !zoneIDAttr.Computed {
+		t.Fatal("zone_id should be computed")
 	}
 }
 

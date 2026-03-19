@@ -3,6 +3,7 @@ package provider
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -10,7 +11,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/ilmax/terraform-provider-unifi/internal/sdkcompat/zones"
 	"github.com/ilmax/terraform-provider-unifi/internal/unifi"
-	"github.com/ilmax/unifi-client-go/pkg/errors"
 )
 
 type firewallZoneDataSource struct {
@@ -44,10 +44,10 @@ func (d *firewallZoneDataSource) Schema(ctx context.Context, req datasource.Sche
 			"site_id": schema.StringAttribute{
 				Optional: true,
 			},
-			"zone_id": schema.StringAttribute{
+			"name": schema.StringAttribute{
 				Required: true,
 			},
-			"name": schema.StringAttribute{
+			"zone_id": schema.StringAttribute{
 				Computed: true,
 			},
 			"network_ids": schema.ListAttribute{
@@ -86,34 +86,52 @@ func (d *firewallZoneDataSource) Read(ctx context.Context, req datasource.ReadRe
 		return
 	}
 
-	zoneID := config.ZoneID.ValueString()
-	if zoneID == "" {
-		resp.Diagnostics.AddAttributeError(path.Root("zone_id"), "Missing zone_id", "zone_id must be provided.")
+	name := strings.TrimSpace(config.Name.ValueString())
+	if name == "" {
+		resp.Diagnostics.AddAttributeError(path.Root("name"), "Missing name", "name must be provided.")
 		return
 	}
 
-	apiPath := fmt.Sprintf("/v1/sites/%s/firewall/zones/%s", siteID, zoneID)
-	var result zones.GetFirewallZoneResponse
+	apiPath := fmt.Sprintf("/v1/sites/%s/firewall/zones", siteID)
+	var result zones.ListFirewallZonesResponse
 	if err := d.client.Get(ctx, apiPath, &result); err != nil {
-		if errors.IsNotFoundError(err) {
-			resp.Diagnostics.AddError("Firewall zone not found", fmt.Sprintf("Firewall zone %q was not found in site %q.", zoneID, siteID))
-			return
-		}
 		resp.Diagnostics.AddError("Unable to read firewall zone", err.Error())
 		return
 	}
 
+	matches := matchFirewallZonesByName(result.Data, name)
+	if len(matches) == 0 {
+		resp.Diagnostics.AddError("Firewall zone not found", fmt.Sprintf("Firewall zone with name %q was not found in site %q.", name, siteID))
+		return
+	}
+	if len(matches) > 1 {
+		resp.Diagnostics.AddError("Duplicate firewall zone names", fmt.Sprintf("Found %d firewall zones named %q in site %q. Use a unique zone name.", len(matches), name, siteID))
+		return
+	}
+
+	zone := matches[0]
 	state := firewallZoneDataSourceModel{
-		ID:         types.StringValue(result.Id),
+		ID:         types.StringValue(zone.Id),
 		SiteID:     types.StringValue(siteID),
-		ZoneID:     types.StringValue(result.Id),
-		Name:       types.StringValue(result.Name),
-		NetworkIDs: rawMessagesToStringList(result.NetworkIds),
+		ZoneID:     types.StringValue(zone.Id),
+		Name:       types.StringValue(zone.Name),
+		NetworkIDs: rawMessagesToStringList(zone.NetworkIds),
 		Origin:     types.StringNull(),
 	}
-	if result.Metadata != nil {
-		state.Origin = stringValueOrNull(result.Metadata.Origin)
+	if zone.Metadata != nil {
+		state.Origin = stringValueOrNull(zone.Metadata.Origin)
 	}
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
+}
+
+func matchFirewallZonesByName(items []zones.ListFirewallZonesData, name string) []zones.ListFirewallZonesData {
+	normalized := strings.TrimSpace(name)
+	matches := make([]zones.ListFirewallZonesData, 0)
+	for _, item := range items {
+		if strings.EqualFold(strings.TrimSpace(item.Name), normalized) {
+			matches = append(matches, item)
+		}
+	}
+	return matches
 }

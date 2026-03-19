@@ -4,14 +4,14 @@ page_title: "unifi_firewall_zone Data Source"
 
 # unifi_firewall_zone (Data Source)
 
-Reads a single firewall zone by zone ID.
+Reads a single firewall zone by name.
 
 ## Example Usage
 
 ```hcl
 data "unifi_firewall_zone" "example" {
   site_id = var.unifi_site_id
-  zone_id = "ed426e98-252f-4ff2-982b-d475007f085f"
+  name    = "trusted"
 }
 ```
 
@@ -19,7 +19,7 @@ data "unifi_firewall_zone" "example" {
 
 ### Required
 
-- `zone_id` (String) Firewall zone identifier.
+- `name` (String) Firewall zone name.
 
 ### Optional
 
@@ -28,6 +28,7 @@ data "unifi_firewall_zone" "example" {
 ### Read-Only
 
 - `id` (String) Firewall zone identifier.
+- `zone_id` (String) Firewall zone identifier.
 - `name` (String) Firewall zone name.
 - `network_ids` (List of String) Attached network IDs.
 - `origin` (String) Zone origin metadata.
