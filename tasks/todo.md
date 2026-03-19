@@ -1,21 +1,18 @@
 # Todo
 
 ## Working Notes
-- Rework `unifi_countries.countries` to be a map keyed by country name.
-- Desired usage: `data.unifi_countries.all.countries["China"].code`
+- Upgrade `github.com/ilmax/unifi-client-go` from `v0.1.6` to `v0.1.7`.
+- Fix only the breakage introduced by `v0.1.7` and keep the provider behavior stable otherwise.
 
 ## Plan
-- [x] Change `unifi_countries.countries` from a list to a map keyed by country name.
-- [x] Update tests and docs for the new access pattern.
-- [x] Verify with `go test ./...`.
+- [ ] Update `go.mod`/`go.sum` to `github.com/ilmax/unifi-client-go v0.1.7`.
+- [ ] Fix any compile or test failures introduced by the SDK update.
+- [ ] Verify with `go test ./...`.
 
 ## Acceptance Criteria
-- `data.unifi_countries.all.countries["China"].code` works.
-- `countries` is exposed as a map keyed by country name.
+- Provider builds and tests cleanly against `github.com/ilmax/unifi-client-go@v0.1.7`.
+- Existing provider behavior remains unchanged unless `v0.1.7` requires an adjustment.
 - Tests pass.
 
 ## Results
-- `unifi_countries.countries` is now a map keyed by country name.
-- Value objects now expose `code`, enabling `countries["China"].code`.
-- Updated tests and documentation for the new HCL usage pattern.
-- Verified with `go test ./...`.
+- In progress.
