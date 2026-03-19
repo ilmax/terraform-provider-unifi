@@ -1,23 +1,20 @@
 # Todo
 
 ## Working Notes
-- Remove `network_ids` from the managed `unifi_firewall_zone` resource.
-- Keep `network_ids` on firewall zone data sources.
-- Preserve existing zone assignment behavior by continuing to read current assignments during updates.
+- Change `unifi_firewall_zone` data source lookup from zone ID to zone name.
+- Keep `zone_id` as a computed output so callers can still use the identifier downstream.
+- Return a clear error when no zone matches or multiple zones share the same name.
 
 ## Plan
-- [x] Remove `network_ids` from `unifi_firewall_zone` schema and state handling.
-- [x] Update resource schema tests and docs to reflect the narrower resource surface.
-- [x] Verify with `go test ./...`.
+- [ ] Update `unifi_firewall_zone` data source schema and read logic to look up by `name`.
+- [ ] Add/update tests and docs for the new lookup behavior.
+- [ ] Verify with `go test ./...`.
 
 ## Acceptance Criteria
-- `unifi_firewall_zone` no longer exposes `network_ids`.
-- `unifi_firewall_zone` updates still preserve current assignments server-side.
-- Firewall zone data sources still expose `network_ids`.
+- `unifi_firewall_zone` data source requires `name` instead of `zone_id`.
+- The data source returns `zone_id` as a computed output.
+- Duplicate or missing zone names produce clear diagnostics.
 - Tests pass with `go test ./...`.
 
 ## Results
-- Removed `network_ids` from the `unifi_firewall_zone` resource schema and state handling.
-- Kept assignment preservation in update logic by still reusing current server-side network assignments.
-- Updated firewall zone resource docs and schema tests.
-- Verified with `go test ./...`.
+- In progress.
