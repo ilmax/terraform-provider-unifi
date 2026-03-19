@@ -6,6 +6,18 @@ page_title: "unifi_dns_policies Data Source"
 
 Lists DNS policies for a site, with optional filtering by type and domain.
 
+## DNS Policy Types
+
+The `type` filter and each returned policy `type` can currently be one of:
+
+- `A_RECORD`
+- `AAAA_RECORD`
+- `CNAME_RECORD`
+- `FORWARD_DOMAIN`
+- `MX_RECORD`
+- `SRV_RECORD`
+- `TXT_RECORD`
+
 ## Example Usage
 
 ```hcl
@@ -15,8 +27,8 @@ data "unifi_dns_policies" "all" {
 
 data "unifi_dns_policies" "blocked_domain" {
   site_id = var.unifi_site_id
-  type    = "BLOCK"
-  domain  = "ads.example"
+  type    = "FORWARD_DOMAIN"
+  domain  = "lab.example"
 }
 ```
 
@@ -25,7 +37,7 @@ data "unifi_dns_policies" "blocked_domain" {
 ### Optional
 
 - `site_id` (String) Site identifier (defaults to provider `site_id`).
-- `type` (String) Case-insensitive DNS policy type filter.
+- `type` (String) Case-insensitive DNS policy type filter. See supported values above.
 - `domain` (String) Case-insensitive DNS policy domain filter.
 
 ### Read-Only
@@ -36,7 +48,7 @@ data "unifi_dns_policies" "blocked_domain" {
 ### `policies` Object
 
 - `id` (String) DNS policy identifier.
-- `type` (String) DNS policy type.
+- `type` (String) DNS policy type. See supported values above.
 - `enabled` (Boolean) DNS policy enabled state.
 - `domain` (String) DNS policy domain (when present).
 - `origin` (String) DNS policy origin metadata.
