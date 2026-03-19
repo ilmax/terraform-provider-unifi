@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"math"
-	"sort"
 
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -18,13 +17,12 @@ type countriesDataSource struct {
 }
 
 type countriesDataSourceModel struct {
-	ID        types.String                   `tfsdk:"id"`
-	Countries []countriesDataSourceItemModel `tfsdk:"countries"`
+	ID        types.String                            `tfsdk:"id"`
+	Countries map[string]countriesDataSourceItemModel `tfsdk:"countries"`
 }
 
 type countriesDataSourceItemModel struct {
 	Code types.String `tfsdk:"code"`
-	Name types.String `tfsdk:"name"`
 }
 
 const (
@@ -46,14 +44,11 @@ func (d *countriesDataSource) Schema(ctx context.Context, req datasource.SchemaR
 			"id": schema.StringAttribute{
 				Computed: true,
 			},
-			"countries": schema.ListNestedAttribute{
+			"countries": schema.MapNestedAttribute{
 				Computed: true,
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
 						"code": schema.StringAttribute{
-							Computed: true,
-						},
-						"name": schema.StringAttribute{
 							Computed: true,
 						},
 					},
@@ -138,19 +133,15 @@ func collectCountriesPages(pageSize int32, maxPages int, fetch func(offset, limi
 	return nil, fmt.Errorf("countries pagination exceeded %d pages", maxPages)
 }
 
-func countriesFromAPI(items []networkapi.CountryDefinition) []countriesDataSourceItemModel {
-	countries := make([]countriesDataSourceItemModel, 0, len(items))
+func countriesFromAPI(items []networkapi.CountryDefinition) map[string]countriesDataSourceItemModel {
+	countries := make(map[string]countriesDataSourceItemModel, len(items))
 	for _, item := range items {
-		countries = append(countries, countriesDataSourceItemModel{
+		if item.Name == "" {
+			continue
+		}
+		countries[item.Name] = countriesDataSourceItemModel{
 			Code: stringValueOrNull(item.Code),
-			Name: stringValueOrNull(item.Name),
-		})
+		}
 	}
-
-	// Keep a deterministic order for stable plans.
-	sort.SliceStable(countries, func(i, j int) bool {
-		return countries[i].Name.ValueString() < countries[j].Name.ValueString()
-	})
-
 	return countries
 }

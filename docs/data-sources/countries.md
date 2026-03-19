@@ -4,7 +4,7 @@ page_title: "unifi_countries Data Source"
 
 # unifi_countries (Data Source)
 
-Reads the full UniFi country catalog (ISO code + display name).
+Reads the full UniFi country catalog as a map keyed by country name.
 
 The provider automatically paginates the `/v1/countries` endpoint to return
 all available countries, not only the first page.
@@ -15,10 +15,7 @@ all available countries, not only the first page.
 data "unifi_countries" "all" {}
 
 locals {
-  country_code_by_name = {
-    for c in data.unifi_countries.all.countries :
-    c.name => c.code
-  }
+  china_code = data.unifi_countries.all.countries["China"].code
 }
 ```
 
@@ -27,9 +24,14 @@ locals {
 ### Read-Only
 
 - `id` (String) Constant data source identifier (`countries`).
-- `countries` (List of Object) Full list of countries.
+- `countries` (Map of Object) Full country catalog keyed by country name.
 
-### `countries` Object
+Example access:
+
+```hcl
+data.unifi_countries.all.countries["China"].code
+```
+
+### `countries` Value Object
 
 - `code` (String) Country code in ISO 3166-1 alpha-2 format.
-- `name` (String) Country display name.
