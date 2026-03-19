@@ -120,6 +120,47 @@ func TestResourceSchemas(t *testing.T) {
 	}
 }
 
+func TestSiteScopedResourcesUseOptionalSiteID(t *testing.T) {
+	checks := []struct {
+		name     string
+		resource resource.Resource
+	}{
+		{name: "acl_rule_ordering", resource: NewACLRuleOrderingResource()},
+		{name: "dns_a_record", resource: NewDNSARecordResource()},
+		{name: "dns_aaaa_record", resource: NewDNSAAAARecordResource()},
+		{name: "dns_cname_record", resource: NewDNSCNAMERecordResource()},
+		{name: "dns_forward_domain_policy", resource: NewDNSForwardDomainPolicyResource()},
+		{name: "dns_mx_record", resource: NewDNSMXRecordResource()},
+		{name: "dns_srv_record", resource: NewDNSSRVRecordResource()},
+		{name: "dns_txt_record", resource: NewDNSTXTRecordResource()},
+		{name: "firewall_policy_ordering", resource: NewFirewallPolicyOrderingResource()},
+		{name: "firewall_rule", resource: NewFirewallRuleResource()},
+		{name: "firewall_zone", resource: NewFirewallZoneResource()},
+		{name: "firewall_zone_networks", resource: NewFirewallZoneNetworksResource()},
+		{name: "network", resource: NewNetworkResource()},
+		{name: "wifi", resource: NewWifiResource()},
+	}
+
+	for _, check := range checks {
+		resp := &resource.SchemaResponse{}
+		check.resource.Schema(context.Background(), resource.SchemaRequest{}, resp)
+		if resp.Diagnostics.HasError() {
+			t.Fatalf("%s schema diagnostics: %v", check.name, resp.Diagnostics)
+		}
+
+		attr, ok := resp.Schema.Attributes["site_id"].(schema.StringAttribute)
+		if !ok {
+			t.Fatalf("%s: site_id attribute missing or not string", check.name)
+		}
+		if !attr.Optional {
+			t.Fatalf("%s: site_id should be optional", check.name)
+		}
+		if attr.Required {
+			t.Fatalf("%s: site_id should not be required", check.name)
+		}
+	}
+}
+
 func TestNetworkSchemaNested(t *testing.T) {
 	resp := &resource.SchemaResponse{}
 	NewNetworkResource().Schema(context.Background(), resource.SchemaRequest{}, resp)

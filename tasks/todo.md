@@ -7,11 +7,11 @@
 
 ## Plan
 - [x] Audit current site-scoped resources/data sources for `site_id` schema, resolution, and persisted state behavior.
-- [ ] Update `AGENTS.md` with explicit DOs and DON'Ts for provider-level `site_id` support.
-- [ ] Fix any resource/data source inconsistencies in runtime or state handling.
-- [ ] Add regression tests that enforce optional `site_id` on all site-scoped resources/data sources and verify precedence helpers.
-- [ ] Update docs so provider-level `site_id` behavior is described consistently.
-- [ ] Verify with `go test ./...`.
+- [x] Update `AGENTS.md` with explicit DOs and DON'Ts for provider-level `site_id` support.
+- [x] Fix any resource/data source inconsistencies in runtime or state handling.
+- [x] Add regression tests that enforce optional `site_id` on all site-scoped resources/data sources and verify precedence helpers.
+- [x] Update docs so provider-level `site_id` behavior is described consistently.
+- [x] Verify with `go test ./...`.
 
 ## Acceptance Criteria
 - Every site-scoped resource and data source accepts optional `site_id`.
@@ -21,4 +21,8 @@
 - Tests pass with `go test ./...`.
 
 ## Results
-- In progress.
+- Audited site-scoped resources and data sources and confirmed they already resolve `site_id` through the shared helper at runtime.
+- Added explicit repository rules for provider-level `site_id` handling in `AGENTS.md`.
+- Added regression tests for `resolveSiteID` precedence and for optional `site_id` on all site-scoped resources and data sources.
+- Updated README, provider index, and site-scoped docs to describe the same `site_id` precedence consistently.
+- Verified with `go test ./...`.

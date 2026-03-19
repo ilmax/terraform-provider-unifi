@@ -99,6 +99,41 @@ func TestDataSourceSchemas(t *testing.T) {
 	}
 }
 
+func TestSiteScopedDataSourcesUseOptionalSiteID(t *testing.T) {
+	checks := []struct {
+		name       string
+		dataSource datasource.DataSource
+	}{
+		{name: "acl_rules", dataSource: NewACLRulesDataSource()},
+		{name: "client", dataSource: NewClientDataSource()},
+		{name: "device", dataSource: NewDeviceDataSource()},
+		{name: "dns_policy", dataSource: NewDNSPolicyDataSource()},
+		{name: "dns_policies", dataSource: NewDNSPoliciesDataSource()},
+		{name: "firewall_zone", dataSource: NewFirewallZoneDataSource()},
+		{name: "firewall_zones", dataSource: NewFirewallZonesDataSource()},
+		{name: "wan", dataSource: NewWanDataSource()},
+	}
+
+	for _, check := range checks {
+		resp := &datasource.SchemaResponse{}
+		check.dataSource.Schema(context.Background(), datasource.SchemaRequest{}, resp)
+		if resp.Diagnostics.HasError() {
+			t.Fatalf("%s schema diagnostics: %v", check.name, resp.Diagnostics)
+		}
+
+		attr, ok := resp.Schema.Attributes["site_id"].(schema.StringAttribute)
+		if !ok {
+			t.Fatalf("%s: site_id attribute missing or not string", check.name)
+		}
+		if !attr.Optional {
+			t.Fatalf("%s: site_id should be optional", check.name)
+		}
+		if attr.Required {
+			t.Fatalf("%s: site_id should not be required", check.name)
+		}
+	}
+}
+
 func TestFirewallZonesDataSourceSchema(t *testing.T) {
 	resp := &datasource.SchemaResponse{}
 	NewFirewallZonesDataSource().Schema(context.Background(), datasource.SchemaRequest{}, resp)
