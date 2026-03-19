@@ -23,11 +23,6 @@ func TestResourceSchemas(t *testing.T) {
 			requiredLists: []string{"ordered_acl_rule_ids"},
 		},
 		{
-			name:            "dns_policy",
-			resource:        NewDNSPolicyResource(),
-			requiredStrings: []string{"type"},
-		},
-		{
 			name:            "dns_a_record",
 			resource:        NewDNSARecordResource(),
 			requiredStrings: []string{"ipv4_address"},
@@ -41,6 +36,26 @@ func TestResourceSchemas(t *testing.T) {
 			name:            "dns_cname_record",
 			resource:        NewDNSCNAMERecordResource(),
 			requiredStrings: []string{"target_domain"},
+		},
+		{
+			name:            "dns_forward_domain_policy",
+			resource:        NewDNSForwardDomainPolicyResource(),
+			requiredStrings: []string{"ip_address"},
+		},
+		{
+			name:            "dns_mx_record",
+			resource:        NewDNSMXRecordResource(),
+			requiredStrings: []string{"mail_server_domain"},
+		},
+		{
+			name:            "dns_srv_record",
+			resource:        NewDNSSRVRecordResource(),
+			requiredStrings: []string{"service", "protocol", "server_domain"},
+		},
+		{
+			name:            "dns_txt_record",
+			resource:        NewDNSTXTRecordResource(),
+			requiredStrings: []string{"text"},
 		},
 		{
 			name:            "firewall_policy_ordering",
@@ -191,29 +206,5 @@ func TestFirewallZoneSchema(t *testing.T) {
 	}
 	if attr.Required {
 		t.Fatal("network_ids should not be required")
-	}
-}
-
-func TestDNSPolicySchema(t *testing.T) {
-	resp := &resource.SchemaResponse{}
-	NewDNSPolicyResource().Schema(context.Background(), resource.SchemaRequest{}, resp)
-	if resp.Diagnostics.HasError() {
-		t.Fatalf("dns policy schema diagnostics: %v", resp.Diagnostics)
-	}
-
-	enabledAttr, ok := resp.Schema.Attributes["enabled"].(schema.BoolAttribute)
-	if !ok {
-		t.Fatal("enabled attribute missing or not bool")
-	}
-	if !enabledAttr.Required {
-		t.Fatal("enabled should be required")
-	}
-
-	domainAttr, ok := resp.Schema.Attributes["domain"].(schema.StringAttribute)
-	if !ok {
-		t.Fatal("domain attribute missing or not string")
-	}
-	if !domainAttr.Computed {
-		t.Fatal("domain should be computed")
 	}
 }

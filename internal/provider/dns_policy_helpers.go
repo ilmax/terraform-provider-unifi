@@ -321,6 +321,13 @@ func terraformInt32Pointer(value types.Int64, attributePath path.Path) (*int32, 
 	return &out, diags
 }
 
+func diagnosticsError(diags diag.Diagnostics) error {
+	if len(diags) == 0 {
+		return nil
+	}
+	return fmt.Errorf("%s", diags[0].Summary())
+}
+
 func stringPointerValueOrNull(value *string) types.String {
 	if value == nil {
 		return types.StringNull()

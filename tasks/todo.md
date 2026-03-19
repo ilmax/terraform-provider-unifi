@@ -15,11 +15,11 @@
 
 ## Plan
 - [x] Define the Terraform resource model for each DNS policy variant and decide what happens to the generic `unifi_dns_policy` resource.
-- [ ] Implement shared DNS policy CRUD helpers plus one resource per DNS policy type.
-- [ ] Add schema/unit tests for each new resource and regression coverage for mapping/state handling.
-- [ ] Update provider registration and remove or deprecate the generic resource as decided.
+- [x] Implement shared DNS policy CRUD helpers plus one resource per DNS policy type.
+- [x] Add schema/unit tests for each new resource and regression coverage for mapping/state handling.
+- [x] Update provider registration and remove or deprecate the generic resource as decided.
 - [ ] Update documentation and examples for each DNS policy resource.
-- [ ] Verify with `go test ./...`.
+- [x] Verify with `go test ./...`.
 
 ## Acceptance Criteria
 - Each DNS policy API variant has its own Terraform resource with typed attributes.
@@ -30,3 +30,5 @@
 ## Results
 - Added shared typed DNS policy helper code and the first typed resources for `A_RECORD`, `AAAA_RECORD`, and `CNAME_RECORD`.
 - Added unit coverage for the new record payload/state mapping.
+- Added the remaining typed resources for `FORWARD_DOMAIN`, `MX_RECORD`, `SRV_RECORD`, and `TXT_RECORD`.
+- Removed the generic `unifi_dns_policy` resource from the provider and deleted its implementation/tests.
