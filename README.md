@@ -74,6 +74,7 @@ export TF_LOG_PATH=./terraform.log
 - `unifi_device`
 - `unifi_firewall_zone`
 - `unifi_firewall_zones`
+- `unifi_site`
 - `unifi_wan`
 
 ## Actions
