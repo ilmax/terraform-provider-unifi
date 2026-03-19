@@ -3,7 +3,6 @@ package provider
 import (
 	"context"
 	"fmt"
-	"net/url"
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
@@ -11,11 +10,11 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/ilmax/terraform-provider-unifi/internal/unifi"
-	"github.com/ilmax/unifi-client-go/pkg/sitemanager"
+	networkapi "github.com/ilmax/unifi-client-go/pkg/network"
 )
 
 const (
-	sitePageSize = 200
+	sitePageSize = int32(200)
 	siteMaxPages = 1000
 )
 
@@ -24,12 +23,10 @@ type siteDataSource struct {
 }
 
 type siteDataSourceModel struct {
-	ID          types.String `tfsdk:"id"`
-	Name        types.String `tfsdk:"name"`
-	SiteID      types.String `tfsdk:"site_id"`
-	HostID      types.String `tfsdk:"host_id"`
-	Description types.String `tfsdk:"description"`
-	Timezone    types.String `tfsdk:"timezone"`
+	ID                types.String `tfsdk:"id"`
+	Name              types.String `tfsdk:"name"`
+	SiteID            types.String `tfsdk:"site_id"`
+	InternalReference types.String `tfsdk:"internal_reference"`
 }
 
 func NewSiteDataSource() datasource.DataSource {
@@ -52,13 +49,7 @@ func (d *siteDataSource) Schema(ctx context.Context, req datasource.SchemaReques
 			"site_id": schema.StringAttribute{
 				Computed: true,
 			},
-			"host_id": schema.StringAttribute{
-				Computed: true,
-			},
-			"description": schema.StringAttribute{
-				Computed: true,
-			},
-			"timezone": schema.StringAttribute{
+			"internal_reference": schema.StringAttribute{
 				Computed: true,
 			},
 		},
@@ -110,54 +101,55 @@ func (d *siteDataSource) Read(ctx context.Context, req datasource.ReadRequest, r
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
-func (d *siteDataSource) listAllSites(ctx context.Context) ([]sitemanager.Site, error) {
-	allSites := make([]sitemanager.Site, 0)
-	nextToken := ""
+func (d *siteDataSource) listAllSites(ctx context.Context) ([]networkapi.SiteOverview, error) {
+	allSites := make([]networkapi.SiteOverview, 0)
+	offset := int32(0)
 
 	for page := 0; page < siteMaxPages; page++ {
-		path := buildSiteListPath(sitePageSize, nextToken)
-		var response sitemanager.ListSitesResponse
+		path := buildSiteListPath(sitePageSize, offset)
+		var response networkapi.SiteOverviewPage
 		if err := d.client.Get(ctx, path, &response); err != nil {
 			return nil, err
 		}
 
 		allSites = append(allSites, response.Data...)
-		if strings.TrimSpace(response.NextToken) == "" {
+		pageCount := int32(len(response.Data))
+		if pageCount == 0 {
 			return allSites, nil
 		}
-		nextToken = response.NextToken
+		nextOffset := offset + pageCount
+		if response.TotalCount > 0 && int64(nextOffset) >= response.TotalCount {
+			return allSites, nil
+		}
+		if pageCount < sitePageSize {
+			return allSites, nil
+		}
+		offset = nextOffset
 	}
 
 	return nil, fmt.Errorf("site pagination exceeded %d pages", siteMaxPages)
 }
 
-func buildSiteListPath(pageSize int, nextToken string) string {
-	values := url.Values{}
-	values.Set("pageSize", fmt.Sprintf("%d", pageSize))
-	if strings.TrimSpace(nextToken) != "" {
-		values.Set("nextToken", nextToken)
-	}
-	return "/v1/sites?" + values.Encode()
+func buildSiteListPath(pageSize, offset int32) string {
+	return fmt.Sprintf("/v1/sites?limit=%d&offset=%d", pageSize, offset)
 }
 
-func matchSitesByName(sites []sitemanager.Site, name string) []sitemanager.Site {
+func matchSitesByName(sites []networkapi.SiteOverview, name string) []networkapi.SiteOverview {
 	normalizedName := strings.TrimSpace(name)
-	matches := make([]sitemanager.Site, 0)
+	matches := make([]networkapi.SiteOverview, 0)
 	for _, site := range sites {
-		if strings.EqualFold(strings.TrimSpace(site.Meta.Name), normalizedName) {
+		if strings.EqualFold(strings.TrimSpace(site.Name), normalizedName) {
 			matches = append(matches, site)
 		}
 	}
 	return matches
 }
 
-func siteStateFromAPI(site sitemanager.Site) siteDataSourceModel {
+func siteStateFromAPI(site networkapi.SiteOverview) siteDataSourceModel {
 	return siteDataSourceModel{
-		ID:          stringValueOrNull(site.SiteID),
-		Name:        stringValueOrNull(site.Meta.Name),
-		SiteID:      stringValueOrNull(site.SiteID),
-		HostID:      stringValueOrNull(site.HostID),
-		Description: stringValueOrNull(site.Meta.Desc),
-		Timezone:    stringValueOrNull(site.Meta.Timezone),
+		ID:                stringValueOrNull(site.Id.String()),
+		Name:              stringValueOrNull(site.Name),
+		SiteID:            stringValueOrNull(site.Id.String()),
+		InternalReference: stringValueOrNull(site.InternalReference),
 	}
 }

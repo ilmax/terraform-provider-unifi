@@ -3,58 +3,52 @@ package provider
 import (
 	"testing"
 
-	"github.com/ilmax/unifi-client-go/pkg/sitemanager"
+	"github.com/google/uuid"
+	networkapi "github.com/ilmax/unifi-client-go/pkg/network"
 )
 
 func TestBuildSiteListPath(t *testing.T) {
-	path := buildSiteListPath(200, "")
-	if path != "/v1/sites?pageSize=200" {
+	path := buildSiteListPath(200, 0)
+	if path != "/v1/sites?limit=200&offset=0" {
 		t.Fatalf("unexpected path: %s", path)
 	}
 
-	path = buildSiteListPath(200, "next-token")
-	if path != "/v1/sites?nextToken=next-token&pageSize=200" {
+	path = buildSiteListPath(200, 200)
+	if path != "/v1/sites?limit=200&offset=200" {
 		t.Fatalf("unexpected paginated path: %s", path)
 	}
 }
 
 func TestMatchSitesByName(t *testing.T) {
-	sites := []sitemanager.Site{
-		{SiteID: "1", Meta: sitemanager.SiteMeta{Name: "Home"}},
-		{SiteID: "2", Meta: sitemanager.SiteMeta{Name: "Lab"}},
-		{SiteID: "3", Meta: sitemanager.SiteMeta{Name: "home"}},
+	sites := []networkapi.SiteOverview{
+		{Id: uuid.MustParse("11111111-1111-1111-1111-111111111111"), Name: "Home"},
+		{Id: uuid.MustParse("22222222-2222-2222-2222-222222222222"), Name: "Lab"},
+		{Id: uuid.MustParse("33333333-3333-3333-3333-333333333333"), Name: "home"},
 	}
 
 	matches := matchSitesByName(sites, " HOME ")
 	if len(matches) != 2 {
 		t.Fatalf("expected 2 matches, got %d", len(matches))
 	}
-	if matches[0].SiteID != "1" || matches[1].SiteID != "3" {
+	if matches[0].Id.String() != "11111111-1111-1111-1111-111111111111" || matches[1].Id.String() != "33333333-3333-3333-3333-333333333333" {
 		t.Fatalf("unexpected matches: %#v", matches)
 	}
 }
 
 func TestSiteStateFromAPI(t *testing.T) {
-	state := siteStateFromAPI(sitemanager.Site{
-		SiteID: "site-1",
-		HostID: "host-1",
-		Meta: sitemanager.SiteMeta{
-			Name:     "Home",
-			Desc:     "Primary site",
-			Timezone: "Europe/Amsterdam",
-		},
+	state := siteStateFromAPI(networkapi.SiteOverview{
+		Id:                uuid.MustParse("11111111-1111-1111-1111-111111111111"),
+		Name:              "Home",
+		InternalReference: "default",
 	})
 
-	if state.ID.ValueString() != "site-1" {
+	if state.ID.ValueString() != "11111111-1111-1111-1111-111111111111" {
 		t.Fatalf("unexpected id: %s", state.ID.ValueString())
 	}
 	if state.Name.ValueString() != "Home" {
 		t.Fatalf("unexpected name: %s", state.Name.ValueString())
 	}
-	if state.Description.ValueString() != "Primary site" {
-		t.Fatalf("unexpected description: %s", state.Description.ValueString())
-	}
-	if state.Timezone.ValueString() != "Europe/Amsterdam" {
-		t.Fatalf("unexpected timezone: %s", state.Timezone.ValueString())
+	if state.InternalReference.ValueString() != "default" {
+		t.Fatalf("unexpected internal reference: %s", state.InternalReference.ValueString())
 	}
 }

@@ -13,7 +13,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/ilmax/terraform-provider-unifi/internal/unifi"
-	"github.com/ilmax/unifi-client-go/pkg/sitemanager"
 )
 
 const (
@@ -100,7 +99,7 @@ func (p *unifiProvider) Configure(ctx context.Context, req provider.ConfigureReq
 
 	apiURL := config.APIURL.ValueString()
 	if apiURL == "" {
-		apiURL = sitemanager.DefaultBaseURL
+		apiURL = unifi.DefaultBaseURL
 	}
 
 	allowInsecure := false

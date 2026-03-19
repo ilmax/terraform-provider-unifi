@@ -13,10 +13,11 @@ import (
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-log/tflog"
-	"github.com/ilmax/unifi-client-go/pkg/config"
 	"github.com/ilmax/unifi-client-go/pkg/errors"
-	"github.com/ilmax/unifi-client-go/pkg/sitemanager"
+	networkapi "github.com/ilmax/unifi-client-go/pkg/network"
 )
+
+const DefaultBaseURL = "https://api.ui.com"
 
 // Config configures the UniFi API client.
 type Config struct {
@@ -37,41 +38,35 @@ type Client struct {
 
 // NewClient creates a new UniFi API client.
 func NewClient(cfg Config) (*Client, error) {
-	sdkCfg := config.New()
-	opts := []config.ConfigOption{
-		config.ConfigAPIKey(cfg.APIKey),
-		config.ConfigBaseURL(cfg.BaseURL),
-	}
-	if cfg.UserAgent != "" {
-		opts = append(opts, config.ConfigUserAgent(cfg.UserAgent))
-	}
-	if cfg.AllowInsecure {
-		opts = append(opts, config.ConfigHTTPClient(insecureHTTPClient(cfg.Timeout)))
-	} else if cfg.Timeout != 0 {
-		opts = append(opts, config.ConfigTimeout(cfg.Timeout))
-	}
-	if err := sdkCfg.Init(opts); err != nil {
-		return nil, err
-	}
-	if sdkCfg.APIKey == "" {
+	apiKey := strings.TrimSpace(cfg.APIKey)
+	if apiKey == "" {
 		return nil, errors.ErrEmptyAPIKey
 	}
-	if sdkCfg.BaseURL == "" {
-		sdkCfg.BaseURL = sitemanager.DefaultBaseURL
+
+	baseURL := strings.TrimSpace(cfg.BaseURL)
+	if baseURL == "" {
+		baseURL = DefaultBaseURL
+	}
+
+	timeout := cfg.Timeout
+	if timeout == 0 {
+		timeout = networkapi.DefaultTimeout
+	}
+
+	httpClient := defaultHTTPClient(timeout, cfg.AllowInsecure)
+	if cfg.AllowInsecure {
+		httpClient = insecureHTTPClient(timeout)
 	}
 
 	return &Client{
-		httpClient: sdkCfg.HTTPClient,
-		baseURL:    strings.TrimSuffix(sdkCfg.BaseURL, "/"),
-		apiKey:     sdkCfg.APIKey,
-		userAgent:  sdkCfg.UserAgent,
+		httpClient: httpClient,
+		baseURL:    strings.TrimSuffix(baseURL, "/"),
+		apiKey:     apiKey,
+		userAgent:  strings.TrimSpace(cfg.UserAgent),
 	}, nil
 }
 
-func insecureHTTPClient(timeout time.Duration) *http.Client {
-	if timeout == 0 {
-		timeout = config.DefaultTimeout
-	}
+func defaultHTTPClient(timeout time.Duration, allowInsecure bool) *http.Client {
 	transport, ok := http.DefaultTransport.(*http.Transport)
 	if !ok {
 		return &http.Client{Timeout: timeout}
@@ -80,11 +75,15 @@ func insecureHTTPClient(timeout time.Duration) *http.Client {
 	if cloned.TLSClientConfig == nil {
 		cloned.TLSClientConfig = &tls.Config{}
 	}
-	cloned.TLSClientConfig.InsecureSkipVerify = true
+	cloned.TLSClientConfig.InsecureSkipVerify = allowInsecure
 	return &http.Client{
 		Timeout:   timeout,
 		Transport: cloned,
 	}
+}
+
+func insecureHTTPClient(timeout time.Duration) *http.Client {
+	return defaultHTTPClient(timeout, true)
 }
 
 // Get sends a GET request.
