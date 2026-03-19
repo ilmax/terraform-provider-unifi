@@ -1,24 +1,19 @@
 # Todo
 
 ## Working Notes
-- Align provider file naming with Terraform resource names for discoverability.
-- Add `unifi_acl_rules` data source to list all ACL rules.
+- Add `unifi_site` data source to resolve a site ID from a site name.
+- Sites are global, so this lookup should not depend on provider `site_id`.
 
 ## Plan
-- [x] Rename mismatched resource file(s), especially `unifi_firewall_rule`.
-- [x] Implement `unifi_acl_rules` data source with pagination support.
-- [x] Register the data source and add schema/unit tests.
-- [x] Update docs/README/index and verify with `go test ./...`.
+- [ ] Implement `unifi_site` data source with paginated site lookup by name.
+- [ ] Register it and add schema/unit tests.
+- [ ] Update docs/README/index and verify with `go test ./...`.
 
 ## Acceptance Criteria
-- `unifi_firewall_rule` implementation lives in a correspondingly named file.
-- `unifi_acl_rules` lists all ACL rules for a site.
+- `unifi_site` resolves `site_id` by site name.
+- Duplicate site names return a clear error.
 - Provider/docs expose the new data source.
 - Tests pass.
 
 ## Results
-- Renamed `resource_firewall.go` to `resource_firewall_rule.go` to match `unifi_firewall_rule`.
-- Added `unifi_acl_rules` data source with paginated retrieval of ACL rules.
-- Registered the new data source and added schema/unit tests.
-- Added docs for `unifi_acl_rules` and updated provider listings in `README.md` and `docs/index.md`.
-- Verified with `go test ./...`.
+- In progress.
