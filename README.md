@@ -56,7 +56,13 @@ export TF_LOG_PATH=./terraform.log
 ## Resources
 
 - `unifi_acl_rule_ordering`
-- `unifi_dns_policy`
+- `unifi_dns_a_record`
+- `unifi_dns_aaaa_record`
+- `unifi_dns_cname_record`
+- `unifi_dns_forward_domain_policy`
+- `unifi_dns_mx_record`
+- `unifi_dns_srv_record`
+- `unifi_dns_txt_record`
 - `unifi_firewall_policy_ordering`
 - `unifi_firewall_rule`
 - `unifi_firewall_zone`

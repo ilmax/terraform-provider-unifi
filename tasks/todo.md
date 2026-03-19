@@ -18,7 +18,7 @@
 - [x] Implement shared DNS policy CRUD helpers plus one resource per DNS policy type.
 - [x] Add schema/unit tests for each new resource and regression coverage for mapping/state handling.
 - [x] Update provider registration and remove or deprecate the generic resource as decided.
-- [ ] Update documentation and examples for each DNS policy resource.
+- [x] Update documentation and examples for each DNS policy resource.
 - [x] Verify with `go test ./...`.
 
 ## Acceptance Criteria
@@ -32,3 +32,4 @@
 - Added unit coverage for the new record payload/state mapping.
 - Added the remaining typed resources for `FORWARD_DOMAIN`, `MX_RECORD`, `SRV_RECORD`, and `TXT_RECORD`.
 - Removed the generic `unifi_dns_policy` resource from the provider and deleted its implementation/tests.
+- Added one resource document per DNS policy type and updated the provider index/README resource lists.

@@ -255,23 +255,6 @@ func importTypedDNSPolicyResource(ctx context.Context, req resource.ImportStateR
 	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), dnsPolicyID)...)
 }
 
-func buildDNSPolicyPayload(policyType string, enabled bool) (networkapi.CreateOrUpdateDNSPolicy, error) {
-	raw, err := json.Marshal(networkapi.CreateOrUpdateDNSPolicyBase{
-		Type:    policyType,
-		Enabled: enabled,
-	})
-	if err != nil {
-		return networkapi.CreateOrUpdateDNSPolicy{}, fmt.Errorf("encode dns policy payload: %w", err)
-	}
-
-	var payload networkapi.CreateOrUpdateDNSPolicy
-	if err := json.Unmarshal(raw, &payload); err != nil {
-		return networkapi.CreateOrUpdateDNSPolicy{}, fmt.Errorf("decode dns policy payload union: %w", err)
-	}
-
-	return payload, nil
-}
-
 func dnsPolicyBaseFromAPI(policy networkapi.DNSPolicy) (networkapi.DNSPolicyBase, error) {
 	raw, err := json.Marshal(policy)
 	if err != nil {
