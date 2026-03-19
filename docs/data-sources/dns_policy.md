@@ -17,6 +17,18 @@ data "unifi_dns_policy" "policy" {
 
 ## Schema
 
+## DNS Policy Types
+
+The returned `type` attribute can currently be one of:
+
+- `A_RECORD`
+- `AAAA_RECORD`
+- `CNAME_RECORD`
+- `FORWARD_DOMAIN`
+- `MX_RECORD`
+- `SRV_RECORD`
+- `TXT_RECORD`
+
 ### Required
 
 - `policy_id` (String) DNS policy identifier.
@@ -28,7 +40,7 @@ data "unifi_dns_policy" "policy" {
 ### Read-Only
 
 - `id` (String) DNS policy identifier.
-- `type` (String) DNS policy type.
+- `type` (String) DNS policy type. See supported values above.
 - `enabled` (Boolean) DNS policy enabled state.
 - `domain` (String) DNS policy domain (when present).
 - `origin` (String) DNS policy origin metadata.
