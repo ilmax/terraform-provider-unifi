@@ -31,6 +31,11 @@ func TestDataSourceSchemas(t *testing.T) {
 			requiredStrings: []string{"policy_id"},
 		},
 		{
+			name:            "site",
+			dataSource:      NewSiteDataSource(),
+			requiredStrings: []string{"name"},
+		},
+		{
 			name:            "dns_policies",
 			dataSource:      NewDNSPoliciesDataSource(),
 			optionalStrings: []string{"type", "domain"},

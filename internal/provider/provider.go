@@ -169,6 +169,7 @@ func (p *unifiProvider) DataSources(ctx context.Context) []func() datasource.Dat
 		NewDeviceDataSource,
 		NewFirewallZoneDataSource,
 		NewFirewallZonesDataSource,
+		NewSiteDataSource,
 		NewWanDataSource,
 	}
 }
