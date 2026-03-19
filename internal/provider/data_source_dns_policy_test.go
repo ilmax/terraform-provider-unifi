@@ -11,20 +11,23 @@ func TestDNSPolicyDataSourceStateFromAPI(t *testing.T) {
 	domain := "ads.example"
 	policyID := uuid.MustParse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")
 
-	state := dnsPolicyDataSourceStateFromAPI("site-id", networkapi.DNSPolicy{
+	state, err := dnsPolicyDataSourceStateFromAPI("site-id", mustDNSPolicyFromBase(t, networkapi.DNSPolicyBase{
 		Id:      policyID,
-		Type:    "BLOCK",
+		Type:    "FORWARD_DOMAIN",
 		Enabled: true,
 		Domain:  &domain,
 		Metadata: networkapi.UserDefinedEntityMetadata{
 			Origin: "USER_DEFINED",
 		},
-	})
+	}))
+	if err != nil {
+		t.Fatalf("dnsPolicyDataSourceStateFromAPI returned error: %v", err)
+	}
 
 	if state.PolicyID.ValueString() != policyID.String() {
 		t.Fatalf("unexpected policy_id: %s", state.PolicyID.ValueString())
 	}
-	if state.Type.ValueString() != "BLOCK" {
+	if state.Type.ValueString() != "FORWARD_DOMAIN" {
 		t.Fatalf("unexpected type: %s", state.Type.ValueString())
 	}
 	if state.Domain.IsNull() || state.Domain.ValueString() != "ads.example" {
@@ -37,12 +40,12 @@ func TestDNSPolicyDataSourceStateFromAPI(t *testing.T) {
 
 func TestDNSPolicyMatchesFilter(t *testing.T) {
 	domain := "ads.example"
-	policy := networkapi.DNSPolicy{
-		Type:   "BLOCK",
+	policy := networkapi.DNSPolicyBase{
+		Type:   "FORWARD_DOMAIN",
 		Domain: &domain,
 	}
 
-	if !dnsPolicyMatchesFilter(policy, "block", "ADS.EXAMPLE") {
+	if !dnsPolicyMatchesFilter(policy, "forward_domain", "ADS.EXAMPLE") {
 		t.Fatal("expected case-insensitive type+domain match")
 	}
 

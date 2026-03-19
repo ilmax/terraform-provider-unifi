@@ -93,9 +93,10 @@ func (r *dnsPolicyResource) Create(ctx context.Context, req resource.CreateReque
 		return
 	}
 
-	payload := networkapi.CreateOrUpdateDNSPolicy{
-		Type:    plan.Type.ValueString(),
-		Enabled: plan.Enabled.ValueBool(),
+	payload, err := buildDNSPolicyPayload(plan.Type.ValueString(), plan.Enabled.ValueBool())
+	if err != nil {
+		resp.Diagnostics.AddError("Unable to encode DNS policy", err.Error())
+		return
 	}
 
 	apiPath := fmt.Sprintf("/v1/sites/%s/dns-policies", siteID)
@@ -105,7 +106,11 @@ func (r *dnsPolicyResource) Create(ctx context.Context, req resource.CreateReque
 		return
 	}
 
-	state := dnsPolicyStateFromAPI(siteID, result)
+	state, err := dnsPolicyStateFromAPI(siteID, result)
+	if err != nil {
+		resp.Diagnostics.AddError("Unable to decode DNS policy", err.Error())
+		return
+	}
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
@@ -137,7 +142,11 @@ func (r *dnsPolicyResource) Read(ctx context.Context, req resource.ReadRequest, 
 		return
 	}
 
-	state = dnsPolicyStateFromAPI(siteID, result)
+	state, err := dnsPolicyStateFromAPI(siteID, result)
+	if err != nil {
+		resp.Diagnostics.AddError("Unable to decode DNS policy", err.Error())
+		return
+	}
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
@@ -158,9 +167,10 @@ func (r *dnsPolicyResource) Update(ctx context.Context, req resource.UpdateReque
 		return
 	}
 
-	payload := networkapi.CreateOrUpdateDNSPolicy{
-		Type:    plan.Type.ValueString(),
-		Enabled: plan.Enabled.ValueBool(),
+	payload, err := buildDNSPolicyPayload(plan.Type.ValueString(), plan.Enabled.ValueBool())
+	if err != nil {
+		resp.Diagnostics.AddError("Unable to encode DNS policy", err.Error())
+		return
 	}
 
 	apiPath := fmt.Sprintf("/v1/sites/%s/dns-policies/%s", siteID, plan.ID.ValueString())
@@ -170,7 +180,11 @@ func (r *dnsPolicyResource) Update(ctx context.Context, req resource.UpdateReque
 		return
 	}
 
-	state := dnsPolicyStateFromAPI(siteID, result)
+	state, err := dnsPolicyStateFromAPI(siteID, result)
+	if err != nil {
+		resp.Diagnostics.AddError("Unable to decode DNS policy", err.Error())
+		return
+	}
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
@@ -208,18 +222,23 @@ func (r *dnsPolicyResource) ImportState(ctx context.Context, req resource.Import
 	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), dnsPolicyID)...)
 }
 
-func dnsPolicyStateFromAPI(siteID string, policy networkapi.DNSPolicy) dnsPolicyResourceModel {
+func dnsPolicyStateFromAPI(siteID string, policy networkapi.DNSPolicy) (dnsPolicyResourceModel, error) {
+	base, err := dnsPolicyBaseFromAPI(policy)
+	if err != nil {
+		return dnsPolicyResourceModel{}, err
+	}
+
 	domain := types.StringNull()
-	if policy.Domain != nil {
-		domain = stringValueOrNull(*policy.Domain)
+	if base.Domain != nil {
+		domain = stringValueOrNull(*base.Domain)
 	}
 
 	return dnsPolicyResourceModel{
-		ID:      types.StringValue(policy.Id.String()),
+		ID:      types.StringValue(base.Id.String()),
 		SiteID:  types.StringValue(siteID),
-		Type:    stringValueOrNull(policy.Type),
-		Enabled: types.BoolValue(policy.Enabled),
+		Type:    stringValueOrNull(base.Type),
+		Enabled: types.BoolValue(base.Enabled),
 		Domain:  domain,
-		Origin:  stringValueOrNull(policy.Metadata.Origin),
-	}
+		Origin:  stringValueOrNull(base.Metadata.Origin),
+	}, nil
 }

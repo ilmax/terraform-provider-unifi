@@ -119,21 +119,27 @@ func (d *dnsPoliciesDataSource) Read(ctx context.Context, req datasource.ReadReq
 
 	items := make([]dnsPoliciesDataSourceItemModel, 0, len(result.Data))
 	for _, policy := range result.Data {
-		if !dnsPolicyMatchesFilter(policy, typeFilter, domainFilter) {
+		base, err := dnsPolicyBaseFromAPI(policy)
+		if err != nil {
+			resp.Diagnostics.AddError("Unable to decode DNS policy", err.Error())
+			return
+		}
+
+		if !dnsPolicyMatchesFilter(base, typeFilter, domainFilter) {
 			continue
 		}
 
 		domain := types.StringNull()
-		if policy.Domain != nil {
-			domain = stringValueOrNull(*policy.Domain)
+		if base.Domain != nil {
+			domain = stringValueOrNull(*base.Domain)
 		}
 
 		items = append(items, dnsPoliciesDataSourceItemModel{
-			ID:      types.StringValue(policy.Id.String()),
-			Type:    stringValueOrNull(policy.Type),
-			Enabled: types.BoolValue(policy.Enabled),
+			ID:      types.StringValue(base.Id.String()),
+			Type:    stringValueOrNull(base.Type),
+			Enabled: types.BoolValue(base.Enabled),
 			Domain:  domain,
-			Origin:  stringValueOrNull(policy.Metadata.Origin),
+			Origin:  stringValueOrNull(base.Metadata.Origin),
 		})
 	}
 
@@ -147,7 +153,7 @@ func (d *dnsPoliciesDataSource) Read(ctx context.Context, req datasource.ReadReq
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
-func dnsPolicyMatchesFilter(policy networkapi.DNSPolicy, typeFilter, domainFilter string) bool {
+func dnsPolicyMatchesFilter(policy networkapi.DNSPolicyBase, typeFilter, domainFilter string) bool {
 	if typeFilter != "" && !strings.EqualFold(policy.Type, typeFilter) {
 		return false
 	}

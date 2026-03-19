@@ -106,23 +106,32 @@ func (d *dnsPolicyDataSource) Read(ctx context.Context, req datasource.ReadReque
 		return
 	}
 
-	state := dnsPolicyDataSourceStateFromAPI(siteID, result)
+	state, err := dnsPolicyDataSourceStateFromAPI(siteID, result)
+	if err != nil {
+		resp.Diagnostics.AddError("Unable to decode DNS policy", err.Error())
+		return
+	}
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
-func dnsPolicyDataSourceStateFromAPI(siteID string, policy networkapi.DNSPolicy) dnsPolicyDataSourceModel {
+func dnsPolicyDataSourceStateFromAPI(siteID string, policy networkapi.DNSPolicy) (dnsPolicyDataSourceModel, error) {
+	base, err := dnsPolicyBaseFromAPI(policy)
+	if err != nil {
+		return dnsPolicyDataSourceModel{}, err
+	}
+
 	domain := types.StringNull()
-	if policy.Domain != nil {
-		domain = stringValueOrNull(*policy.Domain)
+	if base.Domain != nil {
+		domain = stringValueOrNull(*base.Domain)
 	}
 
 	return dnsPolicyDataSourceModel{
-		ID:       types.StringValue(policy.Id.String()),
+		ID:       types.StringValue(base.Id.String()),
 		SiteID:   types.StringValue(siteID),
-		PolicyID: types.StringValue(policy.Id.String()),
-		Type:     stringValueOrNull(policy.Type),
-		Enabled:  types.BoolValue(policy.Enabled),
+		PolicyID: types.StringValue(base.Id.String()),
+		Type:     stringValueOrNull(base.Type),
+		Enabled:  types.BoolValue(base.Enabled),
 		Domain:   domain,
-		Origin:   stringValueOrNull(policy.Metadata.Origin),
-	}
+		Origin:   stringValueOrNull(base.Metadata.Origin),
+	}, nil
 }
