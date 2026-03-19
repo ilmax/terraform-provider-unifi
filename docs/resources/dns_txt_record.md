@@ -26,7 +26,7 @@ resource "unifi_dns_txt_record" "spf" {
 
 ### Optional
 
-- `site_id` (String) Site identifier (defaults to provider `site_id`).
+- `site_id` (String) Site identifier. Defaults to provider `site_id` when omitted. A local `site_id` overrides the provider setting.
 - `domain` (String) Domain name for the record.
 
 ### Read-Only

@@ -22,10 +22,18 @@ provider "unifi" {
 ## Configuration Reference
 
 - `api_key` (String, Required, Sensitive) API key for UniFi Cloud.
-- `site_id` (String, Optional) Default site identifier used by resources.
+- `site_id` (String, Optional) Default site identifier used by site-scoped resources, data sources, and actions. A local `site_id` overrides this provider value.
 - `api_url` (String, Optional) Override the UniFi API base URL.
 - `user_agent` (String, Optional) Custom user agent string.
 - `allow_insecure` (Boolean, Optional) Skip TLS certificate verification.
+
+## Site ID Precedence
+
+For every site-scoped resource, data source, and action:
+
+1. a local `site_id` wins if set on that block
+2. otherwise the provider-level `site_id` is used
+3. if neither is set, the provider returns an error
 
 ## Resources
 

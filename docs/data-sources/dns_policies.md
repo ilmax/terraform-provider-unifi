@@ -36,7 +36,7 @@ data "unifi_dns_policies" "blocked_domain" {
 
 ### Optional
 
-- `site_id` (String) Site identifier (defaults to provider `site_id`).
+- `site_id` (String) Site identifier. Defaults to provider `site_id` when omitted. A local `site_id` overrides the provider setting.
 - `type` (String) Case-insensitive DNS policy type filter. See supported values above.
 - `domain` (String) Case-insensitive DNS policy domain filter.
 

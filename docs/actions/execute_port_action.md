@@ -36,5 +36,5 @@ resource "terraform_data" "trigger" {
 - `device_id` (String, Required) Device identifier that owns the port.
 - `port_idx` (Number, Required) Port index on the device.
 - `action` (String, Required) Port action to execute. Supported: `POWER_CYCLE`.
-- `site_id` (String, Optional) Site identifier (defaults to provider `site_id`).
+- `site_id` (String, Optional) Site identifier. Defaults to provider `site_id` when omitted. A local `site_id` overrides the provider setting.
 - `timeout_seconds` (Number, Optional) Timeout in seconds for the action request (default: 1800).

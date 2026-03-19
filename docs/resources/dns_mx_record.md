@@ -27,7 +27,7 @@ resource "unifi_dns_mx_record" "mail" {
 
 ### Optional
 
-- `site_id` (String) Site identifier (defaults to provider `site_id`).
+- `site_id` (String) Site identifier. Defaults to provider `site_id` when omitted. A local `site_id` overrides the provider setting.
 - `domain` (String) Domain name for the record.
 - `priority` (Number) MX priority; lower values are preferred.
 

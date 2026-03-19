@@ -58,7 +58,7 @@ resource "unifi_wifi" "example" {
 
 ### Optional
 
-- `site_id` (String) Site identifier (defaults to provider `site_id`).
+- `site_id` (String) Site identifier. Defaults to provider `site_id` when omitted. A local `site_id` overrides the provider setting.
 - `enabled` (Boolean) Enable or disable the broadcast.
 - `network_type` (String) Network reference type, such as `NATIVE` or `SPECIFIC`.
 - `multicast_to_unicast_conversion_enabled` (Boolean) Convert multicast to unicast.

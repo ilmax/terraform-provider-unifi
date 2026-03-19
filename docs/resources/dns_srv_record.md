@@ -34,7 +34,7 @@ resource "unifi_dns_srv_record" "ldap" {
 
 ### Optional
 
-- `site_id` (String) Site identifier (defaults to provider `site_id`).
+- `site_id` (String) Site identifier. Defaults to provider `site_id` when omitted. A local `site_id` overrides the provider setting.
 - `domain` (String) Domain name for the record.
 - `priority` (Number) SRV priority; lower values are preferred.
 - `weight` (Number) SRV weight among records with equal priority.

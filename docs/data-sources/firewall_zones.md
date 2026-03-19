@@ -23,7 +23,7 @@ data "unifi_firewall_zones" "external" {
 
 ### Optional
 
-- `site_id` (String) Site identifier (defaults to provider `site_id`).
+- `site_id` (String) Site identifier. Defaults to provider `site_id` when omitted. A local `site_id` overrides the provider setting.
 - `name` (String) Case-insensitive firewall zone name filter.
 
 ### Read-Only

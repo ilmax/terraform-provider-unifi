@@ -26,6 +26,16 @@ provider "unifi" {
 }
 ```
 
+## Site ID Precedence
+
+For every site-scoped resource, data source, and action:
+
+1. a local `site_id` wins if you set it on that block
+2. otherwise the provider-level `site_id` is used
+3. if neither is set, the provider returns an error
+
+This lets you keep a default site in the provider while still overriding it per block when needed.
+
 ## Local Controller Example
 
 To connect to a local UniFi OS console (for example a UDR7), point `api_url` at

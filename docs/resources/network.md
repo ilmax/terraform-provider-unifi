@@ -49,7 +49,7 @@ resource "unifi_network" "example" {
 
 ### Optional
 
-- `site_id` (String) Site identifier (defaults to provider `site_id`).
+- `site_id` (String) Site identifier. Defaults to provider `site_id` when omitted. A local `site_id` overrides the provider setting.
 - `enabled` (Boolean) Enable or disable the network.
 - `vlan_id` (Number) VLAN ID.
 - `zone_id` (String) Firewall zone ID (gateway networks).

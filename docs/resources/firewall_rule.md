@@ -47,7 +47,7 @@ resource "unifi_firewall_rule" "example" {
 
 ### Optional
 
-- `site_id` (String) Site identifier (defaults to provider `site_id`).
+- `site_id` (String) Site identifier. Defaults to provider `site_id` when omitted. A local `site_id` overrides the provider setting.
 - `description` (String) Rule description.
 - `enabled` (Boolean) Enable or disable the rule.
 - `index` (Number) Rule priority (lower is higher priority).

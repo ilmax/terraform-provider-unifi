@@ -44,7 +44,7 @@ resource "unifi_firewall_policy_ordering" "internet_to_lan" {
 
 ### Optional
 
-- `site_id` (String) Site identifier (defaults to provider `site_id`).
+- `site_id` (String) Site identifier. Defaults to provider `site_id` when omitted. A local `site_id` overrides the provider setting.
 
 ### Read-Only
 
