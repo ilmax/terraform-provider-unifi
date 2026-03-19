@@ -22,10 +22,9 @@ type firewallZoneResource struct {
 }
 
 type firewallZoneResourceModel struct {
-	ID         types.String `tfsdk:"id"`
-	SiteID     types.String `tfsdk:"site_id"`
-	Name       types.String `tfsdk:"name"`
-	NetworkIDs types.List   `tfsdk:"network_ids"`
+	ID     types.String `tfsdk:"id"`
+	SiteID types.String `tfsdk:"site_id"`
+	Name   types.String `tfsdk:"name"`
 }
 
 func NewFirewallZoneResource() resource.Resource {
@@ -53,10 +52,6 @@ func (r *firewallZoneResource) Schema(ctx context.Context, req resource.SchemaRe
 			},
 			"name": schema.StringAttribute{
 				Required: true,
-			},
-			"network_ids": schema.ListAttribute{
-				Computed:    true,
-				ElementType: types.StringType,
 			},
 		},
 	}
@@ -97,10 +92,9 @@ func (r *firewallZoneResource) Create(ctx context.Context, req resource.CreateRe
 	}
 
 	state := firewallZoneResourceModel{
-		ID:         types.StringValue(result.Id),
-		SiteID:     types.StringValue(siteID),
-		Name:       types.StringValue(result.Name),
-		NetworkIDs: rawMessagesToStringList(result.NetworkIds),
+		ID:     types.StringValue(result.Id),
+		SiteID: types.StringValue(siteID),
+		Name:   types.StringValue(result.Name),
 	}
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
@@ -136,7 +130,6 @@ func (r *firewallZoneResource) Read(ctx context.Context, req resource.ReadReques
 
 	state.SiteID = types.StringValue(siteID)
 	state.Name = types.StringValue(result.Name)
-	state.NetworkIDs = rawMessagesToStringList(result.NetworkIds)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
@@ -179,10 +172,9 @@ func (r *firewallZoneResource) Update(ctx context.Context, req resource.UpdateRe
 	}
 
 	state := firewallZoneResourceModel{
-		ID:         types.StringValue(result.Id),
-		SiteID:     types.StringValue(siteID),
-		Name:       types.StringValue(result.Name),
-		NetworkIDs: rawMessagesToStringList(result.NetworkIds),
+		ID:     types.StringValue(result.Id),
+		SiteID: types.StringValue(siteID),
+		Name:   types.StringValue(result.Name),
 	}
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)

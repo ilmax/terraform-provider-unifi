@@ -36,7 +36,6 @@ resource "unifi_firewall_zone" "example" {
 ### Read-Only
 
 - `id` (String) Firewall zone identifier.
-- `network_ids` (List of String) Network IDs currently attached to this zone.
 
 ## Import
 

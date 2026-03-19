@@ -238,14 +238,7 @@ func TestFirewallZoneSchema(t *testing.T) {
 		t.Fatalf("firewall zone schema diagnostics: %v", resp.Diagnostics)
 	}
 
-	attr, ok := resp.Schema.Attributes["network_ids"].(schema.ListAttribute)
-	if !ok {
-		t.Fatal("network_ids attribute missing or not list")
-	}
-	if !attr.Computed {
-		t.Fatal("network_ids should be computed")
-	}
-	if attr.Required {
-		t.Fatal("network_ids should not be required")
+	if _, ok := resp.Schema.Attributes["network_ids"]; ok {
+		t.Fatal("network_ids should not be exposed on firewall zone resource")
 	}
 }
