@@ -269,6 +269,27 @@ A task is done when:
 - Implement **tests** for every new provider functionality.
 - Use the **latest Go version** available in toolchains and workflows.
 
+## Site ID Consistency Rules
+
+### DO
+
+- For every **site-scoped resource, data source, and action**, expose `site_id` as **optional**.
+- Resolve `site_id` through the shared helper so precedence stays uniform:
+  - resource/data source/action `site_id`
+  - provider-level `site_id`
+  - otherwise return a diagnostic
+- Persist the **resolved** `site_id` into resource state after create, read, update, and import when the resource is site-scoped.
+- Document the same precedence in README, provider docs, and each site-scoped resource/data source page.
+- Add or update schema tests whenever a new site-scoped resource or data source is introduced.
+
+### DON'T
+
+- Don't make `site_id` required on one site-scoped resource while optional elsewhere.
+- Don't duplicate one-off `site_id` fallback logic in individual resources or data sources.
+- Don't rely on provider-level `site_id` without documenting that behavior.
+- Don't leave imported or refreshed resource state without the resolved `site_id`.
+- Don't add global resources/data sources to the site-scoped pattern unless the API path is actually site-specific.
+
 ## Project Scope (from owner)
 
 - Scaffold a Terraform provider for UniFi based on `github.com/ilmax/unifi-client-go@v0.1.0`.
