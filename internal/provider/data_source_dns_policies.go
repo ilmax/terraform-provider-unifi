@@ -8,8 +8,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/ilmax/terraform-provider-unifi/internal/unifi"
 	networkapi "github.com/ilmax/terraform-provider-unifi/internal/sdkcompat/dns"
+	"github.com/ilmax/terraform-provider-unifi/internal/unifi"
 )
 
 type dnsPoliciesDataSource struct {
