@@ -63,6 +63,33 @@ export TF_LOG_PROVIDER=TRACE
 export TF_LOG_PATH=./terraform.log
 ```
 
+## Acceptance Testing
+
+Acceptance tests exercise the DNS resources and data sources against a
+real UniFi console. They are opt-in and skip automatically unless all of
+the following are set:
+
+```sh
+export TF_ACC=1
+export UNIFI_API_KEY=...      # required
+export UNIFI_SITE_ID=...      # required
+export UNIFI_API_URL=...      # optional, defaults to https://api.ui.com
+export UNIFI_ALLOW_INSECURE=true  # optional, for self-signed local consoles
+```
+
+API keys can only be generated at [unifi.ui.com](https://unifi.ui.com)
+against a real, cloud-linked UniFi console — there is no way to script
+this. `docker-compose.yml` in this repo starts a local UniFi controller
+for manual development convenience only (`docker compose up`, then
+create an account through the web UI); it cannot produce a working
+`UNIFI_API_KEY` and is not used by the acceptance tests themselves.
+
+Run the acceptance tests with:
+
+```sh
+make testacc
+```
+
 ## Resources
 
 - `unifi_acl_rule_ordering`
