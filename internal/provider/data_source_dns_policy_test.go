@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
-	networkapi "github.com/ilmax/unifi-client-go/pkg/network"
+	networkapi "github.com/ilmax/terraform-provider-unifi/internal/sdkcompat/dns"
 )
 
 func TestDNSPolicyDataSourceStateFromAPI(t *testing.T) {

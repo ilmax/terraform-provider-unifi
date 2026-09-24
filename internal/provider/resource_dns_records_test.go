@@ -5,7 +5,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	networkapi "github.com/ilmax/unifi-client-go/pkg/network"
+	networkapi "github.com/ilmax/terraform-provider-unifi/internal/sdkcompat/dns"
 )
 
 func TestBuildDNSARecordPayload(t *testing.T) {

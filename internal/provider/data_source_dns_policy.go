@@ -10,7 +10,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/ilmax/terraform-provider-unifi/internal/unifi"
 	"github.com/ilmax/unifi-client-go/pkg/errors"
-	networkapi "github.com/ilmax/unifi-client-go/pkg/network"
+	networkapi "github.com/ilmax/terraform-provider-unifi/internal/sdkcompat/dns"
 )
 
 type dnsPolicyDataSource struct {

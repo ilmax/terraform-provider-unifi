@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	networkapi "github.com/ilmax/unifi-client-go/pkg/network"
+	networkapi "github.com/ilmax/terraform-provider-unifi/internal/sdkcompat/dns"
 )
 
 func mustDNSPolicyFromBase(t *testing.T, base networkapi.DNSPolicyBase) networkapi.DNSPolicy {
