@@ -1,29 +1,33 @@
 package provider
 
 import (
+	"fmt"
 	"testing"
 
+	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 )
 
 func TestAccDNSForwardDomainPolicy_basic(t *testing.T) {
 	resourceName := "unifi_dns_forward_domain_policy.test"
+	domain := acctest.RandomWithPrefix("tf-acc-forward") + ".example.com"
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckDNSPolicyDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccProviderConfig() + `
+				Config: testAccProviderConfig() + fmt.Sprintf(`
 resource "unifi_dns_forward_domain_policy" "test" {
   enabled    = true
-  domain     = "acctest-forward.example.com"
+  domain     = %q
   ip_address = "192.0.2.53"
 }
-`,
+`, domain),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "enabled", "true"),
-					resource.TestCheckResourceAttr(resourceName, "domain", "acctest-forward.example.com"),
+					resource.TestCheckResourceAttr(resourceName, "domain", domain),
 					resource.TestCheckResourceAttr(resourceName, "ip_address", "192.0.2.53"),
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
 					resource.TestCheckResourceAttrSet(resourceName, "site_id"),
@@ -31,13 +35,13 @@ resource "unifi_dns_forward_domain_policy" "test" {
 				),
 			},
 			{
-				Config: testAccProviderConfig() + `
+				Config: testAccProviderConfig() + fmt.Sprintf(`
 resource "unifi_dns_forward_domain_policy" "test" {
   enabled    = false
-  domain     = "acctest-forward.example.com"
+  domain     = %q
   ip_address = "192.0.2.54"
 }
-`,
+`, domain),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "enabled", "false"),
 					resource.TestCheckResourceAttr(resourceName, "ip_address", "192.0.2.54"),

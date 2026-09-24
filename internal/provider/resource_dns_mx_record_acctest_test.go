@@ -1,30 +1,34 @@
 package provider
 
 import (
+	"fmt"
 	"testing"
 
+	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 )
 
 func TestAccDNSMXRecord_basic(t *testing.T) {
 	resourceName := "unifi_dns_mx_record.test"
+	domain := acctest.RandomWithPrefix("tf-acc-mx") + ".example.com"
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckDNSPolicyDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccProviderConfig() + `
+				Config: testAccProviderConfig() + fmt.Sprintf(`
 resource "unifi_dns_mx_record" "test" {
   enabled             = true
-  domain              = "acctest-mx.example.com"
+  domain              = %q
   mail_server_domain  = "mail-a.example.com"
   priority            = 10
 }
-`,
+`, domain),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "enabled", "true"),
-					resource.TestCheckResourceAttr(resourceName, "domain", "acctest-mx.example.com"),
+					resource.TestCheckResourceAttr(resourceName, "domain", domain),
 					resource.TestCheckResourceAttr(resourceName, "mail_server_domain", "mail-a.example.com"),
 					resource.TestCheckResourceAttr(resourceName, "priority", "10"),
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
@@ -33,14 +37,14 @@ resource "unifi_dns_mx_record" "test" {
 				),
 			},
 			{
-				Config: testAccProviderConfig() + `
+				Config: testAccProviderConfig() + fmt.Sprintf(`
 resource "unifi_dns_mx_record" "test" {
   enabled            = false
-  domain             = "acctest-mx.example.com"
+  domain             = %q
   mail_server_domain = "mail-b.example.com"
   priority           = 20
 }
-`,
+`, domain),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "enabled", "false"),
 					resource.TestCheckResourceAttr(resourceName, "mail_server_domain", "mail-b.example.com"),
