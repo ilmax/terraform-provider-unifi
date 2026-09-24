@@ -13,9 +13,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	networkapi "github.com/ilmax/terraform-provider-unifi/internal/sdkcompat/dns"
 	"github.com/ilmax/terraform-provider-unifi/internal/unifi"
 	"github.com/ilmax/unifi-client-go/pkg/errors"
-	networkapi "github.com/ilmax/terraform-provider-unifi/internal/sdkcompat/dns"
 )
 
 type dnsPolicyPlanModel interface {
@@ -59,8 +59,10 @@ func dnsPolicyIDAttribute() schema.StringAttribute {
 func dnsPolicySiteIDAttribute() schema.StringAttribute {
 	return schema.StringAttribute{
 		Optional: true,
+		Computed: true,
 		PlanModifiers: []planmodifier.String{
 			stringplanmodifier.RequiresReplace(),
+			stringplanmodifier.UseStateForUnknown(),
 		},
 	}
 }
