@@ -47,8 +47,10 @@ func (r *aclRuleOrderingResource) Schema(ctx context.Context, req resource.Schem
 			},
 			"site_id": schema.StringAttribute{
 				Optional: true,
+				Computed: true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
+					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
 			"ordered_acl_rule_ids": schema.ListAttribute{

@@ -105,7 +105,7 @@ func createTypedDNSPolicyResource[T dnsPolicyPlanModel](
 		return
 	}
 
-	apiPath := fmt.Sprintf("/v1/sites/%s/dns-policies", siteID)
+	apiPath := fmt.Sprintf("/v1/sites/%s/dns/policies", siteID)
 	var result networkapi.DNSPolicy
 	if err := client.Post(ctx, apiPath, payload, &result); err != nil {
 		resp.Diagnostics.AddError("Unable to create DNS policy", err.Error())
@@ -146,7 +146,7 @@ func readTypedDNSPolicyResource[T dnsPolicyStateModel](
 		return
 	}
 
-	apiPath := fmt.Sprintf("/v1/sites/%s/dns-policies/%s", siteID, id.ValueString())
+	apiPath := fmt.Sprintf("/v1/sites/%s/dns/policies/%s", siteID, id.ValueString())
 	var result networkapi.DNSPolicy
 	if err := client.Get(ctx, apiPath, &result); err != nil {
 		if errors.IsNotFoundError(err) {
@@ -199,7 +199,7 @@ func updateTypedDNSPolicyResource[T dnsPolicyStateModel](
 		return
 	}
 
-	apiPath := fmt.Sprintf("/v1/sites/%s/dns-policies/%s", siteID, id.ValueString())
+	apiPath := fmt.Sprintf("/v1/sites/%s/dns/policies/%s", siteID, id.ValueString())
 	var result networkapi.DNSPolicy
 	if err := client.Put(ctx, apiPath, payload, &result); err != nil {
 		resp.Diagnostics.AddError("Unable to update DNS policy", err.Error())
@@ -238,7 +238,7 @@ func deleteTypedDNSPolicyResource[T dnsPolicyStateModel](
 		return
 	}
 
-	apiPath := fmt.Sprintf("/v1/sites/%s/dns-policies/%s", siteID, id.ValueString())
+	apiPath := fmt.Sprintf("/v1/sites/%s/dns/policies/%s", siteID, id.ValueString())
 	if err := client.Delete(ctx, apiPath, nil); err != nil && !errors.IsNotFoundError(err) {
 		resp.Diagnostics.AddError("Unable to delete DNS policy", err.Error())
 		return

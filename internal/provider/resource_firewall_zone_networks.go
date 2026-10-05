@@ -39,6 +39,12 @@ func (r *firewallZoneNetworksResource) Metadata(ctx context.Context, req resourc
 
 func (r *firewallZoneNetworksResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
+		Description: "Assigns networks to a firewall zone. Only a GATEWAY-managed network can belong to a zone " +
+			"at all; the real API rejects any other management type with a misleading " +
+			"\"Configured network does not exist\" error. Deleting this resource unassigns every network it " +
+			"listed (the real API falls back to the site's Internal zone, since a GATEWAY network's zone " +
+			"assignment is mandatory once Zone Based Firewall is enabled) rather than leaving them pointed at a " +
+			"zone Terraform is about to destroy.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed: true,
@@ -48,8 +54,10 @@ func (r *firewallZoneNetworksResource) Schema(ctx context.Context, req resource.
 			},
 			"site_id": schema.StringAttribute{
 				Optional: true,
+				Computed: true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
+					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
 			"zone_id": schema.StringAttribute{
@@ -144,6 +152,52 @@ func (r *firewallZoneNetworksResource) Update(ctx context.Context, req resource.
 }
 
 func (r *firewallZoneNetworksResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	var state firewallZoneNetworksResourceModel
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	siteID, ok := resolveSiteID(state.SiteID, r.siteID, &resp.Diagnostics)
+	if !ok {
+		return
+	}
+
+	if state.ZoneID.IsNull() || state.ZoneID.IsUnknown() {
+		resp.State.RemoveResource(ctx)
+		return
+	}
+	zoneID := state.ZoneID.ValueString()
+
+	// Unassign every network this resource attached, rather than leaving
+	// the zone's real networkIds list holding onto them: a zone whose
+	// networkIds still names a network that Terraform goes on to delete
+	// next (the common case — a network usually depends on its zone, so
+	// it's destroyed first) makes the zone itself un-deletable afterward
+	// (api.firewall.zone.network-does-not-exist, "Configured network does
+	// not exist") because the real API's own zone-delete path re-resolves
+	// every member network first.
+	getPath := fmt.Sprintf("/v1/sites/%s/firewall/zones/%s", siteID, zoneID)
+	var current zones.GetFirewallZoneResponse
+	if err := r.client.Get(ctx, getPath, &current); err != nil {
+		if errors.IsNotFoundError(err) {
+			resp.State.RemoveResource(ctx)
+			return
+		}
+		resp.Diagnostics.AddError("Unable to read firewall zone before unassigning its networks", err.Error())
+		return
+	}
+
+	payload := zones.UpdateFirewallZoneRequest{
+		Name:       current.Name,
+		NetworkIds: []json.RawMessage{},
+	}
+	var result zones.UpdateFirewallZoneResponse
+	if err := r.client.Put(ctx, getPath, payload, &result); err != nil && !errors.IsNotFoundError(err) {
+		resp.Diagnostics.AddError("Unable to unassign firewall zone networks", err.Error())
+		return
+	}
+
 	resp.State.RemoveResource(ctx)
 }
 

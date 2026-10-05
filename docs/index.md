@@ -45,24 +45,37 @@ For every site-scoped resource, data source, and action:
 - `unifi_dns_mx_record`
 - `unifi_dns_srv_record`
 - `unifi_dns_txt_record`
+- `unifi_firewall_policy`
 - `unifi_firewall_policy_ordering`
 - `unifi_firewall_rule`
 - `unifi_firewall_zone`
 - `unifi_firewall_zone_networks`
+- `unifi_hotspot_voucher`
 - `unifi_network`
+- `unifi_traffic_matching_list`
 - `unifi_wifi`
 
 ## Data Sources
 
 - `unifi_countries`
 - `unifi_acl_rules`
+- `unifi_device_tag`
 - `unifi_dns_policy`
 - `unifi_dns_policies`
+- `unifi_dpi_application`
+- `unifi_dpi_category`
 - `unifi_client`
 - `unifi_device`
 - `unifi_firewall_zone`
 - `unifi_firewall_zones`
+- `unifi_pending_devices`
+- `unifi_radius_profile`
 - `unifi_site`
+- `unifi_switch_lag`
+- `unifi_switch_mc_lag_domain`
+- `unifi_switch_stack`
+- `unifi_vpn_server`
+- `unifi_vpn_site_to_site_tunnel`
 - `unifi_wan`
 
 ## Actions

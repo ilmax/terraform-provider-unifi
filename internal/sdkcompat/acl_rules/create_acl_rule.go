@@ -106,6 +106,9 @@ type CreateACLRuleResponseMac struct {
 	Metadata *CreateACLRuleMetadata `json:"metadata"`
 	// Protocols this ACL rule will be applied to. When null, the rule will be appli...
 	ProtocolFilter []json.RawMessage `json:"protocolFilter,omitempty"`
+	// Network ID to which this ACL rule applies. Required for MAC rules; the API
+	// echoes it back on create, but this field was missing here originally.
+	NetworkIdFilter string `json:"networkIdFilter,omitempty"`
 }
 
 // CreateACLRuleMetadata represents a nested object structure.

@@ -46,8 +46,10 @@ func (r *firewallZoneResource) Schema(ctx context.Context, req resource.SchemaRe
 			},
 			"site_id": schema.StringAttribute{
 				Optional: true,
+				Computed: true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
+					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
 			"name": schema.StringAttribute{

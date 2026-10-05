@@ -107,7 +107,7 @@ func (d *dnsPoliciesDataSource) Read(ctx context.Context, req datasource.ReadReq
 		return
 	}
 
-	apiPath := fmt.Sprintf("/v1/sites/%s/dns-policies", siteID)
+	apiPath := fmt.Sprintf("/v1/sites/%s/dns/policies", siteID)
 	var result networkapi.IntegrationDnsPolicyPageDto
 	if err := d.client.Get(ctx, apiPath, &result); err != nil {
 		resp.Diagnostics.AddError("Unable to list DNS policies", err.Error())

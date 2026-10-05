@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -47,6 +48,7 @@ type wifiResourceModel struct {
 	BasicDataRateKbpsByFrequencyGHz     *wifiBasicDataRateModel                 `tfsdk:"basic_data_rate_kbps_by_frequency_ghz"`
 	ClientFilteringPolicy               *wifiClientFilteringPolicyModel         `tfsdk:"client_filtering_policy"`
 	BlackoutScheduleConfiguration       *wifiBlackoutScheduleConfigurationModel `tfsdk:"blackout_schedule_configuration"`
+	AdvertiseDeviceName                 types.Bool                              `tfsdk:"advertise_device_name"`
 }
 
 type wifiBasicDataRateModel struct {
@@ -87,8 +89,10 @@ func (r *wifiResource) Schema(ctx context.Context, req resource.SchemaRequest, r
 			},
 			"site_id": schema.StringAttribute{
 				Optional: true,
+				Computed: true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
+					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
 			"name": schema.StringAttribute{
@@ -125,25 +129,33 @@ func (r *wifiResource) Schema(ctx context.Context, req resource.SchemaRequest, r
 			},
 			"multicast_to_unicast_conversion_enabled": schema.BoolAttribute{
 				Optional: true,
+				Computed: true,
 				PlanModifiers: []planmodifier.Bool{
+					boolplanmodifier.UseStateForUnknown(),
 					boolplanmodifier.RequiresReplace(),
 				},
 			},
 			"client_isolation_enabled": schema.BoolAttribute{
 				Optional: true,
+				Computed: true,
 				PlanModifiers: []planmodifier.Bool{
+					boolplanmodifier.UseStateForUnknown(),
 					boolplanmodifier.RequiresReplace(),
 				},
 			},
 			"hide_name": schema.BoolAttribute{
 				Optional: true,
+				Computed: true,
 				PlanModifiers: []planmodifier.Bool{
+					boolplanmodifier.UseStateForUnknown(),
 					boolplanmodifier.RequiresReplace(),
 				},
 			},
 			"uapsd_enabled": schema.BoolAttribute{
 				Optional: true,
+				Computed: true,
 				PlanModifiers: []planmodifier.Bool{
+					boolplanmodifier.UseStateForUnknown(),
 					boolplanmodifier.RequiresReplace(),
 				},
 			},
@@ -156,25 +168,42 @@ func (r *wifiResource) Schema(ctx context.Context, req resource.SchemaRequest, r
 			},
 			"mlo_enabled": schema.BoolAttribute{
 				Optional: true,
+				Computed: true,
 				PlanModifiers: []planmodifier.Bool{
+					boolplanmodifier.UseStateForUnknown(),
 					boolplanmodifier.RequiresReplace(),
 				},
 			},
 			"band_steering_enabled": schema.BoolAttribute{
 				Optional: true,
+				Computed: true,
 				PlanModifiers: []planmodifier.Bool{
+					boolplanmodifier.UseStateForUnknown(),
 					boolplanmodifier.RequiresReplace(),
 				},
 			},
 			"arp_proxy_enabled": schema.BoolAttribute{
 				Optional: true,
+				Computed: true,
 				PlanModifiers: []planmodifier.Bool{
+					boolplanmodifier.UseStateForUnknown(),
 					boolplanmodifier.RequiresReplace(),
 				},
 			},
 			"bss_transition_enabled": schema.BoolAttribute{
 				Optional: true,
+				Computed: true,
 				PlanModifiers: []planmodifier.Bool{
+					boolplanmodifier.UseStateForUnknown(),
+					boolplanmodifier.RequiresReplace(),
+				},
+			},
+			"advertise_device_name": schema.BoolAttribute{
+				Optional:    true,
+				Computed:    true,
+				Description: "Whether the device name is advertised in beacon frames. Required by the API for STANDARD broadcasts; omitting it sends false. Only supported for STANDARD broadcasts.",
+				PlanModifiers: []planmodifier.Bool{
+					boolplanmodifier.UseStateForUnknown(),
 					boolplanmodifier.RequiresReplace(),
 				},
 			},
@@ -398,12 +427,26 @@ func buildWifiPayload(plan wifiResourceModel) (map[string]any, diag.Diagnostics)
 		if diags.HasError() {
 			return nil, diags
 		}
-		payload["broadcastingFrequenciesGHz"] = frequencies
+		// The API types broadcastingFrequenciesGHz as an array of numbers
+		// (2.4, 5, 6), not strings — sending Go strings here marshals to
+		// JSON strings and the API rejects it as a type mismatch. Parse and
+		// re-encode as raw JSON numbers instead.
+		frequencyNumbers := make([]json.RawMessage, 0, len(frequencies))
+		for _, frequency := range frequencies {
+			if _, err := strconv.ParseFloat(frequency, 64); err != nil {
+				diags.AddAttributeError(path.Root("broadcasting_frequencies_ghz"), "Invalid frequency", fmt.Sprintf("%q is not a valid number.", frequency))
+				return nil, diags
+			}
+			frequencyNumbers = append(frequencyNumbers, json.RawMessage(frequency))
+		}
+		payload["broadcastingFrequenciesGHz"] = frequencyNumbers
 	}
 
-	if strings.ToUpper(plan.Type.ValueString()) != "STANDARD" {
-		if hasAnyTrue(plan.MloEnabled, plan.BandSteeringEnabled, plan.ArpProxyEnabled, plan.BssTransitionEnabled) {
-			diags.AddAttributeError(path.Root("type"), "Unsupported fields", "mlo_enabled, band_steering_enabled, arp_proxy_enabled, and bss_transition_enabled are only supported for STANDARD broadcasts.")
+	isStandard := strings.ToUpper(plan.Type.ValueString()) == "STANDARD"
+
+	if !isStandard {
+		if hasAnyTrue(plan.MloEnabled, plan.BandSteeringEnabled, plan.ArpProxyEnabled, plan.BssTransitionEnabled, plan.AdvertiseDeviceName) {
+			diags.AddAttributeError(path.Root("type"), "Unsupported fields", "mlo_enabled, band_steering_enabled, arp_proxy_enabled, bss_transition_enabled, and advertise_device_name are only supported for STANDARD broadcasts.")
 			return nil, diags
 		}
 	}
@@ -412,6 +455,21 @@ func buildWifiPayload(plan wifiResourceModel) (map[string]any, diag.Diagnostics)
 	setBoolIfKnown(payload, "bandSteeringEnabled", plan.BandSteeringEnabled)
 	setBoolIfKnown(payload, "arpProxyEnabled", plan.ArpProxyEnabled)
 	setBoolIfKnown(payload, "bssTransitionEnabled", plan.BssTransitionEnabled)
+	setBoolIfKnown(payload, "advertiseDeviceName", plan.AdvertiseDeviceName)
+
+	// The API requires these as explicit booleans on create — never merely
+	// absent — for both broadcast types (plus three more for STANDARD).
+	// setBoolIfKnown above only sets a key when the user gave an explicit
+	// value, so fill in a safe `false` default for anything still missing.
+	requiredBoolDefaults := []string{"multicastToUnicastConversionEnabled", "clientIsolationEnabled", "hideName", "uapsdEnabled"}
+	if isStandard {
+		requiredBoolDefaults = append(requiredBoolDefaults, "arpProxyEnabled", "bssTransitionEnabled", "advertiseDeviceName")
+	}
+	for _, key := range requiredBoolDefaults {
+		if _, ok := payload[key]; !ok {
+			payload[key] = false
+		}
+	}
 
 	if plan.BasicDataRateKbpsByFrequencyGHz != nil {
 		rates := map[string]any{}
@@ -535,6 +593,7 @@ func wifiStateFromResponse(siteID string, response any) (wifiResourceModel, diag
 			result.BandSteeringEnabled,
 			result.ArpProxyEnabled,
 			result.BssTransitionEnabled,
+			result.AdvertiseDeviceName,
 			readCreateWifiBasicDataRate(result.BasicDataRateKbpsByFrequencyGHz),
 			readCreateWifiClientFilteringPolicy(result.ClientFilteringPolicy),
 			readCreateWifiBlackoutSchedule(result.BlackoutScheduleConfiguration),
@@ -574,6 +633,7 @@ func wifiStateFromResponse(siteID string, response any) (wifiResourceModel, diag
 			result.BandSteeringEnabled,
 			result.ArpProxyEnabled,
 			result.BssTransitionEnabled,
+			result.AdvertiseDeviceName,
 			readGetWifiBasicDataRate(result.BasicDataRateKbpsByFrequencyGHz),
 			readGetWifiClientFilteringPolicy(result.ClientFilteringPolicy),
 			readGetWifiBlackoutSchedule(result.BlackoutScheduleConfiguration),
@@ -629,6 +689,7 @@ func wifiStateCommon(siteID, id, name, broadcastType string, enabled bool, secur
 	state.BandSteeringEnabled = types.BoolNull()
 	state.ArpProxyEnabled = types.BoolNull()
 	state.BssTransitionEnabled = types.BoolNull()
+	state.AdvertiseDeviceName = types.BoolNull()
 	state.BasicDataRateKbpsByFrequencyGHz = nil
 	state.ClientFilteringPolicy = nil
 	state.BlackoutScheduleConfiguration = nil
@@ -636,7 +697,7 @@ func wifiStateCommon(siteID, id, name, broadcastType string, enabled bool, secur
 	return state
 }
 
-func wifiStateFromStandard(siteID, id, name, broadcastType string, enabled bool, securityType string, network *broadcasts.ClientAccess, multicastToUnicast bool, clientIsolation bool, hideName bool, uapsdEnabled bool, frequencies []json.RawMessage, mloEnabled bool, bandSteering bool, arpProxy bool, bssTransition bool, basicDataRate *wifiBasicDataRateModel, clientFilteringPolicy *wifiClientFilteringPolicyModel, blackoutSchedule *wifiBlackoutScheduleConfigurationModel) wifiResourceModel {
+func wifiStateFromStandard(siteID, id, name, broadcastType string, enabled bool, securityType string, network *broadcasts.ClientAccess, multicastToUnicast bool, clientIsolation bool, hideName bool, uapsdEnabled bool, frequencies []json.RawMessage, mloEnabled bool, bandSteering bool, arpProxy bool, bssTransition bool, advertiseDeviceName bool, basicDataRate *wifiBasicDataRateModel, clientFilteringPolicy *wifiClientFilteringPolicyModel, blackoutSchedule *wifiBlackoutScheduleConfigurationModel) wifiResourceModel {
 	state := wifiStateCommon(siteID, id, name, broadcastType, enabled, securityType, network)
 	state.MulticastToUnicastConversionEnabled = types.BoolValue(multicastToUnicast)
 	state.ClientIsolationEnabled = types.BoolValue(clientIsolation)
@@ -647,6 +708,7 @@ func wifiStateFromStandard(siteID, id, name, broadcastType string, enabled bool,
 	state.BandSteeringEnabled = types.BoolValue(bandSteering)
 	state.ArpProxyEnabled = types.BoolValue(arpProxy)
 	state.BssTransitionEnabled = types.BoolValue(bssTransition)
+	state.AdvertiseDeviceName = types.BoolValue(advertiseDeviceName)
 	state.BasicDataRateKbpsByFrequencyGHz = basicDataRate
 	state.ClientFilteringPolicy = clientFilteringPolicy
 	state.BlackoutScheduleConfiguration = blackoutSchedule

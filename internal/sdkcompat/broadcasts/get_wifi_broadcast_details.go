@@ -69,6 +69,9 @@ type GetWifiBroadcastDetailsResponseStandard struct {
 	ArpProxyEnabled                  bool                                                     `json:"arpProxyEnabled,omitempty"`
 	BssTransitionEnabled             bool                                                     `json:"bssTransitionEnabled,omitempty"`
 	DtimPeriodByFrequencyGHzOverride *GetWifiBroadcastDetailsDtimPeriodByFrequencyGHzOverride `json:"dtimPeriodByFrequencyGHzOverride,omitempty"`
+	// Indicates whether the device name is advertised in beacon frames. Required by
+	// the API for STANDARD broadcasts; this field was missing here originally.
+	AdvertiseDeviceName bool `json:"advertiseDeviceName"`
 }
 
 // GetWifiBroadcastDetailsClientFilteringPolicy represents a nested object structure.

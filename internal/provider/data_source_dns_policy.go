@@ -95,7 +95,7 @@ func (d *dnsPolicyDataSource) Read(ctx context.Context, req datasource.ReadReque
 		return
 	}
 
-	apiPath := fmt.Sprintf("/v1/sites/%s/dns-policies/%s", siteID, policyID)
+	apiPath := fmt.Sprintf("/v1/sites/%s/dns/policies/%s", siteID, policyID)
 	var result networkapi.DNSPolicy
 	if err := d.client.Get(ctx, apiPath, &result); err != nil {
 		if errors.IsNotFoundError(err) {

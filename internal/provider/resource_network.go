@@ -57,12 +57,13 @@ type networkIPv4ConfigurationModel struct {
 }
 
 type networkIPv4DHCPConfigurationModel struct {
-	Mode                     types.String                `tfsdk:"mode"`
-	IPAddressRange           *networkIPAddressRangeModel `tfsdk:"ip_address_range"`
-	GatewayIPAddressOverride types.String                `tfsdk:"gateway_ip_address_override"`
-	DNSServers               types.List                  `tfsdk:"dns_servers"`
-	LeaseTimeSeconds         types.Int64                 `tfsdk:"lease_time_seconds"`
-	DomainName               types.String                `tfsdk:"domain_name"`
+	Mode                         types.String                `tfsdk:"mode"`
+	IPAddressRange               *networkIPAddressRangeModel `tfsdk:"ip_address_range"`
+	GatewayIPAddressOverride     types.String                `tfsdk:"gateway_ip_address_override"`
+	DNSServers                   types.List                  `tfsdk:"dns_servers"`
+	LeaseTimeSeconds             types.Int64                 `tfsdk:"lease_time_seconds"`
+	DomainName                   types.String                `tfsdk:"domain_name"`
+	PingConflictDetectionEnabled types.Bool                  `tfsdk:"ping_conflict_detection_enabled"`
 }
 
 type networkIPv6ConfigurationModel struct {
@@ -112,7 +113,9 @@ func (r *networkResource) Schema(ctx context.Context, req resource.SchemaRequest
 			},
 			"site_id": schema.StringAttribute{
 				Optional: true,
+				Computed: true,
 				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
@@ -193,6 +196,7 @@ func (r *networkResource) Schema(ctx context.Context, req resource.SchemaRequest
 				Attributes: map[string]schema.Attribute{
 					"auto_scale_enabled": schema.BoolAttribute{
 						Optional: true,
+						Computed: true,
 					},
 					"host_ip_address": schema.StringAttribute{
 						Optional: true,
@@ -233,6 +237,10 @@ func (r *networkResource) Schema(ctx context.Context, req resource.SchemaRequest
 							},
 							"domain_name": schema.StringAttribute{
 								Optional: true,
+							},
+							"ping_conflict_detection_enabled": schema.BoolAttribute{
+								Optional:    true,
+								Description: "Whether the DHCP server probes an address with ICMP before leasing it. Required by the API when mode is SERVER; omitting it sends false.",
 							},
 						},
 					},
@@ -531,10 +539,10 @@ func buildCreateNetworkRequest(plan networkResourceModel) (any, diag.Diagnostics
 			Name:                  plan.Name.ValueString(),
 			Enabled:               plan.Enabled.ValueBool(),
 			VlanId:                plan.VlanID.ValueInt64(),
-			IsolationEnabled:      plan.IsolationEnabled.ValueBool(),
-			CellularBackupEnabled: plan.CellularBackupEnabled.ValueBool(),
+			IsolationEnabled:      boolOrDefault(plan.IsolationEnabled, false),
+			CellularBackupEnabled: boolOrDefault(plan.CellularBackupEnabled, false),
 			ZoneId:                plan.ZoneID.ValueString(),
-			InternetAccessEnabled: plan.InternetAccessEnabled.ValueBool(),
+			InternetAccessEnabled: boolOrDefault(plan.InternetAccessEnabled, true),
 			MdnsForwardingEnabled: plan.MulticastDNSEnabled.ValueBool(),
 		}
 		request.DhcpGuarding = buildCreateDHCPGuarding(plan.DHCPGuarding, &diags)
@@ -547,8 +555,8 @@ func buildCreateNetworkRequest(plan networkResourceModel) (any, diag.Diagnostics
 			Name:                  plan.Name.ValueString(),
 			Enabled:               plan.Enabled.ValueBool(),
 			VlanId:                plan.VlanID.ValueInt64(),
-			IsolationEnabled:      plan.IsolationEnabled.ValueBool(),
-			CellularBackupEnabled: plan.CellularBackupEnabled.ValueBool(),
+			IsolationEnabled:      boolOrDefault(plan.IsolationEnabled, false),
+			CellularBackupEnabled: boolOrDefault(plan.CellularBackupEnabled, false),
 			DeviceId:              plan.DeviceID.ValueString(),
 		}
 		request.DhcpGuarding = buildCreateDHCPGuarding(plan.DHCPGuarding, &diags)
@@ -580,24 +588,28 @@ func buildUpdateNetworkRequest(plan networkResourceModel) (any, diag.Diagnostics
 			Name:                  plan.Name.ValueString(),
 			Enabled:               plan.Enabled.ValueBool(),
 			VlanId:                plan.VlanID.ValueInt64(),
-			IsolationEnabled:      plan.IsolationEnabled.ValueBool(),
-			CellularBackupEnabled: plan.CellularBackupEnabled.ValueBool(),
+			IsolationEnabled:      boolOrDefault(plan.IsolationEnabled, false),
+			CellularBackupEnabled: boolOrDefault(plan.CellularBackupEnabled, false),
 			ZoneId:                plan.ZoneID.ValueString(),
-			InternetAccessEnabled: plan.InternetAccessEnabled.ValueBool(),
+			InternetAccessEnabled: boolOrDefault(plan.InternetAccessEnabled, true),
 			MdnsForwardingEnabled: plan.MulticastDNSEnabled.ValueBool(),
 		}
 		request.DhcpGuarding = buildUpdateDHCPGuarding(plan.DHCPGuarding, &diags)
 		request.Ipv4Configuration = buildUpdateIPv4Config(plan.IPv4Configuration, &diags)
 		request.Ipv6Configuration = buildUpdateIPv6Config(plan.IPv6Configuration, &diags)
-		return applyMulticastDNSEnable(request, plan.MulticastDNSEnabled, &diags), diags
+		// Unlike create, the update endpoint rejects the renamed
+		// multicastDnsEnable field outright ("Unknown request body
+		// property") — mdnsForwardingEnabled above is the only name it
+		// accepts, so applyMulticastDNSEnable must not run here.
+		return request, diags
 	case "SWITCH":
 		request := &networks.UpdateNetworkRequestSwitch{
 			Management:            management,
 			Name:                  plan.Name.ValueString(),
 			Enabled:               plan.Enabled.ValueBool(),
 			VlanId:                plan.VlanID.ValueInt64(),
-			IsolationEnabled:      plan.IsolationEnabled.ValueBool(),
-			CellularBackupEnabled: plan.CellularBackupEnabled.ValueBool(),
+			IsolationEnabled:      boolOrDefault(plan.IsolationEnabled, false),
+			CellularBackupEnabled: boolOrDefault(plan.CellularBackupEnabled, false),
 			DeviceId:              plan.DeviceID.ValueString(),
 		}
 		request.DhcpGuarding = buildUpdateDHCPGuarding(plan.DHCPGuarding, &diags)
@@ -616,6 +628,18 @@ func buildUpdateNetworkRequest(plan networkResourceModel) (any, diag.Diagnostics
 		diags.AddAttributeError(path.Root("management"), "Invalid management type", "Supported values are GATEWAY, SWITCH, or UNMANAGED.")
 		return nil, diags
 	}
+}
+
+// boolOrDefault resolves a null/unknown plan value to def. The Integrations
+// API requires isolationEnabled, cellularBackupEnabled, and
+// internetAccessEnabled to be present as explicit booleans on GATEWAY/SWITCH
+// networks; leaving them unresolved would send no value at all (a bug fixed
+// alongside this by dropping the underlying struct fields' `omitempty`).
+func boolOrDefault(v types.Bool, def bool) bool {
+	if v.IsNull() || v.IsUnknown() {
+		return def
+	}
+	return v.ValueBool()
 }
 
 func applyMulticastDNSEnable(payload any, value types.Bool, diags *diag.Diagnostics) any {
@@ -728,6 +752,7 @@ func buildCreateIPv4DHCPConfig(model *networkIPv4DHCPConfigurationModel, diags *
 		DnsServerIpAddressesOverride: dns,
 		LeaseTimeSeconds:             model.LeaseTimeSeconds.ValueInt64(),
 		DomainName:                   model.DomainName.ValueString(),
+		PingConflictDetectionEnabled: model.PingConflictDetectionEnabled.ValueBool(),
 	}
 
 	if model.IPAddressRange != nil {
@@ -754,6 +779,7 @@ func buildUpdateIPv4DHCPConfig(model *networkIPv4DHCPConfigurationModel, diags *
 		DnsServerIpAddressesOverride: dns,
 		LeaseTimeSeconds:             model.LeaseTimeSeconds.ValueInt64(),
 		DomainName:                   model.DomainName.ValueString(),
+		PingConflictDetectionEnabled: model.PingConflictDetectionEnabled.ValueBool(),
 	}
 
 	if model.IPAddressRange != nil {
@@ -919,6 +945,7 @@ func networkStateFromResponse(state *networkResourceModel, siteID string, respon
 		state.Enabled = types.BoolValue(result.Enabled)
 		state.VlanID = types.Int64Value(result.VlanId)
 		state.ZoneID = stringValueOrNull(result.ZoneId)
+		state.DeviceID = types.StringNull()
 		state.IsolationEnabled = types.BoolValue(result.IsolationEnabled)
 		state.CellularBackupEnabled = types.BoolValue(result.CellularBackupEnabled)
 		state.InternetAccessEnabled = types.BoolValue(result.InternetAccessEnabled)
@@ -931,9 +958,11 @@ func networkStateFromResponse(state *networkResourceModel, siteID string, respon
 		state.Management = types.StringValue(result.Management)
 		state.Enabled = types.BoolValue(result.Enabled)
 		state.VlanID = types.Int64Value(result.VlanId)
+		state.ZoneID = types.StringNull()
 		state.DeviceID = stringValueOrNull(result.DeviceId)
 		state.IsolationEnabled = types.BoolValue(result.IsolationEnabled)
 		state.CellularBackupEnabled = types.BoolValue(result.CellularBackupEnabled)
+		state.InternetAccessEnabled = types.BoolNull()
 		state.DHCPGuarding = readDHCPGuarding(result.DhcpGuarding)
 		state.IPv4Configuration = readIPv4Config(result.Ipv4Configuration)
 		state.IPv6Configuration = nil
@@ -943,6 +972,11 @@ func networkStateFromResponse(state *networkResourceModel, siteID string, respon
 		state.Management = types.StringValue(result.Management)
 		state.Enabled = types.BoolValue(result.Enabled)
 		state.VlanID = types.Int64Value(result.VlanId)
+		state.ZoneID = types.StringNull()
+		state.DeviceID = types.StringNull()
+		state.IsolationEnabled = types.BoolNull()
+		state.CellularBackupEnabled = types.BoolNull()
+		state.InternetAccessEnabled = types.BoolNull()
 		state.DHCPGuarding = readDHCPGuarding(result.DhcpGuarding)
 		state.IPv4Configuration = nil
 		state.IPv6Configuration = nil
@@ -1007,11 +1041,12 @@ func readIPv4DHCPConfig(cfg *networks.GetNetworkDetailsIpv4ConfigurationDhcpConf
 	}
 
 	model := &networkIPv4DHCPConfigurationModel{
-		Mode:                     stringValueOrNull(cfg.Mode),
-		GatewayIPAddressOverride: stringValueOrNull(cfg.GatewayIpAddressOverride),
-		DNSServers:               rawMessagesToList(cfg.DnsServerIpAddressesOverride),
-		LeaseTimeSeconds:         types.Int64Value(cfg.LeaseTimeSeconds),
-		DomainName:               stringValueOrNull(cfg.DomainName),
+		Mode:                         stringValueOrNull(cfg.Mode),
+		GatewayIPAddressOverride:     stringValueOrNull(cfg.GatewayIpAddressOverride),
+		DNSServers:                   rawMessagesToList(cfg.DnsServerIpAddressesOverride),
+		LeaseTimeSeconds:             types.Int64Value(cfg.LeaseTimeSeconds),
+		DomainName:                   stringValueOrNull(cfg.DomainName),
+		PingConflictDetectionEnabled: types.BoolValue(cfg.PingConflictDetectionEnabled),
 	}
 	if cfg.IpAddressRange != nil && (cfg.IpAddressRange.Start != "" || cfg.IpAddressRange.Stop != "") {
 		model.IPAddressRange = &networkIPAddressRangeModel{

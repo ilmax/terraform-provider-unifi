@@ -22,16 +22,18 @@ type CreateNetworkRequestGateway struct {
 	VlanId     int64  `json:"vlanId"`
 	// DHCP Guarding settings for this Network. If this field is omitted or null, th...
 	DhcpGuarding *CreateNetworkDhcpGuarding `json:"dhcpGuarding,omitempty"`
-	// Whether this network is isolated from all other networks.
-	IsolationEnabled bool `json:"isolationEnabled,omitempty"`
+	// Whether this network is isolated from all other networks. Required by
+	// the API for GATEWAY networks; must be sent even when false, so this
+	// field intentionally has no `omitempty` (that would silently drop it).
+	IsolationEnabled bool `json:"isolationEnabled"`
 	// Whether this network is allowed to use cellular data when WAN connection(s) a...
-	CellularBackupEnabled bool `json:"cellularBackupEnabled,omitempty"`
+	CellularBackupEnabled bool `json:"cellularBackupEnabled"`
 	// Firewall zone ID associated with this Network.
 	ZoneId string `json:"zoneId,omitempty"`
 	// Whether the internet access is allowed for the device on this network.
-	InternetAccessEnabled bool `json:"internetAccessEnabled,omitempty"`
+	InternetAccessEnabled bool `json:"internetAccessEnabled"`
 	// Whether this network should participate in mDNS traffic forwarding.
-	MdnsForwardingEnabled bool `json:"mdnsForwardingEnabled,omitempty"`
+	MdnsForwardingEnabled bool `json:"mdnsForwardingEnabled"`
 	// Details about IPv4 configuration for this Network.
 	Ipv4Configuration *CreateNetworkIpv4Configuration `json:"ipv4Configuration,omitempty"`
 	// Details about IPv6 configuration for this Network. If this field is omitted o...
@@ -46,10 +48,11 @@ type CreateNetworkRequestSwitch struct {
 	VlanId     int64  `json:"vlanId"`
 	// DHCP Guarding settings for this Network. If this field is omitted or null, th...
 	DhcpGuarding *CreateNetworkDhcpGuarding `json:"dhcpGuarding,omitempty"`
-	// Whether this network is isolated from all other networks.
-	IsolationEnabled bool `json:"isolationEnabled,omitempty"`
+	// Whether this network is isolated from all other networks. See the
+	// comment on CreateNetworkRequestGateway.IsolationEnabled.
+	IsolationEnabled bool `json:"isolationEnabled"`
 	// Whether this network is allowed to use cellular data when WAN connection(s) a...
-	CellularBackupEnabled bool `json:"cellularBackupEnabled,omitempty"`
+	CellularBackupEnabled bool `json:"cellularBackupEnabled"`
 	// ID of the L3 switching capable device that manages this network.
 	DeviceId string `json:"deviceId,omitempty"`
 	// Details about IPv4 configuration for this Network.
@@ -175,6 +178,9 @@ type CreateNetworkIpv4ConfigurationDhcpConfiguration struct {
 	LeaseTimeSeconds int64 `json:"leaseTimeSeconds,omitempty"`
 	// Domain name that can be used to access network in the browser.
 	DomainName string `json:"domainName,omitempty"`
+	// Whether the DHCP server probes an address with ICMP before leasing it.
+	// Required by the API when mode is SERVER.
+	PingConflictDetectionEnabled bool `json:"pingConflictDetectionEnabled"`
 }
 
 // CreateNetworkIpv6ConfigurationClientAddressAssignment represents a nested object structure.

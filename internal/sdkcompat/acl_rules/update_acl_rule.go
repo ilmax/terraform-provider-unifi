@@ -107,6 +107,9 @@ type UpdateACLRuleResponseMac struct {
 	Metadata *UpdateACLRuleMetadata `json:"metadata"`
 	// Protocols this ACL rule will be applied to. When null, the rule will be appli...
 	ProtocolFilter []json.RawMessage `json:"protocolFilter,omitempty"`
+	// Network ID to which this ACL rule applies. Required for MAC rules; the API
+	// echoes it back on update, but this field was missing here originally.
+	NetworkIdFilter string `json:"networkIdFilter,omitempty"`
 }
 
 // UpdateACLRuleEnforcingDeviceFilter represents a nested object structure.

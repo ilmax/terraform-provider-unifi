@@ -111,6 +111,9 @@ type GetNetworkDetailsIpv4ConfigurationDhcpConfiguration struct {
 	LeaseTimeSeconds int64 `json:"leaseTimeSeconds,omitempty"`
 	// Domain name that can be used to access network in the browser.
 	DomainName string `json:"domainName,omitempty"`
+	// Whether the DHCP server probes an address with ICMP before leasing it.
+	// Required by the API when mode is SERVER.
+	PingConflictDetectionEnabled bool `json:"pingConflictDetectionEnabled"`
 }
 
 // GetNetworkDetailsIpv4ConfigurationDhcpConfigurationIpAddressRange represents a nested object structure.
