@@ -1,4 +1,4 @@
-package provider
+package acceptance
 
 import (
 	"fmt"
@@ -8,9 +8,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 )
 
-func TestAccDNSAAAARecord_basic(t *testing.T) {
-	resourceName := "unifi_dns_aaaa_record.test"
-	domain := acctest.RandomWithPrefix("tf-acc-aaaa") + ".example.com"
+func TestAccDNSForwardDomainPolicy_basic(t *testing.T) {
+	resourceName := "unifi_dns_forward_domain_policy.test"
+	domain := acctest.RandomWithPrefix("tf-acc-forward") + ".example.com"
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
@@ -19,18 +19,16 @@ func TestAccDNSAAAARecord_basic(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: testAccProviderConfig() + fmt.Sprintf(`
-resource "unifi_dns_aaaa_record" "test" {
-  enabled      = true
-  domain       = %q
-  ipv6_address = "2001:db8::10"
-  ttl_seconds  = 300
+resource "unifi_dns_forward_domain_policy" "test" {
+  enabled    = true
+  domain     = %q
+  ip_address = "192.0.2.53"
 }
 `, domain),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "enabled", "true"),
 					resource.TestCheckResourceAttr(resourceName, "domain", domain),
-					resource.TestCheckResourceAttr(resourceName, "ipv6_address", "2001:db8::10"),
-					resource.TestCheckResourceAttr(resourceName, "ttl_seconds", "300"),
+					resource.TestCheckResourceAttr(resourceName, "ip_address", "192.0.2.53"),
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
 					resource.TestCheckResourceAttrSet(resourceName, "site_id"),
 					resource.TestCheckResourceAttrSet(resourceName, "origin"),
@@ -38,17 +36,15 @@ resource "unifi_dns_aaaa_record" "test" {
 			},
 			{
 				Config: testAccProviderConfig() + fmt.Sprintf(`
-resource "unifi_dns_aaaa_record" "test" {
-  enabled      = false
-  domain       = %q
-  ipv6_address = "2001:db8::20"
-  ttl_seconds  = 600
+resource "unifi_dns_forward_domain_policy" "test" {
+  enabled    = false
+  domain     = %q
+  ip_address = "192.0.2.54"
 }
 `, domain),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "enabled", "false"),
-					resource.TestCheckResourceAttr(resourceName, "ipv6_address", "2001:db8::20"),
-					resource.TestCheckResourceAttr(resourceName, "ttl_seconds", "600"),
+					resource.TestCheckResourceAttr(resourceName, "ip_address", "192.0.2.54"),
 					resource.TestCheckResourceAttrSet(resourceName, "origin"),
 				),
 			},
