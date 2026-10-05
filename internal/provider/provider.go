@@ -156,10 +156,13 @@ func (p *unifiProvider) Resources(ctx context.Context) []func() resource.Resourc
 		NewDNSSRVRecordResource,
 		NewDNSTXTRecordResource,
 		NewFirewallPolicyOrderingResource,
+		NewFirewallPolicyResource,
 		NewFirewallRuleResource,
 		NewFirewallZoneResource,
 		NewFirewallZoneNetworksResource,
+		NewHotspotVoucherResource,
 		NewNetworkResource,
+		NewTrafficMatchingListResource,
 		NewWifiResource,
 	}
 }
@@ -172,9 +175,19 @@ func (p *unifiProvider) DataSources(ctx context.Context) []func() datasource.Dat
 		NewDNSPolicyDataSource,
 		NewClientDataSource,
 		NewDeviceDataSource,
+		NewDeviceTagDataSource,
+		NewDPIApplicationDataSource,
+		NewDPICategoryDataSource,
 		NewFirewallZoneDataSource,
 		NewFirewallZonesDataSource,
+		NewPendingDevicesDataSource,
+		NewRadiusProfileDataSource,
 		NewSiteDataSource,
+		NewSwitchLagDataSource,
+		NewSwitchMcLagDomainDataSource,
+		NewSwitchStackDataSource,
+		NewVPNServerDataSource,
+		NewVPNSiteToSiteTunnelDataSource,
 		NewWanDataSource,
 	}
 }
