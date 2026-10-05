@@ -1,2 +1,6 @@
 .data/
 .superpowers/
+.env
+**.tar.gz
+bin/
+__pycache__/

@@ -1,0 +1,48 @@
+name: Acceptance tests
+
+on:
+  push:
+    branches: [main]
+  pull_request: {}
+  workflow_dispatch: {}
+
+jobs:
+  acctest:
+    # This job talks to a long-lived local console at https://localhost:11443
+    # (see test-infra/unifi/README.md) — it does not boot one from scratch.
+    # A GitHub-hosted runner starts a fresh VM every run with nothing
+    # listening on that port, so this must run on a self-hosted runner that
+    # already has `docker compose up -d` running against
+    # test-infra/unifi/docker-compose.yml, with the one-time manual console
+    # setup (README.md's "Quick start") already done. Rename this label to
+    # match whatever runner group actually hosts that console.
+    runs-on: [self-hosted, unifi-test-console]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Write test-infra/unifi/.env
+        working-directory: test-infra/unifi
+        run: |
+          cat > .env <<EOF
+          UOS_CONSOLE_PASSWORD=${{ secrets.UNIFI_TEST_CONSOLE_PASSWORD }}
+          UNIFI_API_KEY=${{ secrets.UNIFI_TEST_API_KEY }}
+          EOF
+
+      - name: Build
+        run: make build
+
+      - name: Unit tests
+        run: make test
+
+      # adopt-fleet, enable-zbf, and testacc are each idempotent (see
+      # test-infra/unifi/README.md) — safe to run on every job against the
+      # same long-lived console, whatever state it was already in.
+      - name: Acceptance tests
+        run: make ci-test
