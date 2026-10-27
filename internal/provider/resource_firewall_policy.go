@@ -34,6 +34,7 @@ type firewallPolicyResourceModel struct {
 	AllowReturnTraffic           types.Bool   `tfsdk:"allow_return_traffic"`
 	Enabled                      types.Bool   `tfsdk:"enabled"`
 	LoggingEnabled               types.Bool   `tfsdk:"logging_enabled"`
+	ReportFlowEnabled            types.Bool   `tfsdk:"report_flow_enabled"`
 	IPProtocolScope              types.String `tfsdk:"ip_protocol_scope"`
 	IpsecFilter                  types.String `tfsdk:"ipsec_filter"`
 	ConnectionStateFilter        types.Set    `tfsdk:"connection_state_filter"`
@@ -105,6 +106,22 @@ func (r *firewallPolicyResource) Schema(ctx context.Context, req resource.Schema
 				Optional: true,
 				Computed: true,
 				Default:  booldefault.StaticBool(false),
+			},
+			// No schema default: the API defaults to true when the field is omitted,
+			// but reports false for the predefined policies it never reports (Allow
+			// Return Traffic, multicast and IPv6 neighbor discovery). A fixed default
+			// would show a permanent diff on an imported predefined policy, so leave
+			// it unset and keep whatever the controller reports.
+			"report_flow_enabled": schema.BoolAttribute{
+				Optional: true,
+				Computed: true,
+				PlanModifiers: []planmodifier.Bool{
+					boolplanmodifier.UseStateForUnknown(),
+				},
+				Description: "Report traffic matched by this policy in Insights Flows. When unset, the controller " +
+					"decides (it defaults to `true`). Always `false` for the predefined Allow Return Traffic " +
+					"policies and the predefined policies allowing only multicast or IPv6 neighbor discovery " +
+					"traffic, which are never reported.",
 			},
 			"ip_protocol_scope": schema.StringAttribute{
 				Optional: true,
@@ -338,6 +355,9 @@ func buildFirewallPolicyPayload(plan firewallPolicyResourceModel) (map[string]an
 		"destination":     destination,
 	}
 
+	if !plan.ReportFlowEnabled.IsNull() && !plan.ReportFlowEnabled.IsUnknown() {
+		payload["reportFlowEnabled"] = plan.ReportFlowEnabled.ValueBool()
+	}
 	if !plan.Description.IsNull() && !plan.Description.IsUnknown() {
 		payload["description"] = plan.Description.ValueString()
 	}
@@ -371,6 +391,7 @@ func firewallPolicyStateFromAPI(siteID string, p firewallpolicies.Policy) firewa
 		Action:            types.StringValue(p.Action.Type),
 		Enabled:           types.BoolValue(p.Enabled),
 		LoggingEnabled:    types.BoolValue(p.LoggingEnabled),
+		ReportFlowEnabled: types.BoolValue(p.ReportFlowEnabled),
 		IPProtocolScope:   types.StringValue(p.IpProtocolScope.IpVersion),
 		IpsecFilter:       stringValueOrNull(p.IpsecFilter),
 		SourceZoneID:      types.StringValue(p.Source.ZoneId),
