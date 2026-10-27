@@ -26,6 +26,9 @@ func TestAccFirewallZoneNetworks_basic(t *testing.T) {
 	if !hasZoneBasedFirewall(t) {
 		t.Skip("Zone Based Firewall is not enabled on this console — see test-infra/unifi/README.md, `make enable-zbf`")
 	}
+	if !hasAdoptedGateway(t) {
+		t.Skip("no gateway is adopted on this console; the helper network is gateway-managed and needs one")
+	}
 
 	zoneName := "tf-acc-zonenet-" + acctest.RandStringFromCharSet(8, acctest.CharSetAlphaNum)
 	netName := networkTestName("tf-zonenetnet")

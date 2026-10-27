@@ -91,7 +91,10 @@ resource "unifi_network" "test" {
 // (see README.md's "Zone Based Firewall" section) — the real API rejects a
 // GATEWAY network with none.
 func TestAccNetwork_gatewayBasic(t *testing.T) {
-	testAccPreCheck(t) // must run before findFirewallZoneIDByName's own API call
+	testAccPreCheck(t) // must run before hasAdoptedGateway's own API call
+	if !hasAdoptedGateway(t) {
+		t.Skip("no gateway is adopted on this console; a GATEWAY network needs one (see TestAccNetwork_gatewayRequiresAdoptedGateway for the error path)")
+	}
 	resourceName := "unifi_network.test"
 	name := networkTestName("tf-netgw")
 	zoneID := findFirewallZoneIDByName(t, "Internal")
