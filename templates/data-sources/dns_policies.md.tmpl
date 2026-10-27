@@ -1,0 +1,30 @@
+---
+page_title: "{{.Name}} {{.Type}} - {{.RenderedProviderName}}"
+subcategory: ""
+description: |-
+{{ .Description | plainmarkdown | trimspace | prefixlines "  " }}
+---
+
+# {{.Name}} ({{.Type}})
+
+{{ .Description | trimspace }}
+
+{{ if .HasExample -}}
+## Example Usage
+
+{{ tffile .ExampleFile }}
+{{- end }}
+
+## DNS Policy Types
+
+The `type` filter and each returned policy `type` can currently be one of:
+
+- `A_RECORD`
+- `AAAA_RECORD`
+- `CNAME_RECORD`
+- `FORWARD_DOMAIN`
+- `MX_RECORD`
+- `SRV_RECORD`
+- `TXT_RECORD`
+
+{{ .SchemaMarkdown | trimspace }}

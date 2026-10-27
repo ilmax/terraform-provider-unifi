@@ -11,6 +11,14 @@ CONSOLE_ENV   := $(CONSOLE_DIR)/.env
 build:
 	go build ./...
 
+# docs regenerates docs/ from the provider schema with tfplugindocs
+# (scripts/generate-docs.sh). Attribute text comes from the schema's
+# MarkdownDescription, examples from examples/, extra prose from templates/.
+# CI fails when docs/ is out of date.
+.PHONY: docs
+docs:
+	scripts/generate-docs.sh
+
 .PHONY: test
 test:
 	go test -count $(TEST_COUNT) $(TEST) $(TESTARGS)

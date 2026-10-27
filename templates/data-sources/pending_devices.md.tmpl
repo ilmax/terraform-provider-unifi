@@ -1,0 +1,24 @@
+---
+page_title: "{{.Name}} {{.Type}} - {{.RenderedProviderName}}"
+subcategory: ""
+description: |-
+{{ .Description | plainmarkdown | trimspace | prefixlines "  " }}
+---
+
+# {{.Name}} ({{.Type}})
+
+{{ .Description | trimspace }}
+
+{{ if .HasExample -}}
+## Example Usage
+
+{{ tffile .ExampleFile }}
+{{- end }}
+
+## Notes
+
+- This is global (not scoped to a site) and GET-only in the real API — there's no way to adopt a device through this provider; adoption happens through the console UI or the `adoptDevice` API.
+- Always returns `200` with a list, which may be empty (a console with no devices currently pending adoption).
+- The UniFi Network API provides configuration and real-time status for sites, devices, and clients. It authenticates using an `X-API-Key` header (set `api_key` in the provider).
+
+{{ .SchemaMarkdown | trimspace }}

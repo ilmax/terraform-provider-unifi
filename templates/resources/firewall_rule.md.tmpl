@@ -1,0 +1,34 @@
+---
+page_title: "{{.Name}} {{.Type}} - {{.RenderedProviderName}}"
+subcategory: ""
+description: |-
+{{ .Description | plainmarkdown | trimspace | prefixlines "  " }}
+---
+
+# {{.Name}} ({{.Type}})
+
+{{ .Description | trimspace }}
+
+{{ if .HasExample -}}
+## Example Usage
+
+{{ tffile .ExampleFile }}
+{{- end }}
+
+## Notes
+
+- `source_filter`/`destination_filter` model the real API's discriminated union of match criteria as native attributes rather than a raw JSON string: one shared shape covers every variant (`ip_addresses_or_subnets`, `network_ids`, `port_filter`, `mac_addresses`, `prefix_length`), and only the field(s) matching the chosen `type` may be set — the provider validates the rest are omitted.
+- For an `IPV4` rule, `type` is `IP_ADDRESSES_OR_SUBNETS`, `NETWORKS`, or `PORTS`. `port_filter` is required when `type = PORTS`, and optional as an extra restriction on the other two — but only when `protocol_filter` is also set on the rule (the real API rejects a port filter without one).
+- For a `MAC` rule, `type` is always `MAC_ADDRESSES`; `prefix_length` (1-48) is optional and narrows the match to a MAC address prefix instead of full addresses.
+- `network_id_filter` is required by the API when `type = MAC`; unused for `IPV4`.
+- Rules are evaluated by index (lower numbers are evaluated first). For explicit ordering management, use `unifi_acl_rule_ordering`.
+- The UniFi Network API provides configuration and real-time status for sites, devices, and clients. It authenticates using an `X-API-Key` header (set `api_key` in the provider).
+
+{{ .SchemaMarkdown | trimspace }}{{- if .HasImport }}
+
+## Import
+
+Import is supported using the following syntax:
+
+{{ codefile "shell" .ImportFile }}
+{{- end }}

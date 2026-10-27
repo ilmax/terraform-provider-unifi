@@ -1,0 +1,25 @@
+---
+page_title: "{{.Name}} {{.Type}} - {{.RenderedProviderName}}"
+subcategory: ""
+description: |-
+{{ .Description | plainmarkdown | trimspace | prefixlines "  " }}
+---
+
+# {{.Name}} ({{.Type}})
+
+{{ .Description | trimspace }}
+
+{{ if .HasExample -}}
+## Example Usage
+
+{{ tffile .ExampleFile }}
+{{- end }}
+
+## Notes
+
+- This is global reference data (not scoped to a site) and GET-only in the real API, so it's a data source rather than a resource.
+- Unlike most other identifiers in this API, `application_id` is a small integer, not a UUID.
+- There is no lookup-by-name; `application_id` must be the exact ID.
+- The UniFi Network API provides configuration and real-time status for sites, devices, and clients. It authenticates using an `X-API-Key` header (set `api_key` in the provider).
+
+{{ .SchemaMarkdown | trimspace }}
