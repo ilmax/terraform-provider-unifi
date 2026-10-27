@@ -35,14 +35,21 @@ func (r *dnsAAAARecordResource) Metadata(ctx context.Context, req resource.Metad
 
 func (r *dnsAAAARecordResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
+		MarkdownDescription: "Manages a UniFi DNS AAAA record policy.",
 		Attributes: map[string]schema.Attribute{
-			"id":           dnsPolicyIDAttribute(),
-			"site_id":      dnsPolicySiteIDAttribute(),
-			"enabled":      dnsPolicyEnabledAttribute(),
-			"domain":       dnsPolicyDomainAttribute(true),
-			"origin":       dnsPolicyOriginAttribute(),
-			"ipv6_address": schema.StringAttribute{Required: true},
-			"ttl_seconds":  schema.Int64Attribute{Optional: true},
+			"id":      dnsPolicyIDAttribute(),
+			"site_id": dnsPolicySiteIDAttribute(),
+			"enabled": dnsPolicyEnabledAttribute(),
+			"domain":  dnsPolicyDomainAttribute(true, "Domain name for the record."),
+			"origin":  dnsPolicyOriginAttribute(),
+			"ipv6_address": schema.StringAttribute{
+				Required:            true,
+				MarkdownDescription: "IPv6 address returned for the record.",
+			},
+			"ttl_seconds": schema.Int64Attribute{
+				Optional:            true,
+				MarkdownDescription: "DNS TTL in seconds.",
+			},
 		},
 	}
 }

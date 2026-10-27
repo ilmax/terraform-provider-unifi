@@ -42,25 +42,32 @@ func (d *vpnServerDataSource) Schema(ctx context.Context, req datasource.SchemaR
 		Description: "A configured VPN server. This endpoint is GET-only in the real API, so it's a data source rather than a resource.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Computed: true,
+				MarkdownDescription: "VPN server identifier.",
+				Computed:            true,
 			},
 			"site_id": schema.StringAttribute{
-				Optional: true,
+				MarkdownDescription: "Site identifier. Defaults to provider `site_id` when omitted. A local `site_id` overrides the provider setting.",
+				Optional:            true,
 			},
 			"vpn_server_id": schema.StringAttribute{
-				Required: true,
+				MarkdownDescription: "VPN server identifier.",
+				Required:            true,
 			},
 			"name": schema.StringAttribute{
-				Computed: true,
+				MarkdownDescription: "VPN server name.",
+				Computed:            true,
 			},
 			"type": schema.StringAttribute{
-				Computed: true,
+				MarkdownDescription: "VPN server type.",
+				Computed:            true,
 			},
 			"enabled": schema.BoolAttribute{
-				Computed: true,
+				MarkdownDescription: "Whether the VPN server is enabled.",
+				Computed:            true,
 			},
 			"origin": schema.StringAttribute{
-				Computed: true,
+				MarkdownDescription: "Entity origin metadata.",
+				Computed:            true,
 			},
 		},
 	}

@@ -33,13 +33,17 @@ func (r *dnsTXTRecordResource) Metadata(ctx context.Context, req resource.Metada
 
 func (r *dnsTXTRecordResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
+		MarkdownDescription: "Manages a UniFi DNS TXT record policy.",
 		Attributes: map[string]schema.Attribute{
 			"id":      dnsPolicyIDAttribute(),
 			"site_id": dnsPolicySiteIDAttribute(),
 			"enabled": dnsPolicyEnabledAttribute(),
-			"domain":  dnsPolicyDomainAttribute(true),
+			"domain":  dnsPolicyDomainAttribute(true, "Domain name for the record."),
 			"origin":  dnsPolicyOriginAttribute(),
-			"text":    schema.StringAttribute{Required: true},
+			"text": schema.StringAttribute{
+				Required:            true,
+				MarkdownDescription: "TXT record value.",
+			},
 		},
 	}
 }

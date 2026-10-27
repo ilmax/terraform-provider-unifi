@@ -104,139 +104,168 @@ func (r *networkResource) Metadata(ctx context.Context, req resource.MetadataReq
 
 func (r *networkResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
+		MarkdownDescription: "Manages a UniFi network.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Computed: true,
+				MarkdownDescription: "Network identifier.",
+				Computed:            true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
 			"site_id": schema.StringAttribute{
-				Optional: true,
-				Computed: true,
+				MarkdownDescription: "Site identifier. Defaults to provider `site_id` when omitted. A local `site_id` overrides the provider setting.",
+				Optional:            true,
+				Computed:            true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
 			"name": schema.StringAttribute{
-				Required: true,
+				MarkdownDescription: "Network name.",
+				Required:            true,
 			},
 			"management": schema.StringAttribute{
-				Required: true,
+				MarkdownDescription: "Management type. Example: `GATEWAY`, `SWITCH`, `UNMANAGED`.",
+				Required:            true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
 			"enabled": schema.BoolAttribute{
-				Optional: true,
-				Computed: true,
-				Default:  booldefault.StaticBool(true),
+				MarkdownDescription: "Enable or disable the network.",
+				Optional:            true,
+				Computed:            true,
+				Default:             booldefault.StaticBool(true),
 			},
 			"vlan_id": schema.Int64Attribute{
-				Optional: true,
-				Computed: true,
+				MarkdownDescription: "VLAN ID.",
+				Optional:            true,
+				Computed:            true,
 				PlanModifiers: []planmodifier.Int64{
 					int64planmodifier.UseStateForUnknown(),
 				},
 			},
 			"zone_id": schema.StringAttribute{
-				Optional: true,
-				Computed: true,
+				MarkdownDescription: "Firewall zone ID (gateway networks).",
+				Optional:            true,
+				Computed:            true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
 			"device_id": schema.StringAttribute{
-				Optional: true,
-				Computed: true,
+				MarkdownDescription: "Switch device ID (switch networks).",
+				Optional:            true,
+				Computed:            true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
 			"isolation_enabled": schema.BoolAttribute{
-				Optional: true,
-				Computed: true,
+				MarkdownDescription: "Whether the network is isolated.",
+				Optional:            true,
+				Computed:            true,
 				PlanModifiers: []planmodifier.Bool{
 					boolplanmodifier.UseStateForUnknown(),
 				},
 			},
 			"cellular_backup_enabled": schema.BoolAttribute{
-				Optional: true,
-				Computed: true,
+				MarkdownDescription: "Allow cellular backup.",
+				Optional:            true,
+				Computed:            true,
 				PlanModifiers: []planmodifier.Bool{
 					boolplanmodifier.UseStateForUnknown(),
 				},
 			},
 			"internet_access_enabled": schema.BoolAttribute{
-				Optional: true,
-				Computed: true,
+				MarkdownDescription: "Allow internet access.",
+				Optional:            true,
+				Computed:            true,
 				PlanModifiers: []planmodifier.Bool{
 					boolplanmodifier.UseStateForUnknown(),
 				},
 			},
 			"multicast_dns_enabled": schema.BoolAttribute{
-				Optional: true,
-				Computed: true,
+				MarkdownDescription: "Enable multicast DNS forwarding.",
+				Optional:            true,
+				Computed:            true,
 				PlanModifiers: []planmodifier.Bool{
 					boolplanmodifier.UseStateForUnknown(),
 				},
 			},
 			"dhcp_guarding": schema.SingleNestedAttribute{
-				Optional: true,
+				MarkdownDescription: "DHCP guarding configuration.",
+				Optional:            true,
 				Attributes: map[string]schema.Attribute{
 					"trusted_dhcp_server_ip_addresses": schema.ListAttribute{
-						Optional:    true,
-						ElementType: types.StringType,
+						MarkdownDescription: "Trusted DHCP server IPs.",
+						Optional:            true,
+						ElementType:         types.StringType,
 					},
 				},
 			},
 			"ipv4_configuration": schema.SingleNestedAttribute{
-				Optional: true,
+				MarkdownDescription: "IPv4 configuration, including DHCP/DNS settings.",
+				Optional:            true,
 				Attributes: map[string]schema.Attribute{
 					"auto_scale_enabled": schema.BoolAttribute{
-						Optional: true,
-						Computed: true,
+						MarkdownDescription: "Enable auto-scaling subnet sizing.",
+						Optional:            true,
+						Computed:            true,
 					},
 					"host_ip_address": schema.StringAttribute{
-						Optional: true,
+						MarkdownDescription: "Gateway IP.",
+						Optional:            true,
 					},
 					"prefix_length": schema.Int64Attribute{
-						Optional: true,
+						MarkdownDescription: "CIDR prefix length.",
+						Optional:            true,
 					},
 					"additional_host_ip_subnets": schema.ListAttribute{
-						Optional:    true,
-						ElementType: types.StringType,
+						MarkdownDescription: "Additional subnets.",
+						Optional:            true,
+						ElementType:         types.StringType,
 					},
 					"dhcp_configuration": schema.SingleNestedAttribute{
-						Optional: true,
+						MarkdownDescription: "DHCP settings.",
+						Optional:            true,
 						Attributes: map[string]schema.Attribute{
 							"mode": schema.StringAttribute{
-								Optional: true,
+								MarkdownDescription: "DHCP mode (for example `SERVER` or `RELAY`).",
+								Optional:            true,
 							},
 							"ip_address_range": schema.SingleNestedAttribute{
-								Optional: true,
+								MarkdownDescription: "DHCP pool range.",
+								Optional:            true,
 								Attributes: map[string]schema.Attribute{
 									"start": schema.StringAttribute{
-										Optional: true,
+										MarkdownDescription: "Range start.",
+										Optional:            true,
 									},
 									"stop": schema.StringAttribute{
-										Optional: true,
+										MarkdownDescription: "Range end.",
+										Optional:            true,
 									},
 								},
 							},
 							"gateway_ip_address_override": schema.StringAttribute{
-								Optional: true,
+								MarkdownDescription: "Gateway override.",
+								Optional:            true,
 							},
 							"dns_servers": schema.ListAttribute{
-								Optional:    true,
-								ElementType: types.StringType,
+								MarkdownDescription: "DNS servers.",
+								Optional:            true,
+								ElementType:         types.StringType,
 							},
 							"lease_time_seconds": schema.Int64Attribute{
-								Optional: true,
+								MarkdownDescription: "Lease time in seconds.",
+								Optional:            true,
 							},
 							"domain_name": schema.StringAttribute{
-								Optional: true,
+								MarkdownDescription: "DNS search domain.",
+								Optional:            true,
 							},
 							"ping_conflict_detection_enabled": schema.BoolAttribute{
 								Optional:    true,
@@ -247,54 +276,68 @@ func (r *networkResource) Schema(ctx context.Context, req resource.SchemaRequest
 				},
 			},
 			"ipv6_configuration": schema.SingleNestedAttribute{
-				Optional: true,
+				MarkdownDescription: "IPv6 configuration.",
+				Optional:            true,
 				Attributes: map[string]schema.Attribute{
 					"interface_type": schema.StringAttribute{
-						Optional: true,
+						MarkdownDescription: "Interface type.",
+						Optional:            true,
 					},
 					"prefix_delegation_wan_interface_id": schema.StringAttribute{
-						Optional: true,
+						MarkdownDescription: "WAN interface for PD.",
+						Optional:            true,
 					},
 					"dns_servers": schema.ListAttribute{
-						Optional:    true,
-						ElementType: types.StringType,
+						MarkdownDescription: "DNS servers.",
+						Optional:            true,
+						ElementType:         types.StringType,
 					},
 					"additional_host_ip_subnets": schema.ListAttribute{
-						Optional:    true,
-						ElementType: types.StringType,
+						MarkdownDescription: "Additional subnets.",
+						Optional:            true,
+						ElementType:         types.StringType,
 					},
 					"client_address_assignment": schema.SingleNestedAttribute{
-						Optional: true,
+						MarkdownDescription: "Client addressing.",
+						Optional:            true,
 						Attributes: map[string]schema.Attribute{
 							"slaac_enabled": schema.BoolAttribute{
-								Optional: true,
+								MarkdownDescription: "Enable SLAAC.",
+								Optional:            true,
 							},
 							"dhcp_configuration": schema.SingleNestedAttribute{
-								Optional: true,
+								MarkdownDescription: "DHCPv6 settings.",
+								Optional:            true,
 								Attributes: map[string]schema.Attribute{
 									"ip_address_suffix_range": schema.SingleNestedAttribute{
-										Optional: true,
+										MarkdownDescription: "DHCPv6 suffix range.",
+										Optional:            true,
 										Attributes: map[string]schema.Attribute{
 											"start": schema.StringAttribute{
-												Optional: true,
+												MarkdownDescription: "Range start.",
+												Optional:            true,
 											},
 											"stop": schema.StringAttribute{
-												Optional: true,
+												MarkdownDescription: "Range end.",
+												Optional:            true,
 											},
 										},
 									},
 									"lease_time_seconds": schema.Int64Attribute{
-										Optional: true,
+										MarkdownDescription: "Lease time in seconds.",
+										Optional:            true,
 									},
 								},
 							},
 						},
 					},
 					"router_advertisement": schema.SingleNestedAttribute{
-						Optional: true,
+						MarkdownDescription: "Router advertisement.",
+						Optional:            true,
 						Attributes: map[string]schema.Attribute{
 							"priority": schema.StringAttribute{
-								Optional: true,
+								MarkdownDescription: "Router advertisement priority.",
+								Optional:            true,
 							},
 						},
 					},

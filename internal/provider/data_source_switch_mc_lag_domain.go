@@ -62,11 +62,13 @@ func lagMemberNestedObject() schema.NestedAttributeObject {
 	return schema.NestedAttributeObject{
 		Attributes: map[string]schema.Attribute{
 			"device_id": schema.StringAttribute{
-				Computed: true,
+				MarkdownDescription: "Device ID this member port belongs to.",
+				Computed:            true,
 			},
 			"port_idxs": schema.ListAttribute{
-				Computed:    true,
-				ElementType: types.Int64Type,
+				MarkdownDescription: "Port indexes making up this member.",
+				Computed:            true,
+				ElementType:         types.Int64Type,
 			},
 		},
 	}
@@ -79,50 +81,63 @@ func (d *switchMcLagDomainDataSource) Schema(ctx context.Context, req datasource
 			"a data source rather than a resource.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Computed: true,
+				MarkdownDescription: "MC-LAG domain identifier.",
+				Computed:            true,
 			},
 			"site_id": schema.StringAttribute{
-				Optional: true,
+				MarkdownDescription: "Site identifier. Defaults to provider `site_id` when omitted. A local `site_id` overrides the provider setting.",
+				Optional:            true,
 			},
 			"mc_lag_domain_id": schema.StringAttribute{
-				Required: true,
+				MarkdownDescription: "MC-LAG domain identifier.",
+				Required:            true,
 			},
 			"name": schema.StringAttribute{
-				Computed: true,
+				MarkdownDescription: "MC-LAG domain name.",
+				Computed:            true,
 			},
 			"origin": schema.StringAttribute{
-				Computed: true,
+				MarkdownDescription: "Entity origin metadata.",
+				Computed:            true,
 			},
 			"lags": schema.ListNestedAttribute{
-				Computed: true,
+				MarkdownDescription: "LAGs local to this domain.",
+				Computed:            true,
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
 						"id": schema.StringAttribute{
-							Computed: true,
+							MarkdownDescription: "LAG identifier.",
+							Computed:            true,
 						},
 						"origin": schema.StringAttribute{
-							Computed: true,
+							MarkdownDescription: "Entity origin metadata.",
+							Computed:            true,
 						},
 						"members": schema.ListNestedAttribute{
-							Computed:     true,
-							NestedObject: lagMemberNestedObject(),
+							MarkdownDescription: "LAG member ports.",
+							Computed:            true,
+							NestedObject:        lagMemberNestedObject(),
 						},
 					},
 				},
 			},
 			"peers": schema.ListNestedAttribute{
-				Computed: true,
+				MarkdownDescription: "Peer switches forming this MC-LAG domain.",
+				Computed:            true,
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
 						"device_id": schema.StringAttribute{
-							Computed: true,
+							MarkdownDescription: "Peer device ID.",
+							Computed:            true,
 						},
 						"link_port_idxs": schema.ListAttribute{
-							Computed:    true,
-							ElementType: types.Int64Type,
+							MarkdownDescription: "Port indexes used for the inter-chassis link.",
+							Computed:            true,
+							ElementType:         types.Int64Type,
 						},
 						"role": schema.StringAttribute{
-							Computed: true,
+							MarkdownDescription: "Peer role in the domain.",
+							Computed:            true,
 						},
 					},
 				},

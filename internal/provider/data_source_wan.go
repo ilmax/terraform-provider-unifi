@@ -35,18 +35,23 @@ func (d *wanDataSource) Metadata(ctx context.Context, req datasource.MetadataReq
 
 func (d *wanDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
+		MarkdownDescription: "Reads WAN interface details.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Computed: true,
+				MarkdownDescription: "WAN identifier.",
+				Computed:            true,
 			},
 			"site_id": schema.StringAttribute{
-				Optional: true,
+				MarkdownDescription: "Site identifier. Defaults to provider `site_id` when omitted. A local `site_id` overrides the provider setting.",
+				Optional:            true,
 			},
 			"wan_id": schema.StringAttribute{
-				Required: true,
+				MarkdownDescription: "WAN interface identifier.",
+				Required:            true,
 			},
 			"name": schema.StringAttribute{
-				Computed: true,
+				MarkdownDescription: "WAN interface name.",
+				Computed:            true,
 			},
 		},
 	}

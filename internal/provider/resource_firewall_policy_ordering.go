@@ -42,40 +42,47 @@ func (r *firewallPolicyOrderingResource) Metadata(ctx context.Context, req resou
 
 func (r *firewallPolicyOrderingResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
+		MarkdownDescription: "Manages firewall policy ordering for a source/destination zone pair.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Computed: true,
+				MarkdownDescription: "Composite identifier in the format `<site_id>/<source_firewall_zone_id>/<destination_firewall_zone_id>`.",
+				Computed:            true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
 			"site_id": schema.StringAttribute{
-				Optional: true,
-				Computed: true,
+				MarkdownDescription: "Site identifier. Defaults to provider `site_id` when omitted. A local `site_id` overrides the provider setting.",
+				Optional:            true,
+				Computed:            true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
 			"source_firewall_zone_id": schema.StringAttribute{
-				Required: true,
+				MarkdownDescription: "Source firewall zone ID.",
+				Required:            true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
 			"destination_firewall_zone_id": schema.StringAttribute{
-				Required: true,
+				MarkdownDescription: "Destination firewall zone ID.",
+				Required:            true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
 			"before_system_defined": schema.ListAttribute{
-				Required:    true,
-				ElementType: types.StringType,
+				MarkdownDescription: "Ordered firewall policy IDs placed before system-defined policies.",
+				Required:            true,
+				ElementType:         types.StringType,
 			},
 			"after_system_defined": schema.ListAttribute{
-				Required:    true,
-				ElementType: types.StringType,
+				MarkdownDescription: "Ordered firewall policy IDs placed after system-defined policies.",
+				Required:            true,
+				ElementType:         types.StringType,
 			},
 		},
 	}

@@ -48,40 +48,51 @@ func (d *pendingDevicesDataSource) Schema(ctx context.Context, req datasource.Sc
 			"site yet. This is global (not scoped to a site) and GET-only in the real API.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Computed: true,
+				MarkdownDescription: "Data source identifier.",
+				Computed:            true,
 			},
 			"devices": schema.ListNestedAttribute{
-				Computed: true,
+				MarkdownDescription: "Devices currently pending adoption.",
+				Computed:            true,
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
 						"mac_address": schema.StringAttribute{
-							Computed: true,
+							MarkdownDescription: "Device MAC address.",
+							Computed:            true,
 						},
 						"ip_address": schema.StringAttribute{
-							Computed: true,
+							MarkdownDescription: "Device IP address.",
+							Computed:            true,
 						},
 						"model": schema.StringAttribute{
-							Computed: true,
+							MarkdownDescription: "Device model.",
+							Computed:            true,
 						},
 						"state": schema.StringAttribute{
-							Computed: true,
+							MarkdownDescription: "Adoption state.",
+							Computed:            true,
 						},
 						"firmware_version": schema.StringAttribute{
-							Computed: true,
+							MarkdownDescription: "Firmware version, if reported.",
+							Computed:            true,
 						},
 						"firmware_updatable": schema.BoolAttribute{
-							Computed: true,
+							MarkdownDescription: "Whether firmware can be updated before adoption.",
+							Computed:            true,
 						},
 						"supported": schema.BoolAttribute{
-							Computed: true,
+							MarkdownDescription: "Whether this model is supported.",
+							Computed:            true,
 						},
 						"adoption_target_site_ids": schema.ListAttribute{
-							Computed:    true,
-							ElementType: types.StringType,
+							MarkdownDescription: "Site IDs this device can be adopted into.",
+							Computed:            true,
+							ElementType:         types.StringType,
 						},
 						"features": schema.ListAttribute{
-							Computed:    true,
-							ElementType: types.StringType,
+							MarkdownDescription: "Device feature flags.",
+							Computed:            true,
+							ElementType:         types.StringType,
 						},
 					},
 				},

@@ -35,14 +35,21 @@ func (r *dnsMXRecordResource) Metadata(ctx context.Context, req resource.Metadat
 
 func (r *dnsMXRecordResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
+		MarkdownDescription: "Manages a UniFi DNS MX record policy.",
 		Attributes: map[string]schema.Attribute{
-			"id":                 dnsPolicyIDAttribute(),
-			"site_id":            dnsPolicySiteIDAttribute(),
-			"enabled":            dnsPolicyEnabledAttribute(),
-			"domain":             dnsPolicyDomainAttribute(true),
-			"origin":             dnsPolicyOriginAttribute(),
-			"mail_server_domain": schema.StringAttribute{Required: true},
-			"priority":           schema.Int64Attribute{Optional: true},
+			"id":      dnsPolicyIDAttribute(),
+			"site_id": dnsPolicySiteIDAttribute(),
+			"enabled": dnsPolicyEnabledAttribute(),
+			"domain":  dnsPolicyDomainAttribute(true, "Domain name for the record."),
+			"origin":  dnsPolicyOriginAttribute(),
+			"mail_server_domain": schema.StringAttribute{
+				Required:            true,
+				MarkdownDescription: "Mail server host for the record.",
+			},
+			"priority": schema.Int64Attribute{
+				Optional:            true,
+				MarkdownDescription: "MX priority; lower values are preferred.",
+			},
 		},
 	}
 }

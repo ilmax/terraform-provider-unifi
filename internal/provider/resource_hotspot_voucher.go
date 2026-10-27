@@ -54,14 +54,16 @@ func (r *hotspotVoucherResource) Schema(ctx context.Context, req resource.Schema
 			"so every attribute forces replacement.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Computed: true,
+				MarkdownDescription: "Voucher identifier.",
+				Computed:            true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
 			"site_id": schema.StringAttribute{
-				Optional: true,
-				Computed: true,
+				MarkdownDescription: "Site identifier. Defaults to provider `site_id` when omitted. A local `site_id` overrides the provider setting.",
+				Optional:            true,
+				Computed:            true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 					stringplanmodifier.UseStateForUnknown(),
@@ -118,18 +120,20 @@ func (r *hotspotVoucherResource) Schema(ctx context.Context, req resource.Schema
 				Description: "How many guests have used this voucher to authorize network access so far.",
 			},
 			"created_at": schema.StringAttribute{
-				Computed: true,
+				MarkdownDescription: "When the voucher was created (RFC 3339).",
+				Computed:            true,
 			},
 			"activated_at": schema.StringAttribute{
 				Computed:    true,
-				Description: "When the first guest authorized with this voucher. Null until then.",
+				Description: "When the first guest authorized with this voucher (RFC 3339). Null until then.",
 			},
 			"expires_at": schema.StringAttribute{
 				Computed:    true,
-				Description: "When the voucher stops granting access. Null until activated.",
+				Description: "When the voucher stops granting access (RFC 3339). Null until activated.",
 			},
 			"expired": schema.BoolAttribute{
-				Computed: true,
+				MarkdownDescription: "Whether the voucher has expired.",
+				Computed:            true,
 			},
 		},
 	}

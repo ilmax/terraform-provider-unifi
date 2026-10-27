@@ -41,19 +41,24 @@ func (d *radiusProfileDataSource) Schema(ctx context.Context, req datasource.Sch
 		Description: "A configured RADIUS profile. This endpoint is GET-only in the real API, so it's a data source rather than a resource.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Computed: true,
+				MarkdownDescription: "RADIUS profile identifier.",
+				Computed:            true,
 			},
 			"site_id": schema.StringAttribute{
-				Optional: true,
+				MarkdownDescription: "Site identifier. Defaults to provider `site_id` when omitted. A local `site_id` overrides the provider setting.",
+				Optional:            true,
 			},
 			"radius_profile_id": schema.StringAttribute{
-				Required: true,
+				MarkdownDescription: "RADIUS profile identifier.",
+				Required:            true,
 			},
 			"name": schema.StringAttribute{
-				Computed: true,
+				MarkdownDescription: "RADIUS profile name.",
+				Computed:            true,
 			},
 			"origin": schema.StringAttribute{
-				Computed: true,
+				MarkdownDescription: "Entity origin metadata (e.g. `SYSTEM_DEFINED`, `DERIVED`, `USER_DEFINED`).",
+				Computed:            true,
 			},
 		},
 	}

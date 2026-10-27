@@ -56,34 +56,31 @@ func (r *firewallPolicyResource) Metadata(ctx context.Context, req resource.Meta
 
 func (r *firewallPolicyResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "A Zone Based Firewall policy: an allow/block/reject rule between two firewall zones. " +
-			"Requires unifi_firewall_zone for source_zone_id/destination_zone_id, and (like real UniFi hardware) " +
-			"a gateway model that actually supports Zone Based Firewall. " +
-			"The traffic filter (matching specific networks/IPs/ports/etc. within a zone, rather than the whole zone) " +
-			"is a large discriminated union in the real API; source_traffic_filter_json/destination_traffic_filter_json " +
-			"take it as a raw JSON string — the same escape hatch unifi_firewall_rule uses for its filters — rather " +
-			"than modeling every filter variant as native attributes. Schedules are not yet supported: an unscheduled " +
-			"policy is always active, which is the common case.",
+		MarkdownDescription: "Manages a Zone Based Firewall policy: an allow/block/reject rule between two firewall zones.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Computed: true,
+				MarkdownDescription: "Policy identifier.",
+				Computed:            true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
 			"site_id": schema.StringAttribute{
-				Optional: true,
-				Computed: true,
+				MarkdownDescription: "Site identifier. Defaults to provider `site_id` when omitted. A local `site_id` overrides the provider setting.",
+				Optional:            true,
+				Computed:            true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
 			"name": schema.StringAttribute{
-				Required: true,
+				MarkdownDescription: "Policy name.",
+				Required:            true,
 			},
 			"description": schema.StringAttribute{
-				Optional: true,
+				MarkdownDescription: "Policy description.",
+				Optional:            true,
 			},
 			"action": schema.StringAttribute{
 				Required:    true,
@@ -98,14 +95,16 @@ func (r *firewallPolicyResource) Schema(ctx context.Context, req resource.Schema
 				},
 			},
 			"enabled": schema.BoolAttribute{
-				Optional: true,
-				Computed: true,
-				Default:  booldefault.StaticBool(true),
+				MarkdownDescription: "Enable or disable the policy. Defaults to `true`.",
+				Optional:            true,
+				Computed:            true,
+				Default:             booldefault.StaticBool(true),
 			},
 			"logging_enabled": schema.BoolAttribute{
-				Optional: true,
-				Computed: true,
-				Default:  booldefault.StaticBool(false),
+				MarkdownDescription: "Enable logging for matching traffic. Defaults to `false`.",
+				Optional:            true,
+				Computed:            true,
+				Default:             booldefault.StaticBool(false),
 			},
 			// No schema default: the API defaults to true when the field is omitted,
 			// but reports false for the predefined policies it never reports (Allow
@@ -142,10 +141,12 @@ func (r *firewallPolicyResource) Schema(ctx context.Context, req resource.Schema
 					"A set, not a list: the real API stores this unordered and doesn't echo back the order it was sent in.",
 			},
 			"source_zone_id": schema.StringAttribute{
-				Required: true,
+				MarkdownDescription: "Source firewall zone ID.",
+				Required:            true,
 			},
 			"destination_zone_id": schema.StringAttribute{
-				Required: true,
+				MarkdownDescription: "Destination firewall zone ID.",
+				Required:            true,
 			},
 			"source_traffic_filter_json": schema.StringAttribute{
 				Optional:    true,

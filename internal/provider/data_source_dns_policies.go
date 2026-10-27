@@ -43,37 +43,48 @@ func (d *dnsPoliciesDataSource) Metadata(ctx context.Context, req datasource.Met
 
 func (d *dnsPoliciesDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
+		MarkdownDescription: "Lists DNS policies for a site, with optional filtering by type and domain.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Computed: true,
+				MarkdownDescription: "Data source identifier (site ID).",
+				Computed:            true,
 			},
 			"site_id": schema.StringAttribute{
-				Optional: true,
+				MarkdownDescription: "Site identifier. Defaults to provider `site_id` when omitted. A local `site_id` overrides the provider setting.",
+				Optional:            true,
 			},
 			"type": schema.StringAttribute{
-				Optional: true,
+				MarkdownDescription: "Case-insensitive DNS policy type filter. See supported values above.",
+				Optional:            true,
 			},
 			"domain": schema.StringAttribute{
-				Optional: true,
+				MarkdownDescription: "Case-insensitive DNS policy domain filter.",
+				Optional:            true,
 			},
 			"policies": schema.ListNestedAttribute{
-				Computed: true,
+				MarkdownDescription: "Matching DNS policies.",
+				Computed:            true,
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
 						"id": schema.StringAttribute{
-							Computed: true,
+							MarkdownDescription: "DNS policy identifier.",
+							Computed:            true,
 						},
 						"type": schema.StringAttribute{
-							Computed: true,
+							MarkdownDescription: "DNS policy type. See supported values above.",
+							Computed:            true,
 						},
 						"enabled": schema.BoolAttribute{
-							Computed: true,
+							MarkdownDescription: "DNS policy enabled state.",
+							Computed:            true,
 						},
 						"domain": schema.StringAttribute{
-							Computed: true,
+							MarkdownDescription: "DNS policy domain (when present).",
+							Computed:            true,
 						},
 						"origin": schema.StringAttribute{
-							Computed: true,
+							MarkdownDescription: "DNS policy origin metadata.",
+							Computed:            true,
 						},
 					},
 				},

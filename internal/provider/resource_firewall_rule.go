@@ -70,42 +70,50 @@ func (r *firewallResource) Schema(ctx context.Context, req resource.SchemaReques
 			"variant, validated per the chosen type) rather than a raw JSON string.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Computed: true,
+				MarkdownDescription: "ACL rule identifier.",
+				Computed:            true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
 			"site_id": schema.StringAttribute{
-				Optional: true,
-				Computed: true,
+				MarkdownDescription: "Site identifier. Defaults to provider `site_id` when omitted. A local `site_id` overrides the provider setting.",
+				Optional:            true,
+				Computed:            true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
 			"type": schema.StringAttribute{
-				Required: true,
+				MarkdownDescription: "ACL rule type. Example: `IPV4`, `MAC`.",
+				Required:            true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
 			"name": schema.StringAttribute{
-				Required: true,
+				MarkdownDescription: "Rule name.",
+				Required:            true,
 			},
 			"description": schema.StringAttribute{
-				Optional: true,
+				MarkdownDescription: "Rule description.",
+				Optional:            true,
 			},
 			"action": schema.StringAttribute{
-				Required: true,
+				MarkdownDescription: "Rule action. Example: `ALLOW`, `DENY`.",
+				Required:            true,
 			},
 			"enabled": schema.BoolAttribute{
-				Optional: true,
-				Computed: true,
-				Default:  booldefault.StaticBool(true),
+				MarkdownDescription: "Enable or disable the rule.",
+				Optional:            true,
+				Computed:            true,
+				Default:             booldefault.StaticBool(true),
 			},
 			"index": schema.Int64Attribute{
-				Optional: true,
-				Computed: true,
+				MarkdownDescription: "Rule priority (lower is higher priority).",
+				Optional:            true,
+				Computed:            true,
 			},
 			"source_filter": schema.SingleNestedAttribute{
 				Optional:    true,

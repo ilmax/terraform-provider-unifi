@@ -40,30 +40,27 @@ func (r *trafficMatchingListResource) Metadata(ctx context.Context, req resource
 
 func (r *trafficMatchingListResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "A reusable named list of IPv4 addresses, IPv6 addresses, or ports, referenced from " +
-			"traffic filters (e.g. unifi_firewall_policy's source_traffic_filter_json/destination_traffic_filter_json) " +
-			"instead of repeating the same match criteria inline. Each entry in the list is itself a small " +
-			"discriminated union (a single address, an address range, or a subnet for IPv4; a single address or " +
-			"subnet for IPv6; a single port or a port range for PORTS), so items_json takes them as a raw JSON " +
-			"array string — the same opaque-JSON escape hatch used elsewhere in this provider for deeply nested " +
-			"discriminated unions — rather than modeling every item variant as native attributes.",
+		MarkdownDescription: "Manages a reusable named list of IPv4 addresses, IPv6 addresses, or ports.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Computed: true,
+				MarkdownDescription: "List identifier.",
+				Computed:            true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
 			"site_id": schema.StringAttribute{
-				Optional: true,
-				Computed: true,
+				MarkdownDescription: "Site identifier. Defaults to provider `site_id` when omitted. A local `site_id` overrides the provider setting.",
+				Optional:            true,
+				Computed:            true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
 			"name": schema.StringAttribute{
-				Required: true,
+				MarkdownDescription: "List name.",
+				Required:            true,
 			},
 			"type": schema.StringAttribute{
 				Required:    true,

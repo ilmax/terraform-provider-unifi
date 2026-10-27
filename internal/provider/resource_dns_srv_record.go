@@ -39,18 +39,37 @@ func (r *dnsSRVRecordResource) Metadata(ctx context.Context, req resource.Metada
 
 func (r *dnsSRVRecordResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
+		MarkdownDescription: "Manages a UniFi DNS SRV record policy.",
 		Attributes: map[string]schema.Attribute{
-			"id":            dnsPolicyIDAttribute(),
-			"site_id":       dnsPolicySiteIDAttribute(),
-			"enabled":       dnsPolicyEnabledAttribute(),
-			"domain":        dnsPolicyDomainAttribute(true),
-			"origin":        dnsPolicyOriginAttribute(),
-			"service":       schema.StringAttribute{Required: true},
-			"protocol":      schema.StringAttribute{Required: true},
-			"server_domain": schema.StringAttribute{Required: true},
-			"port":          schema.Int64Attribute{Required: true},
-			"priority":      schema.Int64Attribute{Optional: true},
-			"weight":        schema.Int64Attribute{Optional: true},
+			"id":      dnsPolicyIDAttribute(),
+			"site_id": dnsPolicySiteIDAttribute(),
+			"enabled": dnsPolicyEnabledAttribute(),
+			"domain":  dnsPolicyDomainAttribute(true, "Domain name for the record."),
+			"origin":  dnsPolicyOriginAttribute(),
+			"service": schema.StringAttribute{
+				Required:            true,
+				MarkdownDescription: "SRV service label such as `_ldap`.",
+			},
+			"protocol": schema.StringAttribute{
+				Required:            true,
+				MarkdownDescription: "SRV protocol label such as `_tcp`.",
+			},
+			"server_domain": schema.StringAttribute{
+				Required:            true,
+				MarkdownDescription: "Hostname serving the service.",
+			},
+			"port": schema.Int64Attribute{
+				Required:            true,
+				MarkdownDescription: "Service port.",
+			},
+			"priority": schema.Int64Attribute{
+				Optional:            true,
+				MarkdownDescription: "SRV priority; lower values are preferred.",
+			},
+			"weight": schema.Int64Attribute{
+				Optional:            true,
+				MarkdownDescription: "SRV weight among records with equal priority.",
+			},
 		},
 	}
 }

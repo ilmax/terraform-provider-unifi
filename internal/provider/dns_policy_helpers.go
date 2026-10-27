@@ -49,7 +49,8 @@ func (r *dnsPolicyResourceBase) configure(req resource.ConfigureRequest, resp *r
 
 func dnsPolicyIDAttribute() schema.StringAttribute {
 	return schema.StringAttribute{
-		Computed: true,
+		MarkdownDescription: "DNS policy identifier.",
+		Computed:            true,
 		PlanModifiers: []planmodifier.String{
 			stringplanmodifier.UseStateForUnknown(),
 		},
@@ -58,8 +59,9 @@ func dnsPolicyIDAttribute() schema.StringAttribute {
 
 func dnsPolicySiteIDAttribute() schema.StringAttribute {
 	return schema.StringAttribute{
-		Optional: true,
-		Computed: true,
+		MarkdownDescription: "Site identifier. Defaults to provider `site_id` when omitted. A local `site_id` overrides the provider setting.",
+		Optional:            true,
+		Computed:            true,
 		PlanModifiers: []planmodifier.String{
 			stringplanmodifier.RequiresReplace(),
 			stringplanmodifier.UseStateForUnknown(),
@@ -68,15 +70,15 @@ func dnsPolicySiteIDAttribute() schema.StringAttribute {
 }
 
 func dnsPolicyEnabledAttribute() schema.BoolAttribute {
-	return schema.BoolAttribute{Required: true}
+	return schema.BoolAttribute{Required: true, MarkdownDescription: "Whether the DNS policy is active."}
 }
 
-func dnsPolicyDomainAttribute(optional bool) schema.StringAttribute {
-	return schema.StringAttribute{Optional: optional, Computed: !optional}
+func dnsPolicyDomainAttribute(optional bool, description string) schema.StringAttribute {
+	return schema.StringAttribute{Optional: optional, Computed: !optional, MarkdownDescription: description}
 }
 
 func dnsPolicyOriginAttribute() schema.StringAttribute {
-	return schema.StringAttribute{Computed: true}
+	return schema.StringAttribute{Computed: true, MarkdownDescription: "UniFi metadata origin."}
 }
 
 func createTypedDNSPolicyResource[T dnsPolicyPlanModel](

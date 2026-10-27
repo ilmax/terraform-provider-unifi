@@ -41,23 +41,29 @@ func (d *deviceTagDataSource) Schema(ctx context.Context, req datasource.SchemaR
 		Description: "A device tag grouping adopted devices under a shared label. This endpoint is GET-only in the real API, so it's a data source rather than a resource.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Computed: true,
+				MarkdownDescription: "Device tag identifier.",
+				Computed:            true,
 			},
 			"site_id": schema.StringAttribute{
-				Optional: true,
+				MarkdownDescription: "Site identifier. Defaults to provider `site_id` when omitted. A local `site_id` overrides the provider setting.",
+				Optional:            true,
 			},
 			"device_tag_id": schema.StringAttribute{
-				Required: true,
+				MarkdownDescription: "Device tag identifier.",
+				Required:            true,
 			},
 			"name": schema.StringAttribute{
-				Computed: true,
+				MarkdownDescription: "Tag name.",
+				Computed:            true,
 			},
 			"device_ids": schema.ListAttribute{
-				Computed:    true,
-				ElementType: types.StringType,
+				MarkdownDescription: "IDs of devices carrying this tag.",
+				Computed:            true,
+				ElementType:         types.StringType,
 			},
 			"origin": schema.StringAttribute{
-				Computed: true,
+				MarkdownDescription: "Entity origin metadata.",
+				Computed:            true,
 			},
 		},
 	}

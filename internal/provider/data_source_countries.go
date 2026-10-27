@@ -40,16 +40,20 @@ func (d *countriesDataSource) Metadata(ctx context.Context, req datasource.Metad
 
 func (d *countriesDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
+		MarkdownDescription: "Reads the full UniFi country catalog as a map keyed by country name.\n\nThe provider automatically paginates the `/v1/countries` endpoint to return\nall available countries, not only the first page.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Computed: true,
+				MarkdownDescription: "Constant data source identifier (`countries`).",
+				Computed:            true,
 			},
 			"countries": schema.MapNestedAttribute{
-				Computed: true,
+				MarkdownDescription: "Full country catalog keyed by country name.",
+				Computed:            true,
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
 						"code": schema.StringAttribute{
-							Computed: true,
+							MarkdownDescription: "Country code in ISO 3166-1 alpha-2 format.",
+							Computed:            true,
 						},
 					},
 				},

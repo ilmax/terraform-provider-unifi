@@ -40,13 +40,16 @@ func (d *dpiApplicationDataSource) Schema(ctx context.Context, req datasource.Sc
 			"source rather than a resource.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Computed: true,
+				MarkdownDescription: "Data source identifier (string form of `application_id`).",
+				Computed:            true,
 			},
 			"application_id": schema.Int64Attribute{
-				Required: true,
+				MarkdownDescription: "DPI application identifier.",
+				Required:            true,
 			},
 			"name": schema.StringAttribute{
-				Computed: true,
+				MarkdownDescription: "Application name.",
+				Computed:            true,
 			},
 		},
 	}

@@ -39,18 +39,23 @@ func (d *siteDataSource) Metadata(ctx context.Context, req datasource.MetadataRe
 
 func (d *siteDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
+		MarkdownDescription: "Finds a UniFi site by its name and returns the corresponding `site_id`.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Computed: true,
+				MarkdownDescription: "The resolved site ID.",
+				Computed:            true,
 			},
 			"name": schema.StringAttribute{
-				Required: true,
+				MarkdownDescription: "Site name to look up.",
+				Required:            true,
 			},
 			"site_id": schema.StringAttribute{
-				Computed: true,
+				MarkdownDescription: "The resolved site ID.",
+				Computed:            true,
 			},
 			"internal_reference": schema.StringAttribute{
-				Computed: true,
+				MarkdownDescription: "Internal unique site name used in older APIs.",
+				Computed:            true,
 			},
 		},
 	}
