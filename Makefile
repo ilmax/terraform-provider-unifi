@@ -35,9 +35,28 @@ testacc:
 	UNIFI_ALLOW_INSECURE=true \
 	go test -count $(TEST_COUNT) -timeout $(TEST_TIMEOUT) -run TestAcc -v $(ACCTEST_PKG) $(TESTARGS)
 
+# console-image builds the UniFi OS Server image from Ubiquiti's installer
+# (test-infra/unifi/image). UOS_VERSION / UOS_INSTALLER_URL select the version.
+.PHONY: console-image
+console-image:
+	$(CONSOLE_DIR)/image/build.sh
+
+# console-up starts a ready console with no manual steps: the OS, then the
+# Network application, admin account and API key (bootstrap.sh, which writes
+# $(CONSOLE_ENV)), then the emulated device fleet. NETWORK_VERSION selects the
+# Network version (default UNIFI_API_VERSION).
 .PHONY: console-up
 console-up:
-	cd $(CONSOLE_DIR) && docker compose up -d
+	@docker image inspect $${UOS_IMAGE:-unifi-os-server-test:dev} >/dev/null 2>&1 || $(CONSOLE_DIR)/image/build.sh
+	cd $(CONSOLE_DIR) && docker compose up -d --wait unifi-os-server
+	$(CONSOLE_DIR)/bootstrap.sh
+	cd $(CONSOLE_DIR) && docker compose up -d unifi-emu
+
+# console-reset discards the console and its credentials.
+.PHONY: console-reset
+console-reset:
+	cd $(CONSOLE_DIR) && docker compose down -v
+	rm -f $(CONSOLE_ENV)
 
 .PHONY: console-down
 console-down:
@@ -59,7 +78,10 @@ adopt-fleet:
 	@set -a; . ./$(CONSOLE_ENV); set +a; python3 $(CONSOLE_DIR)/adopt_fleet.py
 
 # enable-zbf force-enables Zone Based Firewall directly in the console's own
-# database — there's no API/UI path to do this without real UDM-class
+# MongoDB. Only UniFi Network 10.x consoles need it: Network 11 has the zones
+# out of the box and no longer keeps its data in MongoDB, so ci-test does not
+# run it. The original description follows.
+# (force-enables Zone Based Firewall directly in the console's own database — there's no API/UI path to do this without real UDM-class
 # console hardware. See test-infra/unifi/README.md's "Zone Based Firewall"
 # section for the investigation that led here and exactly what this writes.
 # Idempotent: safe to run on every CI job, a no-op once already enabled.
@@ -73,4 +95,4 @@ enable-zbf:
 # and "Adopted device fleet" sections for why). Every step is idempotent, so
 # re-running this against the same long-lived console is always safe.
 .PHONY: ci-test
-ci-test: adopt-fleet enable-zbf testacc
+ci-test: adopt-fleet testacc

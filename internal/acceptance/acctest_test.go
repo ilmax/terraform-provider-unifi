@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
@@ -141,11 +142,14 @@ func listFirewallZones(t *testing.T) []struct {
 	return page.Data
 }
 
-// hasAdoptedGateway reports whether the site has at least one adopted
-// device — used to skip tests that assert the "no gateway" error path once
-// test-infra/unifi's unifi-emu fleet (see its README's "Adopted device
-// fleet" section) has actually adopted one, since that error can no longer
-// occur.
+// hasAdoptedGateway reports whether the site has an adopted gateway — used to
+// skip tests that need one, and tests that assert the "no gateway" error path
+// once one is present.
+//
+// The Integrations API lists a gateway with empty `features`, so it is
+// recognized by model name. This is a heuristic covering the UniFi
+// gateway/Dream/UXG/UCG/UDR families; switch to a device-type field if the API
+// ever exposes one.
 func hasAdoptedGateway(t *testing.T) bool {
 	t.Helper()
 	client, err := testAccNewClient()
@@ -155,14 +159,24 @@ func hasAdoptedGateway(t *testing.T) bool {
 
 	var page struct {
 		Data []struct {
-			Id string `json:"id"`
+			Model string `json:"model"`
 		} `json:"data"`
 	}
 	siteID := os.Getenv("UNIFI_SITE_ID")
 	if err := client.Get(context.Background(), fmt.Sprintf("/v1/sites/%s/devices", siteID), &page); err != nil {
 		t.Fatalf("list devices: %v", err)
 	}
-	return len(page.Data) > 0
+
+	for _, d := range page.Data {
+		model := strings.ToLower(d.Model)
+		for _, marker := range []string{"gateway", "dream", "uxg", "ucg", "udr", "udm"} {
+			if strings.Contains(model, marker) {
+				return true
+			}
+		}
+	}
+
+	return false
 }
 
 // testAccCheckResourceDestroyed builds a CheckDestroy func for a single

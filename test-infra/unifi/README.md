@@ -1,37 +1,62 @@
 # Local UniFi OS Server for acceptance testing
 
-Runs a genuine, locally-administered UniFi OS Server (no cloud account) via
-[`hieutq/unifi-os-server`](https://github.com/toquanghieu/unifi-os-server-docker),
-which flattens the official installer's extracted appliance rootfs into a
-single Docker image and runs systemd directly as PID 1 — no nested
-Podman-in-Docker layer. This is what actually has the Network Integrations
-API (`/network/default/integrations` → "Create New API Key"); the legacy
-standalone Network Application does not.
+Runs a genuine, locally-administered UniFi OS Server (no cloud account) with
+UniFi Network 11, an admin account, an API key and a small emulated device
+fleet, started by one command and with no manual steps. The Network
+Integrations API this provider targets lives on a UniFi OS console; the legacy
+standalone Network Application does not have it.
 
 ## Quick start
 
 ```sh
-docker compose up -d
+make console-up    # first run builds the image (about 800 MB download), then ~3 min
+make testacc       # or: make ci-test, which also adopts the device fleet first
+make console-reset # discard the console and its credentials
 ```
 
-Then, **once** (state persists in the `unifi_data` volume across restarts
-and full container recreation — already verified):
+`make console-up` does, in order:
 
-1. Open `https://localhost:11443` (accept the self-signed cert warning).
-2. Name the server, click **Next**.
-3. Click **Proceed Without a UI Account** → **Continue Anyway** (skips
-   cloud account creation entirely — stays fully local).
-4. Set a console password, agree to terms, **Finish**. Save the password
-   into `.env` as `UOS_CONSOLE_PASSWORD` (copy `.env.example` first).
-5. Go to `https://localhost:11443/network/default/integrations` →
-   **Create New API Key**. Save the shown key into `.env` as
-   `UNIFI_API_KEY` — **it is shown only once**. Use `pbpaste` after
-   clicking "Copy Key" rather than reading it off the screen: this key's
-   font renders capital `I` and lowercase `l` identically.
+1. **Builds the image** (`image/build.sh`, once). UniFi OS Server only ships as
+   a self-extracting installer that wraps a systemd-based OCI image and drives
+   it with Podman. `image/Dockerfile` pulls that image out of the installer
+   and flattens it (`image/flatten-oci.sh`), so it runs under plain Docker with
+   Ubiquiti's own entrypoint. UniFi Network 11 needs UniFi OS 6, which no
+   community image ships yet.
+2. **Starts the console** (`docker-compose.yml`) and waits until it is healthy.
+3. **Runs `bootstrap.sh`**, which
+   - creates the admin account (`POST /api/setup`; no cloud account),
+   - installs the Network application (`install-network.sh`),
+   - creates an API key (`POST /proxy/users/api/v2/user/{id}/keys`, the call the
+     web UI makes on Integrations > Create New API Key) and
+   - writes `UOS_CONSOLE_PASSWORD` and `UNIFI_API_KEY` to the git-ignored
+     `.env`.
 
-The Network application version is pinned automatically post-boot by
-`fix-model-and-start.sh` (default `10.6.106`, override via `NETWORK_VERSION`
-env var / `.env`) — no manual step needed.
+   It is idempotent: it does nothing when `.env` already holds a key the console
+   accepts. It does one login (to create the key) and uses the API key for
+   everything else, because UniFi OS rate-limits `POST /api/auth/login`.
+4. **Starts the emulated fleet** (`unifi-emu`). `make adopt-fleet` adopts it.
+
+## Versions
+
+Both versions are set by environment variables:
+
+| Variable | Used by | Default |
+|---|---|---|
+| `NETWORK_VERSION` | `install-network.sh` | the `UNIFI_API_VERSION` file at the repo root |
+| `UOS_VERSION`, `UOS_INSTALLER_URL` | `image/build.sh` | `6.0.19` and its installer URL |
+| `UOS_IMAGE` | `build.sh`, `docker-compose.yml` | `unifi-os-server-test:dev` |
+| `UNIFI_EMU_VERSION` | `docker-compose.yml` | `0.5.5` |
+
+- **Network 11 is not in the OS updater's catalog yet**, so
+  `uos runnable install unifi --version 11.0.97` fails with "Required package
+  was not found". `install-network.sh` looks the `.deb` up in Ubiquiti's firmware
+  API (`fw-update.ubnt.com`) for the container's architecture and installs it by
+  URL. `NETWORK_URL` skips the lookup; `NETWORK_CHANNEL` picks the channel.
+- **Ubiquiti's installer URLs contain a hash**, so an OS version alone cannot be
+  resolved. A different `UOS_VERSION` needs its `UOS_INSTALLER_URL`.
+- **UniFi OS Server 6.0.19 is an Early Access build.** It is linked from the
+  community release page and is not on the public release channel yet; it bundles
+  Network 10.6.106, and Network 11 is installed on top.
 
 ## Running the acceptance suite
 
@@ -39,84 +64,56 @@ env var / `.env`) — no manual step needed.
 make testacc
 ```
 
-This reads `UNIFI_API_KEY` from `.env`, resolves the console's real site
-UUID automatically (see "Known issues" below for why that matters), and
-runs everything under `internal/acceptance/` — the package all acceptance
-tests live in, separate from the unit tests in `internal/provider/`.
+This reads `UNIFI_API_KEY` from `.env`, resolves the console's real site UUID
+automatically, and runs everything under `internal/acceptance/` — the package
+all acceptance tests live in, separate from the unit tests in
+`internal/provider/`.
 
-To wire up a provider config or run `go test` directly instead:
+To run `go test` directly instead:
 
 ```sh
 export TF_ACC=1
-export UNIFI_API_KEY="$(grep UNIFI_API_KEY .env | cut -d= -f2)"
+export UNIFI_API_KEY="$(grep UNIFI_API_KEY test-infra/unifi/.env | cut -d= -f2)"
 export UNIFI_API_URL="https://localhost:11443/proxy/network/integrations"
-export UNIFI_SITE_ID="<the real site UUID, e.g. from GET /v1/sites — see below>"
+export UNIFI_SITE_ID="<the real site UUID, from GET /v1/sites>"
 export UNIFI_ALLOW_INSECURE=true
 ```
 
-Note the `/proxy/network/integrations` suffix on `UNIFI_API_URL` — this
-console's Integrations API lives at that path, not bare `/v1/...`.
-
-**`UNIFI_SITE_ID` must be the real UUID, not `"default"`.** The console
-displays the default site as "Default" and its `internalReference` is the
-string `"default"`, but the Integrations API rejects that literal string as
-a `siteId` path parameter (`400 'default' is not a valid 'siteId' value`).
-Get the real UUID with:
+**`UNIFI_SITE_ID` must be the real UUID, not `"default"`.** The console shows
+the default site as "Default" and its `internalReference` is the string
+`"default"`, but the Integrations API rejects that literal as a `siteId` path
+parameter (`400 'default' is not a valid 'siteId' value`). Get it with:
 
 ```sh
 curl -sk -H "X-API-Key: $UNIFI_API_KEY" \
   https://localhost:11443/proxy/network/integrations/v1/sites
 ```
 
-`make testacc` does this lookup for you automatically.
+`make testacc` does this lookup for you.
 
-## CI/CD reproducibility
+## CI
 
-`.github/workflows/acctest.yml` runs the full suite on every push/PR. It
-targets **one long-lived console**, not a fresh one per run: a GitHub-hosted
-runner starts a clean VM every job with nothing listening on
-`localhost:11443`, and fully automating this image's own onboarding wizard
-(name the server, skip cloud account, set a password, click "Create New API
-Key") was deliberately not pursued — see "Known issues" below for exactly
-what's manual and why. Instead:
+`.github/workflows/acctest.yml` boots a fresh console on a GitHub-hosted runner
+for every run (`make console-up`, then `make ci-test`). Nothing is
+long-lived, so there are no secrets to maintain and no self-hosted runner.
 
-1. **One-time, by a human:** bring the console up (`docker compose up -d`)
-   somewhere a self-hosted runner can reach it, complete the manual setup in
-   "Quick start" above, and save `UOS_CONSOLE_PASSWORD`/`UNIFI_API_KEY` as
-   the `UNIFI_TEST_CONSOLE_PASSWORD`/`UNIFI_TEST_API_KEY` repository secrets
-   the workflow reads. Point the workflow's `runs-on` at that runner (it
-   ships pointing at a placeholder `[self-hosted, unifi-test-console]`
-   label — rename it to match).
-2. **Every CI run, fully scripted:** `make ci-test` — `adopt-fleet` (adopts
-   whatever the `unifi-emu` fleet reports pending), `enable-zbf`
-   (force-enables Zone Based Firewall; see below), then `testacc`. All three
-   steps are idempotent: re-running them against a console that's already in
-   the target state is a fast no-op, so the same long-lived console can run
-   this on every job indefinitely without manual intervention.
+Only arm64 (Apple silicon) has been exercised locally. The amd64 installer URL
+resolves and an amd64 Network package exists, but the first run on a GitHub
+runner is the first run on amd64: try it with the workflow's `workflow_dispatch`
+trigger.
 
-This means the console's local state (which devices are adopted, whether
-Zone Based Firewall is enabled, `.env`'s credentials) is exactly the kind of
-long-lived fixture state a real network appliance test suite has to live
-with — CI reproducibility here means *idempotent setup steps against
-persistent state*, not *stateless from-scratch boot*.
+## Known issues
 
-## Known issues in this image (already worked around here)
-
-- **Missing `/usr/lib/app_model` / `/usr/lib/product_name`**: the image's
-  own `/entrypoint.sh` never writes these, so `unifi-core` crash-loops with
-  `Unsupported console model: ""` (it shells out to `/sbin/ubnt-tools`,
-  which reads those two files). Fixed by `fix-model-and-start.sh`, which
-  writes them before handing off to the real entrypoint.
+- **Your old console is untouched.** This setup uses its own Compose project
+  (`unifi-os-test`), container names (`uos-test`, `uos-test-emu`) and volumes, so
+  it does not reuse or remove a console that an earlier version of this directory
+  set up.
 - **Browser automation and the self-signed cert**: Chrome's native SSL
-  interstitial cannot be scripted by browser extensions (by design) — a
-  human has to click through "Advanced → Proceed" once per fresh
-  certificate. A real CI browser tool (Playwright/Puppeteer with
-  `ignoreHTTPSErrors: true`) does not have this problem.
-- **Stale frontend session after a volume wipe**: if you tear down with
-  `docker compose down -v` while a browser tab from a previous instance is
-  still open, "Create New API Key" fails with `403` (the tab's cached user
-  ID no longer matches the fresh console's admin user). Reload the page
-  (or open a new tab) after any full volume reset.
+  interstitial cannot be scripted by browser extensions (by design) — a human
+  has to click through "Advanced → Proceed" once per fresh certificate.
+- **Stale frontend session after a reset**: if a browser tab from a previous
+  console is still open after `make console-reset`, "Create New API Key" in the UI
+  fails with `403`. Reload the page. The scripted setup is not affected.
 
 ## Adopted device fleet
 
@@ -125,19 +122,28 @@ and everything gated on Zone Based Firewall. There's no API/UI way around
 that — but the `unifi-emu` service runs
 [`jamesbraid/unifi-emu`](https://github.com/jamesbraid/unifi-emu), which
 speaks the real UniFi "inform" protocol well enough to appear as a whole
-fleet of adoptable devices: one gateway, one switch, one AP (see
+fleet of adoptable devices: one switch and one AP (see
 `docker-compose.yml`'s `SIM_MODELS`). It replaced an earlier one-device
 emulator (`amd989/unifi-gateway`) that only covered a decade-old USG3;
 `unifi-emu` covers the current device lineup and is purpose-built for
 exactly this "give a test controller real, adoptable devices" job — its own
 docs name this provider as one of the projects it exists for.
 
-Bring it up and adopt everything it reports as pending, in one step:
+`make console-up` starts it; adopt everything it reports as pending with:
 
 ```sh
-docker compose up -d unifi-emu
 make adopt-fleet   # from the repo root; needs test-infra/unifi/.env
 ```
+
+**There is deliberately no gateway in the fleet on Network 11.** A fresh Network
+11 console already has the six default firewall zones and the Integrations API
+zone endpoints work. Adopting the emulator's gateway (its gateway models report
+firmware capabilities older than the zone-based firewall) makes Network 11 drop
+the site's zones, after which every zone call answers `Zone Based Firewall is
+not configured`, and removing the gateway again does not bring them back. The
+tests that need an adopted gateway (`TestAccNetwork_gatewayBasic`,
+`TestAccFirewallZoneNetworks_basic`, and the device/WAN data sources) skip with a
+reason.
 
 `adopt-fleet` (`adopt_fleet.py`) waits for pending devices, then adopts each
 one with nothing but the API key, via the modern
@@ -159,6 +165,12 @@ http://unifi-os-server:8080/inform -mac <mac> -model <model>`) until the
 device disappears from `GET /v1/sites/{siteId}/devices`, then stop it.
 
 ## Zone Based Firewall
+
+> **Network 11:** nothing here is needed. A fresh console has the default zones,
+> and `make enable-zbf` cannot run there, because it writes into MongoDB and
+> Network 11 moves its configuration out of MongoDB at startup. `make ci-test`
+> therefore no longer runs it. The rest of this section describes UniFi Network
+> 10.x consoles.
 
 Real Zone Based Firewall CRUD — `unifi_firewall_zone`,
 `unifi_firewall_zone_networks`, `unifi_firewall_policy`,
@@ -267,14 +279,3 @@ of resources: `unifi_vpn_server`, `unifi_vpn_site_to_site_tunnel`,
   freshly adopted switch has none by default, and the real API has no way
   to create one (`/switching/lags` etc. are GET-only). Only their not-found
   path is tested here, even with a real switch in the fleet.
-
-## Pinning versions
-
-- **Network application**: `NETWORK_VERSION` in `.env` / compose
-  environment (default `10.6.106`, matching `UNIFI_API_VERSION` at the
-  repo root). Installed post-boot via the real `uos runnable install unifi
-  --version <version>` CLI — confirmed to survive both a simple restart
-  and a full `docker compose down && up` (volume-only persistence).
-- **UniFi OS Server** itself: pin the image tag, e.g.
-  `hieutq/unifi-os-server:5.1.42` instead of `:latest`, in
-  `docker-compose.yml`.

@@ -8,7 +8,7 @@ Cheap signals (no decompile, no Docker, no 6.0 console):
   3. public download catalog: newest unifi-os-server + network (self-host)
   4. community image: unihosted/unifi-os-server-docker tags
 
-Fires an alert when the marker/spec goes above the known-good 10.6.106 (the provider's
+Fires an alert when the marker/spec goes above the known-good version in UNIFI_API_VERSION (the provider's
 current baseline) OR a 6.0 os-server / 11.x network deb appears OR a 6.0 image tag lands.
 
 Exit codes: 0 = no change, 1 = change detected (alert), 2 = error.
@@ -20,7 +20,8 @@ import json, os, sys, re, urllib.request, ssl, datetime
 HERE = os.path.dirname(os.path.abspath(__file__))
 STATE = os.path.join(HERE, "state.json")
 CTX = ssl.create_default_context(); CTX.check_hostname = False; CTX.verify_mode = ssl.CERT_NONE
-BASELINE_VERSION = "10.6.106"   # the provider's current unifi-client-go spec
+# The provider's current unifi-client-go spec: the Network version in UNIFI_API_VERSION.
+BASELINE_VERSION = open(os.path.join(HERE, "..", "..", "..", "UNIFI_API_VERSION")).read().strip()
 
 def get(url, timeout=20):
     try:
@@ -77,7 +78,7 @@ def check():
     if marker and vtuple(marker) > vtuple(BASELINE_VERSION):
         out["alerts"].append(f"unifi-client-go version marker is {marker} (> {BASELINE_VERSION}) — new integrations spec likely; fetch + diff it")
     if newest_spec and vtuple(newest_spec) > vtuple(BASELINE_VERSION):
-        out["alerts"].append(f"unifi-client-go has a new spec: {newest_spec} — diff against 10.6.106.json")
+        out["alerts"].append(f"unifi-client-go has a new spec: {newest_spec} — diff against {BASELINE_VERSION}.json")
     os_server = out["signals"].get("catalog_newest_os_server")
     if os_server and vtuple(os_server) >= (6,):
         out["alerts"].append(f"public catalog now offers self-host os-server {os_server} — 6.0 is downloadable! Grab it, run the comparison tool.")

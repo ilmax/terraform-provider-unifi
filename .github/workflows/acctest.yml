@@ -8,15 +8,12 @@ on:
 
 jobs:
   acctest:
-    # This job talks to a long-lived local console at https://localhost:11443
-    # (see test-infra/unifi/README.md) — it does not boot one from scratch.
-    # A GitHub-hosted runner starts a fresh VM every run with nothing
-    # listening on that port, so this must run on a self-hosted runner that
-    # already has `docker compose up -d` running against
-    # test-infra/unifi/docker-compose.yml, with the one-time manual console
-    # setup (README.md's "Quick start") already done. Rename this label to
-    # match whatever runner group actually hosts that console.
-    runs-on: [self-hosted, unifi-test-console]
+    # Boots a fresh UniFi OS Server console on every run: `make console-up`
+    # builds the image from Ubiquiti's installer, installs UniFi Network,
+    # creates the admin account and an API key, and starts the emulated device
+    # fleet, with no manual steps (see test-infra/unifi/README.md).
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -27,22 +24,24 @@ jobs:
           go-version-file: go.mod
           cache: true
 
-      - name: Write test-infra/unifi/.env
-        working-directory: test-infra/unifi
-        run: |
-          cat > .env <<EOF
-          UOS_CONSOLE_PASSWORD=${{ secrets.UNIFI_TEST_CONSOLE_PASSWORD }}
-          UNIFI_API_KEY=${{ secrets.UNIFI_TEST_API_KEY }}
-          EOF
-
       - name: Build
         run: make build
 
       - name: Unit tests
         run: make test
 
-      # adopt-fleet, enable-zbf, and testacc are each idempotent (see
-      # test-infra/unifi/README.md) — safe to run on every job against the
-      # same long-lived console, whatever state it was already in.
+      # The Network and OS versions come from UNIFI_API_VERSION and
+      # test-infra/unifi/image/build.sh; set NETWORK_VERSION, UOS_VERSION or
+      # UOS_INSTALLER_URL here to test another one.
+      - name: Start the console
+        run: make console-up
+
       - name: Acceptance tests
         run: make ci-test
+
+      - name: Console logs
+        if: failure()
+        run: |
+          docker ps -a
+          docker logs uos-test --tail 200 || true
+          docker logs uos-test-emu --tail 50 || true

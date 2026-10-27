@@ -10,10 +10,10 @@
 # migration/zone state before writing anything, and only restarts the
 # Network application (to clear its 1-hour zone cache) when it actually
 # changed something. Needs CONTAINER (the running UniFi OS Server
-# container; defaults to unifi-os-server) and docker exec access to it.
+# container; defaults to uos-test) and docker exec access to it.
 set -eu
 
-CONTAINER="${CONTAINER:-unifi-os-server}"
+CONTAINER="${CONTAINER:-${UOS_CONTAINER:-uos-test}}"
 
 changed=$(docker exec "$CONTAINER" mongo --port 27117 ace --quiet --eval '
 function ensureZoneBasedFirewall(siteId) {
