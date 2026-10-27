@@ -1,103 +1,85 @@
-# Community-maintained UniFi OS Server image that flattens the official
-# installer's extracted appliance rootfs into a single Docker image and
-# runs systemd directly as PID 1 — no nested Podman-in-Docker layer, which
-# is where our own sandbox/ hit a reproducible "Invalid argument" exec bug
-# on this host. See https://github.com/toquanghieu/unifi-os-server-docker
+# UniFi OS Server console for the acceptance tests.
+#
+# The image is built locally from Ubiquiti's own installer by image/build.sh
+# (`make console-image`): the installer wraps a systemd-based image and
+# normally drives it with Podman, and the recipe pulls that image out so it
+# runs under plain Docker with Ubiquiti's own entrypoint. UniFi Network 11
+# needs UniFi OS 6, which no community image ships yet.
+#
+# The Network application, the admin account and the API key are set up by
+# `make console-up` (install-network.sh, bootstrap.sh).
+#
+# Versions come from environment variables:
+#   UOS_VERSION / UOS_INSTALLER_URL   image/build.sh   (UniFi OS Server)
+#   NETWORK_VERSION                   install-network.sh (default: UNIFI_API_VERSION)
+#   UOS_IMAGE                         image tag shared by build.sh and this file
+# A project name of its own, so the named volumes cannot collide with (or be
+# removed together with) those of an older console set up from this directory.
+name: unifi-os-test
+
 services:
   unifi-os-server:
-    image: hieutq/unifi-os-server:latest
-    container_name: unifi-os-server
-    restart: unless-stopped
+    image: ${UOS_IMAGE:-unifi-os-server-test:dev}
+    container_name: ${UOS_CONTAINER:-uos-test}
+    # systemd runs as PID 1: it needs the host cgroup namespace and a writable
+    # cgroup mount.
     cgroup: host
-    cap_drop:
-      - ALL
     cap_add:
-      - SYS_ADMIN
-      - NET_ADMIN
       - NET_RAW
-      - NET_BIND_SERVICE
-      - DAC_OVERRIDE
-      - DAC_READ_SEARCH
-      - FOWNER
-      - CHOWN
-      - SETUID
-      - SETGID
-      - KILL
-      - SYS_CHROOT
-      - SYS_PTRACE
-      - SYS_RESOURCE
-      - AUDIT_WRITE
-      - MKNOD
-      - SETPCAP
+      - NET_ADMIN
+    stop_signal: SIGRTMIN+3
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:rw
+      # Named volumes, not bind mounts: MongoDB cannot create its Unix socket
+      # on a macOS bind mount.
+      - uos_persistent:/persistent
+      - unifi_data:/data
+      - uos_lib:/var/lib/uosserver
     tmpfs:
       - /run:exec
       - /run/lock
       - /tmp:exec
-      - /var/lib/journal
+      - /var/log/journal
       - /var/opt/unifi/tmp:size=64m
-    volumes:
-      - /sys/fs/cgroup:/sys/fs/cgroup:rw
-      - unifi_data:/unifi
-      - ./fix-model-and-start.sh:/fix-model-and-start.sh:ro
-    # Works around a bug in this image's own /entrypoint.sh: it never
-    # writes /usr/lib/product_name or /usr/lib/app_model, which unifi-core
-    # needs (via /sbin/ubnt-tools) or it crash-loops with
-    # `Unsupported console model: ""`. See fix-model-and-start.sh.
-    entrypoint: ["/fix-model-and-start.sh"]
-    environment:
-      - UOS_SYSTEM_IP=127.0.0.1
-      - APP_MODEL=UOSSERVER
-      - PRODUCT_NAME=UniFi OS Server
-      # Network application version to pin, once booted (see
-      # fix-model-and-start.sh). Matches UNIFI_API_VERSION at the repo
-      # root / AGENTS.md — the version github.com/ilmax/unifi-client-go
-      # generates its client from.
-      - NETWORK_VERSION=${NETWORK_VERSION:-10.6.106}
+      - /data/unifi-core/config/http
     ports:
       - "11443:443"
       - "8080:8080"
       - "3478:3478/udp"
       - "10003:10003/udp"
+    healthcheck:
+      test: ["CMD", "curl", "-fks", "https://localhost/api/system"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 60s
 
-  # Emulates a small fleet (jamesbraid/unifi-emu) so the console has adopted
+  # Emulates a small fleet (jamesbraid/unifi-emu) so the console has adoptable
   # devices to test GATEWAY-managed networks, WAN, and switch/device data
-  # sources against — see "Adopted device fleet" below. Replaces the old
-  # amd989/unifi-gateway single-device emulator: unifi-emu speaks the same
-  # real inform protocol but resolves the controller's hostname to an IP
-  # itself (no wrapper script needed — amd989/unifi-gateway rejected
-  # `unifi-os-server` as a hostname and needed one), takes device MACs as
-  # plain flags/env instead of a rewritten config file (no named volume or
-  # container mac_address: pinning needed either), and covers current
-  # gateway/switch/AP models instead of only a decade-old USG3.
+  # sources against — see "Adopted device fleet" in README.md. unifi-emu speaks
+  # the real inform protocol and resolves the controller's hostname itself.
   #
   # No network_mode: host (unsupported by Docker Desktop on macOS; also
-  # unneeded — we don't need real interface stats, only devices that adopt
-  # and report as connected).
+  # unneeded — we only need devices that adopt and report as connected).
   unifi-emu:
-    image: ghcr.io/jamesbraid/unifi-emu:latest
-    container_name: unifi-emu
+    image: ghcr.io/jamesbraid/unifi-emu:${UNIFI_EMU_VERSION:-0.5.5}
+    container_name: ${EMU_CONTAINER:-uos-test-emu}
     restart: unless-stopped
+    depends_on:
+      unifi-os-server:
+        condition: service_healthy
     environment:
-      # One gateway, one switch, one AP. UXG is a current-generation gateway
-      # (unlike UGW3, though see README — Zone Based Firewall still doesn't
-      # unlock, a gap in the emulator's captured firmware capabilities, not
-      # this compose file). USM8P/U7PRO are unifi-emu's own docs' example
-      # switch/AP models. MAC/IP for each device are auto-derived from
-      # SIM_MAC_BASE/SIM_IP_BASE (left at their defaults — these are just
-      # informational fields in each device's inform payload, not addresses
-      # anything needs to route to).
+      # One switch and one AP, and deliberately no gateway: the emulator's
+      # gateways report firmware capabilities older than the zone-based
+      # firewall, and adopting one makes UniFi Network 11 drop the site's
+      # firewall zones (the Integrations API then answers "Zone Based Firewall
+      # is not configured"). Tests that need an adopted gateway skip. MAC/IP
+      # for each device are derived from SIM_MAC_BASE/SIM_IP_BASE (left at their
+      # defaults — informational fields in each device's inform payload).
       - SIM_CONTROLLER=http://unifi-os-server:8080/inform
-      - SIM_MODELS=UXG,USM8P,U7PRO
-
-networks:
-  default:
-    # The running console (this session) predates this compose file and
-    # is on a different compose project's network — see README's "Known
-    # issues". Update this name if you bring the console up fresh from
-    # this same file instead (then delete this whole `networks:` block
-    # and just run `docker compose up -d` normally).
-    external: true
-    name: hieutq-uos_default
+      - SIM_MODELS=USM8P,U7PRO
 
 volumes:
+  uos_persistent:
   unifi_data:
+  uos_lib:
