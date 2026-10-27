@@ -178,3 +178,66 @@ resource "unifi_firewall_policy" "test" {
 		},
 	})
 }
+
+// TestAccFirewallPolicy_reportFlow covers report_flow_enabled (new in UniFi
+// Network 11): the API defaults it to true when omitted, an explicit value is
+// stored, and removing it from the configuration again keeps the stored value
+// instead of resetting it.
+func TestAccFirewallPolicy_reportFlow(t *testing.T) {
+	testAccPreCheck(t)
+	sourceZoneID := findFirewallZoneIDByName(t, "Internal")
+	destinationZoneID := findFirewallZoneIDByName(t, "External")
+	resourceName := "unifi_firewall_policy.test"
+	name := "tf-acc-" + acctest.RandStringFromCharSet(8, acctest.CharSetAlphaNum)
+
+	config := func(reportFlow string) string {
+		attr := ""
+		if reportFlow != "" {
+			attr = "report_flow_enabled  = " + reportFlow
+		}
+
+		return testAccProviderConfig() + fmt.Sprintf(`
+resource "unifi_firewall_policy" "test" {
+  name                = %q
+  action              = "BLOCK"
+  source_zone_id      = %q
+  destination_zone_id = %q
+  %s
+}
+`, name, sourceZoneID, destinationZoneID, attr)
+	}
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy: testAccCheckResourceDestroyed("unifi_firewall_policy", func(siteID, id string) string {
+			return fmt.Sprintf("/v1/sites/%s/firewall/policies/%s", siteID, id)
+		}),
+		Steps: []resource.TestStep{
+			{
+				// Unset: the API default applies.
+				Config: config(""),
+				Check:  resource.TestCheckResourceAttr(resourceName, "report_flow_enabled", "true"),
+			},
+			{
+				Config: config("false"),
+				Check:  resource.TestCheckResourceAttr(resourceName, "report_flow_enabled", "false"),
+			},
+			{
+				// Removed again: the value the controller stores is kept.
+				Config: config(""),
+				Check:  resource.TestCheckResourceAttr(resourceName, "report_flow_enabled", "false"),
+			},
+			{
+				Config: config("true"),
+				Check:  resource.TestCheckResourceAttr(resourceName, "report_flow_enabled", "true"),
+			},
+			{
+				ResourceName:      resourceName,
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateIdFunc: testAccSiteScopedImportStateIdFunc(resourceName),
+			},
+		},
+	})
+}

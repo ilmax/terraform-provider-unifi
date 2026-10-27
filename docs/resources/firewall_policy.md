@@ -58,6 +58,7 @@ resource "unifi_firewall_policy" "allow_internal_to_external" {
 - `allow_return_traffic` (Boolean) Only valid when `action = ALLOW`: also creates a derived policy on the mirrored zone pair to allow return traffic. Omitting it sends `false`.
 - `enabled` (Boolean) Enable or disable the policy. Defaults to `true`.
 - `logging_enabled` (Boolean) Enable logging for matching traffic. Defaults to `false`.
+- `report_flow_enabled` (Boolean) Report traffic matched by this policy in Insights Flows (UniFi Network 11 and later). Omitted: the controller decides, and the API defaults it to `true`; a value the controller already stores is kept. Always `false` for the predefined Allow Return Traffic policies and the predefined policies allowing only multicast or IPv6 neighbor discovery traffic, which are never reported.
 - `ip_protocol_scope` (String) `IPV4`, `IPV6`, or `IPV4_AND_IPV6`. Defaults to `IPV4_AND_IPV6`.
 - `ipsec_filter` (String) `MATCH_ENCRYPTED` or `MATCH_NOT_ENCRYPTED`. Omitted: matches all traffic regardless of IPsec encryption.
 - `connection_state_filter` (Set of String) Any of `NEW`, `INVALID`, `ESTABLISHED`, `RELATED`. Omitted: matches all connection states. A set, not a list: the real API stores this unordered.

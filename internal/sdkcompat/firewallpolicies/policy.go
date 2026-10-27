@@ -1,6 +1,6 @@
 // Package firewallpolicies holds hand-written response types for the
 // firewall policy endpoints, matching the shapes verified against the
-// official OpenAPI spec (developer.ui.com/network/v10.6.106/openapi.json).
+// official OpenAPI spec (developer.ui.com/network/v11.0.97/openapi.json).
 //
 // The request side is deliberately NOT modeled as typed structs here: a
 // firewall policy's source/destination traffic filter is a deeply nested
@@ -24,6 +24,7 @@ type Policy struct {
 	Description           string                `json:"description,omitempty"`
 	Enabled               bool                  `json:"enabled"`
 	LoggingEnabled        bool                  `json:"loggingEnabled"`
+	ReportFlowEnabled     bool                  `json:"reportFlowEnabled"`
 	IpProtocolScope       PolicyIPProtocolScope `json:"ipProtocolScope"`
 	IpsecFilter           string                `json:"ipsecFilter,omitempty"`
 	ConnectionStateFilter []string              `json:"connectionStateFilter,omitempty"`
