@@ -4,6 +4,14 @@ _A complete record of the investigation into the UniFi Network Application API s
 how Ubiquiti promotes capabilities into the public "Integrations API," and where each
 artifact can be downloaded. Compiled 2026-10-04._
 
+> **Update 2026-10-27:** UniFi Network 11.0.97 has since been released, and the
+> sections below that say no 11.x exists, or that 10.6.106 is the newest build,
+> describe 2026-10-04. `unifi-client-go` v0.1.12 is generated from 11.0.97 and
+> `UNIFI_API_VERSION` is now `11.0.97`. Against the official specs, 11.0.97 has
+> the same 73 operations as 10.6.106; the only new properties are
+> `reportFlowEnabled` (firewall policy) and `txPowerMode` (wireless radio
+> overview). Network 11 requires UniFi OS 6; see `test-infra/unifi/README.md`.
+
 ## 1. The two API surfaces
 
 The UniFi Network Application exposes **two distinct HTTP APIs** inside a single running

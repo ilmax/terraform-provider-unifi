@@ -10,10 +10,11 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 )
 
-// The three models below must match test-infra/unifi/docker-compose.yml's
-// unifi-emu service (SIM_MODELS=UXG,USM8P,U7PRO) — see its README.md's
-// "Adopted device fleet" section. Each is reported by the real API under
-// its display name, not the SIM_MODELS short code.
+// The models below must match test-infra/unifi/docker-compose.yml's unifi-emu
+// service (SIM_MODELS=USM8P,U7PRO) — see its README.md's "Adopted device
+// fleet" section. Each is reported by the real API under its display name, not
+// the SIM_MODELS short code. The fleet has no gateway on UniFi Network 11, so
+// the gateway model is only used by tests that skip when none is adopted.
 const (
 	adoptedGatewayModel = "Gateway Lite"
 	adoptedSwitchModel  = "USW Ultra"
