@@ -153,6 +153,35 @@ in the console's Postgres (`unifi-network` database, port 5434): the six
 zone cache. It is idempotent. If `unifi-emu` ever emits `versionDetail`, the
 script becomes a no-op and can be deleted.
 
+### Patched emulator (optional): gateway with ZBF, and an EtherLighting switch
+
+`unifi-emu` builds its inform payload from fixed model profiles, so it cannot
+claim a capability a profile lacks. `emu/extra-fields.patch` adds a per-device
+`extra` map to fleet files; its keys are merged into every inform payload
+(nested maps merge, everything else replaces). Two things need it:
+
+- **Zone Based Firewall survives gateway adoption** when the gateway reports
+  `udapi_version.versionDetail` with `firewall/filter >= 4` and
+  `firewall/mangle >= 6` (see above), so `restore_zbf.sh` is not needed.
+- **EtherLighting shows up in the UI** when a switch reports
+  `switch_caps.feature_caps` with bit 22 (4194304) and `switch_caps.etherlight_caps`.
+  The controller shows the "Etherlighting" section (mode, colors, brightness,
+  breathing) in that switch's settings; with the stock emulator no emulated
+  device has it.
+
+```sh
+test-infra/unifi/emu/build.sh                 # clones upstream, applies the patch, builds unifi-emu:extra
+export COMPOSE_FILE=docker-compose.yml:docker-compose.extra.yml
+make console-reset console-up adopt-fleet     # fleet: UXG, USW Pro Max 24 PoE, U7 Pro, USW Ultra
+make testacc                                  # 79 pass, no restore-zbf step
+```
+
+`docker-compose.extra.yml` swaps the fleet for explicit devices and the image for
+`unifi-emu:extra`. Stopping and restarting the emulator container loses its
+adoption keys (devices answer 400 and sit in state 9), so reset the console
+instead. The default setup (stock image, `restore-zbf`) is unchanged; moving CI
+to the patched image needs the image published or built in the workflow.
+
 `adopt-fleet` (`adopt_fleet.py`) waits for pending devices, then adopts each
 one with nothing but the API key, via the modern
 `POST /v1/sites/{siteId}/devices` (`adoptDevice`) endpoint — no admin

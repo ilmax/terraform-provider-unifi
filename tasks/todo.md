@@ -84,3 +84,10 @@
 ## EtherLighting in the UI (2026-10-28)
 - Resources done: site `ether_lighting` setting (only the override lists are writable; defaults are controller-owned) and per-device `ether_lighting {led_mode, mode, brightness, behavior}` via `PUT rest/device/{_id}`; devices are listed from `stat/device` (`GET rest/device` is 404).
 - Capability gate is `switch_caps.feature_caps & 4194304` (+ `etherlight_caps`) on the in-memory device. Every inform replaces it, so the DB trigger approach failed. Working route: stop the `uos-test-emu` container (devices go offline, no informs), set `dynamic_part.switch_caps.feature_caps=4194304` and `etherlight_caps=7` on the USM8P row in Postgres, restart `unifi.service`; the API then shows the bits and `ether_lighting` on the (offline) switch. Whether the UI renders the EtherLighting controls for an offline device is being checked next (needs a signed-in Chrome tab).
+
+## Patched emulator result (2026-10-28)
+- `test-infra/unifi/emu/{extra-fields.patch,build.sh}` + `docker-compose.extra.yml`: unifi-emu 0.5.5 plus a per-device `extra` map merged into the inform payload. Not a fork; the patch is applied to a fresh clone at build time and has its own unit test.
+- Gateway with `udapi_version.versionDetail {firewall/filter:4, firewall/mangle:6}` keeps ZBF on adoption: no restore step; `make testacc` 79 pass, 0 fail on the patched fleet.
+- Switch (USPM24P) with `switch_caps {vlan_caps:7, feature_caps:4194304, etherlight_caps:7}` makes the UI show an "Etherlighting" section in the device settings (Speed/Network, colors, brightness, breathing). Writing the same values the resources write (GbE FF0000, brightness 40, steady) through the legacy client was reflected in the UI after reload.
+- Caveats: `etherlight_caps` lives inside `switch_caps` (top-level was ignored). Restarting only the emulator container breaks adoption (state 9); reset the console. CI still uses the stock image + restore_zbf.
+- Open: publish the patched image or build it in the workflow before switching CI; upstream the patch to jamesbraid/unifi-emu.
