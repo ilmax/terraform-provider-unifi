@@ -6,34 +6,12 @@ import (
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
-	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/ilmax/terraform-provider-unifi/internal/siteid"
 )
 
 func resolveSiteID(siteAttr types.String, providerSiteID string, diags *diag.Diagnostics) (string, bool) {
-	if !siteAttr.IsNull() && !siteAttr.IsUnknown() {
-		value := siteAttr.ValueString()
-		if value == "" {
-			diags.AddAttributeError(
-				path.Root("site_id"),
-				"Empty site_id",
-				"The site_id value cannot be empty when set.",
-			)
-			return "", false
-		}
-		return value, true
-	}
-
-	if providerSiteID != "" {
-		return providerSiteID, true
-	}
-
-	diags.AddAttributeError(
-		path.Root("site_id"),
-		"Missing site_id",
-		"The site_id must be set on the resource or provider configuration.",
-	)
-	return "", false
+	return siteid.Resolve(siteAttr, providerSiteID, diags)
 }
 
 func splitImportID(id string) (string, string, error) {
