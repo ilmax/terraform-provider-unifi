@@ -76,9 +76,13 @@ func lagMemberNestedObject() schema.NestedAttributeObject {
 
 func (d *switchMcLagDomainDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "An MC-LAG (multi-chassis link aggregation) domain spanning two switches. Requires MC-LAG " +
-			"capable switch hardware to have anything to read. This endpoint is GET-only in the real API, so it's " +
-			"a data source rather than a resource.",
+		MarkdownDescription: "An MC-LAG (multi-chassis link aggregation) domain spanning two switches. Requires MC-LAG capable switch hardware to have anything to read. This endpoint is GET-only in the real API, so it's a data source rather than a resource.\n" +
+			"\n" +
+			"## Notes\n" +
+			"\n" +
+			"- Requires MC-LAG capable switch hardware to have anything to read.\n" +
+			"- This endpoint is GET-only in the real API (no create/update/delete), so it's a data source rather than a resource.\n" +
+			"- The UniFi Network API provides configuration and real-time status for sites, devices, and clients. It authenticates using an `X-API-Key` header (set `api_key` in the provider).",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				MarkdownDescription: "MC-LAG domain identifier.",

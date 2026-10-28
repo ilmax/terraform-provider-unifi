@@ -38,7 +38,19 @@ func (d *dnsPolicyDataSource) Metadata(ctx context.Context, req datasource.Metad
 
 func (d *dnsPolicyDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "Reads a single DNS policy by policy ID.",
+		MarkdownDescription: "Reads a single DNS policy by policy ID.\n" +
+			"\n" +
+			"## DNS Policy Types\n" +
+			"\n" +
+			"The returned `type` attribute can currently be one of:\n" +
+			"\n" +
+			"- `A_RECORD`\n" +
+			"- `AAAA_RECORD`\n" +
+			"- `CNAME_RECORD`\n" +
+			"- `FORWARD_DOMAIN`\n" +
+			"- `MX_RECORD`\n" +
+			"- `SRV_RECORD`\n" +
+			"- `TXT_RECORD`",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				MarkdownDescription: "DNS policy identifier.",

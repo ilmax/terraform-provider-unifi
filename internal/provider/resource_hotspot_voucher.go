@@ -49,9 +49,14 @@ func (r *hotspotVoucherResource) Metadata(ctx context.Context, req resource.Meta
 
 func (r *hotspotVoucherResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "A UniFi Hotspot guest WiFi voucher. The API has no update endpoint for vouchers " +
-			"(they're immutable once created — matching how a printed/issued voucher code works in practice), " +
-			"so every attribute forces replacement.",
+		MarkdownDescription: "A UniFi Hotspot guest WiFi voucher. The API has no update endpoint for vouchers (they're immutable once created — matching how a printed/issued voucher code works in practice), so every attribute forces replacement.\n" +
+			"\n" +
+			"## Notes\n" +
+			"\n" +
+			"- The API has no update endpoint for vouchers — they're immutable once created, matching how a printed/issued voucher code works in practice. Every attribute forces replacement.\n" +
+			"- The real API supports creating up to 1000 vouchers in a single call (`count`), but this resource always creates exactly one, so that Terraform's own `count`/`for_each` handles multiplicity the way it does for every other resource.\n" +
+			"- `authorized_guest_limit`, `data_usage_limit_mbytes`, `rx_rate_limit_kbps`, and `tx_rate_limit_kbps` stay unset (unlimited) when omitted.\n" +
+			"- The UniFi Network API provides configuration and real-time status for sites, devices, and clients. It authenticates using an `X-API-Key` header (set `api_key` in the provider).",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				MarkdownDescription: "Voucher identifier.",

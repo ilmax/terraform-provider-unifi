@@ -62,9 +62,13 @@ func (d *switchStackDataSource) Metadata(ctx context.Context, req datasource.Met
 
 func (d *switchStackDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "A stack of physically linked switches acting as one logical switch. Requires stackable " +
-			"switch hardware to have anything to read. This endpoint is GET-only in the real API, so it's a data " +
-			"source rather than a resource.",
+		MarkdownDescription: "A stack of physically linked switches acting as one logical switch. Requires stackable switch hardware to have anything to read. This endpoint is GET-only in the real API, so it's a data source rather than a resource.\n" +
+			"\n" +
+			"## Notes\n" +
+			"\n" +
+			"- Requires stackable switch hardware to have anything to read.\n" +
+			"- This endpoint is GET-only in the real API (no create/update/delete), so it's a data source rather than a resource.\n" +
+			"- The UniFi Network API provides configuration and real-time status for sites, devices, and clients. It authenticates using an `X-API-Key` header (set `api_key` in the provider).",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				MarkdownDescription: "Switch stack identifier.",

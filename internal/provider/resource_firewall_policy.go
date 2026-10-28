@@ -56,7 +56,16 @@ func (r *firewallPolicyResource) Metadata(ctx context.Context, req resource.Meta
 
 func (r *firewallPolicyResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "Manages a Zone Based Firewall policy: an allow/block/reject rule between two firewall zones.",
+		MarkdownDescription: "Manages a Zone Based Firewall policy: an allow/block/reject rule between two firewall zones.\n" +
+			"\n" +
+			"## Notes\n" +
+			"\n" +
+			"- Requires `unifi_firewall_zone` for `source_zone_id`/`destination_zone_id`, and (like real UniFi hardware) a gateway model that actually supports Zone Based Firewall — a UDM/UDR/UXG-class device. Classic gateways like the USG 3P never supported this feature.\n" +
+			"- The traffic filter (matching specific networks/IPs/ports/etc. within a zone, rather than the whole zone) is a large discriminated union in the real API. `source_traffic_filter_json`/`destination_traffic_filter_json` take it as a raw JSON string — the same escape hatch `unifi_firewall_rule` uses for its filters — rather than modeling every filter variant as native attributes. Omit them to match all traffic to/from that zone.\n" +
+			"- `allow_return_traffic` is only valid when `action = ALLOW`; setting it for `BLOCK`/`REJECT` is a plan-time error.\n" +
+			"- Schedules are not yet supported: an unscheduled policy is always active, which is the common case.\n" +
+			"- Priority among a site's policies is managed with `unifi_firewall_policy_ordering`, not here — `index` is read-only.\n" +
+			"- The UniFi Network API provides configuration and real-time status for sites, devices, and clients. It authenticates using an `X-API-Key` header (set `api_key` in the provider).",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				MarkdownDescription: "Policy identifier.",

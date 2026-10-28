@@ -44,8 +44,13 @@ func (d *pendingDevicesDataSource) Metadata(ctx context.Context, req datasource.
 
 func (d *pendingDevicesDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "All devices that have sent an inform to the controller but haven't been adopted into any " +
-			"site yet. This is global (not scoped to a site) and GET-only in the real API.",
+		MarkdownDescription: "All devices that have sent an inform to the controller but haven't been adopted into any site yet. This is global (not scoped to a site) and GET-only in the real API.\n" +
+			"\n" +
+			"## Notes\n" +
+			"\n" +
+			"- This is global (not scoped to a site) and GET-only in the real API — there's no way to adopt a device through this provider; adoption happens through the console UI or the `adoptDevice` API.\n" +
+			"- Always returns `200` with a list, which may be empty (a console with no devices currently pending adoption).\n" +
+			"- The UniFi Network API provides configuration and real-time status for sites, devices, and clients. It authenticates using an `X-API-Key` header (set `api_key` in the provider).",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				MarkdownDescription: "Data source identifier.",

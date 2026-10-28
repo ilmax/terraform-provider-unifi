@@ -4,13 +4,13 @@
 - Move `docs/` from hand-written Markdown to tfplugindocs output so the docs cannot drift from the schema.
 - tfplugindocs builds the provider from the repository root, but `main` is in `cmd/terraform-provider-unifi`, so `scripts/generate-docs.sh` builds it, exports the schema with the Terraform CLI (dev override) and passes it with `--providers-schema`. tfplugindocs runs at a pinned version.
 - 300 of 314 attributes already had text in the hand-written pages (the Go schemas had descriptions for only 40); that text moved into the schemas. 2 attributes were missing from the hand-written pages and appear now.
-- Examples moved to `examples/`; notes and the DNS policy types list to per-page templates in `templates/`; the provider page to `templates/index.md.tmpl`.
+- Examples moved to `examples/`; notes and the DNS policy types list to the end of each schema's `MarkdownDescription` (the default tfplugindocs layout is used, no per-page templates); the provider page to `templates/index.md.tmpl`.
 - Import sections held only the ID format, so each became a real `terraform import` command in `import.sh`.
 
 ## Plan
 - [x] Add `scripts/generate-docs.sh` and `make docs`.
 - [x] Put the attribute text from the pages into the Go schemas (shared DNS helpers included).
-- [x] Move examples, imports and notes into `examples/` and `templates/`.
+- [x] Move examples, imports and notes into `examples/` and the schema descriptions.
 - [x] Regenerate `docs/` and compare every attribute text with the old pages.
 - [x] CI check that fails when `docs/` is stale.
 - [x] Update AGENTS.md.

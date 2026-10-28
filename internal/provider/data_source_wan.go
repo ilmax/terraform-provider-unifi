@@ -35,7 +35,12 @@ func (d *wanDataSource) Metadata(ctx context.Context, req datasource.MetadataReq
 
 func (d *wanDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "Reads WAN interface details.",
+		MarkdownDescription: "Reads WAN interface details.\n" +
+			"\n" +
+			"## Notes\n" +
+			"\n" +
+			"- WAN interfaces are commonly associated with the External zone to represent internet-facing traffic in zone-based policies.\n" +
+			"- The UniFi Network API provides configuration and real-time status for sites, devices, and clients. It authenticates using an `X-API-Key` header (set `api_key` in the provider).",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				MarkdownDescription: "WAN identifier.",

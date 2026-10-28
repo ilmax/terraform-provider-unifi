@@ -80,7 +80,14 @@ func (r *wifiResource) Metadata(ctx context.Context, req resource.MetadataReques
 
 func (r *wifiResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "Manages a WiFi broadcast (SSID). Changes to this resource force replacement.",
+		MarkdownDescription: "Manages a WiFi broadcast (SSID). Changes to this resource force replacement.\n" +
+			"\n" +
+			"## Notes\n" +
+			"\n" +
+			"- By default, access points broadcast SSIDs on all supported bands. Use `broadcasting_frequencies_ghz` to limit the broadcast to specific bands.\n" +
+			"- Access points typically support four SSIDs per band, and up to eight when wireless meshing is disabled; too many SSIDs can reduce performance.\n" +
+			"- MLO is a WiFi 7 feature that can use multiple bands for a single connection. UniFi documents support starting with UniFi Network 8.2.93 and WiFi 7 AP firmware 7.1.18, plus compatible clients.\n" +
+			"- The UniFi Network API provides configuration and real-time status for sites, devices, and clients. It authenticates using an `X-API-Key` header (set `api_key` in the provider).",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				MarkdownDescription: "WiFi broadcast identifier.",

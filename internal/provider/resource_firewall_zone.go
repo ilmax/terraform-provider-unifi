@@ -37,7 +37,15 @@ func (r *firewallZoneResource) Metadata(ctx context.Context, req resource.Metada
 
 func (r *firewallZoneResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "Manages a custom firewall zone.",
+		MarkdownDescription: "Manages a custom firewall zone.\n" +
+			"\n" +
+			"## Notes\n" +
+			"\n" +
+			"- Firewall zones group interfaces (VLANs, WANs, VPNs) so you can manage policies between zones instead of individual networks.\n" +
+			"- UniFi ships with built-in zones (such as External, Internal, Gateway, VPN, Hotspot, DMZ). Custom zones are supported, and interfaces can belong to one zone at a time.\n" +
+			"- Zone-based policies are directional, and can also be applied within a zone when needed.\n" +
+			"- Use `unifi_firewall_zone_networks` to manage network assignments in a zone.\n" +
+			"- The UniFi Network API provides configuration and real-time status for sites, devices, and clients. It authenticates using an `X-API-Key` header (set `api_key` in the provider).",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				MarkdownDescription: "Firewall zone identifier.",

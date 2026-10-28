@@ -40,7 +40,18 @@ func (r *trafficMatchingListResource) Metadata(ctx context.Context, req resource
 
 func (r *trafficMatchingListResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "Manages a reusable named list of IPv4 addresses, IPv6 addresses, or ports.",
+		MarkdownDescription: "Manages a reusable named list of IPv4 addresses, IPv6 addresses, or ports.\n" +
+			"\n" +
+			"## Notes\n" +
+			"\n" +
+			"- Referenced from traffic filters (e.g. `unifi_firewall_policy`'s `source_traffic_filter_json`/`destination_traffic_filter_json`) instead of repeating the same match criteria inline.\n" +
+			"- Each entry in `items_json` is itself a small discriminated union, so it's exposed as a raw JSON array string — the same opaque-JSON escape hatch used elsewhere in this provider — rather than modeled as native attributes:\n" +
+			"  - `IPV4_ADDRESSES`: `IP_ADDRESS` (`value`), `IP_ADDRESS_RANGE` (`start`/`stop`), `SUBNET` (`value`, CIDR).\n" +
+			"  - `IPV6_ADDRESSES`: `IP_ADDRESS` (`value`), `SUBNET` (`value`, CIDR). No range type.\n" +
+			"  - `PORTS`: `PORT_NUMBER` (`value`), `PORT_NUMBER_RANGE` (`start`/`stop`).\n" +
+			"- Unlike `unifi_firewall_policy`, this endpoint is standalone (not nested under `/firewall/`), so it isn't gated behind Zone Based Firewall or any adopted gateway model.\n" +
+			"- `name` and `items_json` are mutable in place via the real API's `PUT`. `type` requires replacement, since changing it would mean incompatible item semantics.\n" +
+			"- The UniFi Network API provides configuration and real-time status for sites, devices, and clients. It authenticates using an `X-API-Key` header (set `api_key` in the provider).",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				MarkdownDescription: "List identifier.",

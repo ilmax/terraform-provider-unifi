@@ -42,7 +42,16 @@ func (r *firewallPolicyOrderingResource) Metadata(ctx context.Context, req resou
 
 func (r *firewallPolicyOrderingResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "Manages firewall policy ordering for a source/destination zone pair.",
+		MarkdownDescription: "Manages firewall policy ordering for a source/destination zone pair.\n" +
+			"\n" +
+			"## Notes\n" +
+			"\n" +
+			"- UniFi tracks ordering separately for each source/destination firewall zone pair.\n" +
+			"- This resource calls:\n" +
+			"- `GET /v1/sites/{siteId}/firewall/policies/ordering`\n" +
+			"- `PUT /v1/sites/{siteId}/firewall/policies/ordering`\n" +
+			"- with `sourceFirewallZoneId` and `destinationFirewallZoneId` query parameters.\n" +
+			"- Deleting this resource removes it from Terraform state only; it does not reset ordering in UniFi.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				MarkdownDescription: "Composite identifier in the format `<site_id>/<source_firewall_zone_id>/<destination_firewall_zone_id>`.",

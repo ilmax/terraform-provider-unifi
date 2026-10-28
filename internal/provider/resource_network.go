@@ -104,7 +104,13 @@ func (r *networkResource) Metadata(ctx context.Context, req resource.MetadataReq
 
 func (r *networkResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "Manages a UniFi network.",
+		MarkdownDescription: "Manages a UniFi network.\n" +
+			"\n" +
+			"## Notes\n" +
+			"\n" +
+			"- UniFi firewall zones group interfaces (VLANs, WANs, VPNs) to manage policy between zones. Networks can belong to a single zone at a time, and are placed into a built-in zone by default if you do not specify `zone_id`.\n" +
+			"- Zone-based policies are directional; traffic is evaluated separately in each direction and can also be filtered within the same zone.\n" +
+			"- The UniFi Network API provides configuration and real-time status for sites, devices, and clients. It authenticates using an `X-API-Key` header (set `api_key` in the provider).",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				MarkdownDescription: "Network identifier.",

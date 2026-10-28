@@ -46,7 +46,12 @@ func (d *clientDataSource) Metadata(ctx context.Context, req datasource.Metadata
 
 func (d *clientDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "Reads details about a connected client.",
+		MarkdownDescription: "Reads details about a connected client.\n" +
+			"\n" +
+			"## Notes\n" +
+			"\n" +
+			"- Clients can represent wired, wireless, VPN, or teleport connections depending on the UniFi Network API response.\n" +
+			"- The UniFi Network API provides configuration and real-time status for sites, devices, and clients. It authenticates using an `X-API-Key` header (set `api_key` in the provider).",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				MarkdownDescription: "Client identifier.",

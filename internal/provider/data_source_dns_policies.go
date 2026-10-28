@@ -43,7 +43,19 @@ func (d *dnsPoliciesDataSource) Metadata(ctx context.Context, req datasource.Met
 
 func (d *dnsPoliciesDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "Lists DNS policies for a site, with optional filtering by type and domain.",
+		MarkdownDescription: "Lists DNS policies for a site, with optional filtering by type and domain.\n" +
+			"\n" +
+			"## DNS Policy Types\n" +
+			"\n" +
+			"The `type` filter and each returned policy `type` can currently be one of:\n" +
+			"\n" +
+			"- `A_RECORD`\n" +
+			"- `AAAA_RECORD`\n" +
+			"- `CNAME_RECORD`\n" +
+			"- `FORWARD_DOMAIN`\n" +
+			"- `MX_RECORD`\n" +
+			"- `SRV_RECORD`\n" +
+			"- `TXT_RECORD`",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				MarkdownDescription: "Data source identifier (site ID).",

@@ -267,7 +267,7 @@ A task is done when:
 - Prefer **smaller, focused resources** over monolithic ones.
 - The provider must support **api_key authentication only** (no username/password).
 - Implement **tests** for every new provider functionality.
-- `docs/` (index, resources, data sources, actions) is **generated** by tfplugindocs: run `make docs` and commit the result; CI fails when it is stale. Do not edit those pages by hand. Put attribute text in the schema's `MarkdownDescription`, examples in `examples/` (`resources/<type>/resource.tf`, `import.sh`, `data-sources/<type>/data-source.tf`, `actions/<type>/action.tf`), and prose the schema cannot hold (notes) in `templates/`. The hand-written pages `docs/api-versioning-and-promotion.md` and `docs/releasing.md` are not generated.
+- `docs/` (index, resources, data sources, actions) is **generated** by tfplugindocs: run `make docs` and commit the result; CI fails when it is stale. Do not edit those pages by hand. Put attribute text in the schema's `MarkdownDescription`, examples in `examples/` (`resources/<type>/resource.tf`, `import.sh`, `data-sources/<type>/data-source.tf`, `actions/<type>/action.tf`), and notes (extra prose, e.g. a `## Notes` list) at the end of the resource's schema `MarkdownDescription`, after the one-sentence intro, as a `\n\n## Notes\n\n- ...` section. Do not add per-resource files under `templates/`: the default tfplugindocs layout is used for every page, and only `templates/index.md.tmpl` (the provider page) is a custom template. The hand-written pages `docs/api-versioning-and-promotion.md` and `docs/releasing.md` are not generated.
 - Use the **latest Go version** available in toolchains and workflows.
 
 ## Site ID Consistency Rules

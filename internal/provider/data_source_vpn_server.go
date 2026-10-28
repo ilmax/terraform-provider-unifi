@@ -39,7 +39,13 @@ func (d *vpnServerDataSource) Metadata(ctx context.Context, req datasource.Metad
 
 func (d *vpnServerDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "A configured VPN server. This endpoint is GET-only in the real API, so it's a data source rather than a resource.",
+		MarkdownDescription: "A configured VPN server. This endpoint is GET-only in the real API, so it's a data source rather than a resource.\n" +
+			"\n" +
+			"## Notes\n" +
+			"\n" +
+			"- This endpoint is GET-only in the real API (no create/update/delete), so it's a data source rather than a resource.\n" +
+			"- There is no lookup-by-name; `vpn_server_id` must be the exact ID.\n" +
+			"- The UniFi Network API provides configuration and real-time status for sites, devices, and clients. It authenticates using an `X-API-Key` header (set `api_key` in the provider).",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				MarkdownDescription: "VPN server identifier.",
