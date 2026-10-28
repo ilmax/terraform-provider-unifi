@@ -35,7 +35,7 @@ func (a *executeAdoptedDeviceAction) Metadata(ctx context.Context, req action.Me
 
 func (a *executeAdoptedDeviceAction) Schema(ctx context.Context, req action.SchemaRequest, resp *action.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Executes an action on an adopted device.",
+		MarkdownDescription: "Executes an action on an adopted device. Actions are experimental in Terraform and require Terraform v1.14 or later.",
 		Attributes: map[string]schema.Attribute{
 			"site_id": schema.StringAttribute{
 				Optional:    true,

@@ -49,40 +49,52 @@ func (d *aclRulesDataSource) Metadata(ctx context.Context, req datasource.Metada
 
 func (d *aclRulesDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
+		MarkdownDescription: "Lists ACL rules for a site.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Computed: true,
+				MarkdownDescription: "Data source identifier (site ID).",
+				Computed:            true,
 			},
 			"site_id": schema.StringAttribute{
-				Optional: true,
+				MarkdownDescription: "Site identifier. Defaults to provider `site_id` when omitted. A local `site_id` overrides the provider setting.",
+				Optional:            true,
 			},
 			"acl_rules": schema.ListNestedAttribute{
-				Computed: true,
+				MarkdownDescription: "ACL rules for the site.",
+				Computed:            true,
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
 						"id": schema.StringAttribute{
-							Computed: true,
+							MarkdownDescription: "ACL rule ID.",
+							Computed:            true,
 						},
 						"type": schema.StringAttribute{
-							Computed: true,
+							MarkdownDescription: "ACL rule type.",
+							Computed:            true,
 						},
 						"name": schema.StringAttribute{
-							Computed: true,
+							MarkdownDescription: "ACL rule name.",
+							Computed:            true,
 						},
 						"description": schema.StringAttribute{
-							Computed: true,
+							MarkdownDescription: "ACL rule description.",
+							Computed:            true,
 						},
 						"action": schema.StringAttribute{
-							Computed: true,
+							MarkdownDescription: "ACL rule action.",
+							Computed:            true,
 						},
 						"enabled": schema.BoolAttribute{
-							Computed: true,
+							MarkdownDescription: "ACL rule enabled state.",
+							Computed:            true,
 						},
 						"index": schema.Int64Attribute{
-							Computed: true,
+							MarkdownDescription: "ACL rule index (lower is higher priority).",
+							Computed:            true,
 						},
 						"origin": schema.StringAttribute{
-							Computed: true,
+							MarkdownDescription: "ACL rule origin metadata.",
+							Computed:            true,
 						},
 					},
 				},

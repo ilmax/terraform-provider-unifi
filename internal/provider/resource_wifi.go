@@ -80,119 +80,143 @@ func (r *wifiResource) Metadata(ctx context.Context, req resource.MetadataReques
 
 func (r *wifiResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
+		MarkdownDescription: "Manages a WiFi broadcast (SSID). Changes to this resource force replacement.\n" +
+			"\n" +
+			"## Notes\n" +
+			"\n" +
+			"- By default, access points broadcast SSIDs on all supported bands. Use `broadcasting_frequencies_ghz` to limit the broadcast to specific bands.\n" +
+			"- Access points typically support four SSIDs per band, and up to eight when wireless meshing is disabled; too many SSIDs can reduce performance.\n" +
+			"- MLO is a WiFi 7 feature that can use multiple bands for a single connection. UniFi documents support starting with UniFi Network 8.2.93 and WiFi 7 AP firmware 7.1.18, plus compatible clients.\n" +
+			"- The UniFi Network API provides configuration and real-time status for sites, devices, and clients. It authenticates using an `X-API-Key` header (set `api_key` in the provider).",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Computed: true,
+				MarkdownDescription: "WiFi broadcast identifier.",
+				Computed:            true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
 			"site_id": schema.StringAttribute{
-				Optional: true,
-				Computed: true,
+				MarkdownDescription: "Site identifier. Defaults to provider `site_id` when omitted. A local `site_id` overrides the provider setting.",
+				Optional:            true,
+				Computed:            true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
 			"name": schema.StringAttribute{
-				Required: true,
+				MarkdownDescription: "WiFi name.",
+				Required:            true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
 			"type": schema.StringAttribute{
-				Required: true,
+				MarkdownDescription: "Broadcast type. Example: `STANDARD`, `IOT_OPTIMIZED`.",
+				Required:            true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
 			"enabled": schema.BoolAttribute{
-				Optional: true,
-				Computed: true,
-				Default:  booldefault.StaticBool(true),
+				MarkdownDescription: "Enable or disable the broadcast.",
+				Optional:            true,
+				Computed:            true,
+				Default:             booldefault.StaticBool(true),
 				PlanModifiers: []planmodifier.Bool{
 					boolplanmodifier.RequiresReplace(),
 				},
 			},
 			"security_type": schema.StringAttribute{
-				Required: true,
+				MarkdownDescription: "Security configuration type. Example: `OPEN`, `WPA2_PERSONAL`.",
+				Required:            true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
 			"network_type": schema.StringAttribute{
-				Optional: true,
+				MarkdownDescription: "Network reference type, such as `NATIVE` or `SPECIFIC`.",
+				Optional:            true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
 			"multicast_to_unicast_conversion_enabled": schema.BoolAttribute{
-				Optional: true,
-				Computed: true,
+				MarkdownDescription: "Convert multicast to unicast.",
+				Optional:            true,
+				Computed:            true,
 				PlanModifiers: []planmodifier.Bool{
 					boolplanmodifier.UseStateForUnknown(),
 					boolplanmodifier.RequiresReplace(),
 				},
 			},
 			"client_isolation_enabled": schema.BoolAttribute{
-				Optional: true,
-				Computed: true,
+				MarkdownDescription: "Enable client isolation.",
+				Optional:            true,
+				Computed:            true,
 				PlanModifiers: []planmodifier.Bool{
 					boolplanmodifier.UseStateForUnknown(),
 					boolplanmodifier.RequiresReplace(),
 				},
 			},
 			"hide_name": schema.BoolAttribute{
-				Optional: true,
-				Computed: true,
+				MarkdownDescription: "Hide SSID.",
+				Optional:            true,
+				Computed:            true,
 				PlanModifiers: []planmodifier.Bool{
 					boolplanmodifier.UseStateForUnknown(),
 					boolplanmodifier.RequiresReplace(),
 				},
 			},
 			"uapsd_enabled": schema.BoolAttribute{
-				Optional: true,
-				Computed: true,
+				MarkdownDescription: "Enable U-APSD.",
+				Optional:            true,
+				Computed:            true,
 				PlanModifiers: []planmodifier.Bool{
 					boolplanmodifier.UseStateForUnknown(),
 					boolplanmodifier.RequiresReplace(),
 				},
 			},
 			"broadcasting_frequencies_ghz": schema.ListAttribute{
-				Optional:    true,
-				ElementType: types.StringType,
+				MarkdownDescription: "Broadcast frequencies (STANDARD only).",
+				Optional:            true,
+				ElementType:         types.StringType,
 				PlanModifiers: []planmodifier.List{
 					listplanmodifier.RequiresReplace(),
 				},
 			},
 			"mlo_enabled": schema.BoolAttribute{
-				Optional: true,
-				Computed: true,
+				MarkdownDescription: "Enable MLO (STANDARD only).",
+				Optional:            true,
+				Computed:            true,
 				PlanModifiers: []planmodifier.Bool{
 					boolplanmodifier.UseStateForUnknown(),
 					boolplanmodifier.RequiresReplace(),
 				},
 			},
 			"band_steering_enabled": schema.BoolAttribute{
-				Optional: true,
-				Computed: true,
+				MarkdownDescription: "Enable band steering (STANDARD only).",
+				Optional:            true,
+				Computed:            true,
 				PlanModifiers: []planmodifier.Bool{
 					boolplanmodifier.UseStateForUnknown(),
 					boolplanmodifier.RequiresReplace(),
 				},
 			},
 			"arp_proxy_enabled": schema.BoolAttribute{
-				Optional: true,
-				Computed: true,
+				MarkdownDescription: "Enable ARP proxy (STANDARD only).",
+				Optional:            true,
+				Computed:            true,
 				PlanModifiers: []planmodifier.Bool{
 					boolplanmodifier.UseStateForUnknown(),
 					boolplanmodifier.RequiresReplace(),
 				},
 			},
 			"bss_transition_enabled": schema.BoolAttribute{
-				Optional: true,
-				Computed: true,
+				MarkdownDescription: "Enable BSS transition (STANDARD only).",
+				Optional:            true,
+				Computed:            true,
 				PlanModifiers: []planmodifier.Bool{
 					boolplanmodifier.UseStateForUnknown(),
 					boolplanmodifier.RequiresReplace(),
@@ -208,49 +232,59 @@ func (r *wifiResource) Schema(ctx context.Context, req resource.SchemaRequest, r
 				},
 			},
 			"basic_data_rate_kbps_by_frequency_ghz": schema.SingleNestedAttribute{
-				Optional: true,
+				MarkdownDescription: "Basic data rate overrides by band.",
+				Optional:            true,
 				PlanModifiers: []planmodifier.Object{
 					objectplanmodifier.RequiresReplace(),
 				},
 				Attributes: map[string]schema.Attribute{
 					"rate_2_4_kbps": schema.Int64Attribute{
-						Optional: true,
+						MarkdownDescription: "Basic data rate for 2.4 GHz in Kbps.",
+						Optional:            true,
 					},
 					"rate_5_kbps": schema.Int64Attribute{
-						Optional: true,
+						MarkdownDescription: "Basic data rate for 5 GHz in Kbps.",
+						Optional:            true,
 					},
 				},
 			},
 			"client_filtering_policy": schema.SingleNestedAttribute{
-				Optional: true,
+				MarkdownDescription: "WiFi client filtering policy.",
+				Optional:            true,
 				PlanModifiers: []planmodifier.Object{
 					objectplanmodifier.RequiresReplace(),
 				},
 				Attributes: map[string]schema.Attribute{
 					"action": schema.StringAttribute{
-						Required: true,
+						MarkdownDescription: "Filter policy action (for example `ALLOW` or `DENY`).",
+						Required:            true,
 					},
 					"mac_address_filter": schema.ListAttribute{
-						Optional:    true,
-						ElementType: types.StringType,
+						MarkdownDescription: "MAC addresses used by the filter.",
+						Optional:            true,
+						ElementType:         types.StringType,
 					},
 				},
 			},
 			"blackout_schedule_configuration": schema.SingleNestedAttribute{
-				Optional: true,
+				MarkdownDescription: "Blackout schedule per day.",
+				Optional:            true,
 				PlanModifiers: []planmodifier.Object{
 					objectplanmodifier.RequiresReplace(),
 				},
 				Attributes: map[string]schema.Attribute{
 					"days": schema.ListNestedAttribute{
-						Optional: true,
+						MarkdownDescription: "Day schedule entries.",
+						Optional:            true,
 						NestedObject: schema.NestedAttributeObject{
 							Attributes: map[string]schema.Attribute{
 								"day": schema.StringAttribute{
-									Required: true,
+									MarkdownDescription: "Day name (for example `MONDAY`).",
+									Required:            true,
 								},
 								"type": schema.StringAttribute{
-									Required: true,
+									MarkdownDescription: "Day schedule type (for example `ALL_DAY`).",
+									Required:            true,
 								},
 							},
 						},

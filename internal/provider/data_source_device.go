@@ -42,39 +42,56 @@ func (d *deviceDataSource) Metadata(ctx context.Context, req datasource.Metadata
 
 func (d *deviceDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
+		MarkdownDescription: "Reads details about an adopted device.\n" +
+			"\n" +
+			"## Notes\n" +
+			"\n" +
+			"- Device details include model-specific capabilities, such as switch ports on gateways/switches or radio details on access points, when available.\n" +
+			"- The UniFi Network API provides configuration and real-time status for sites, devices, and clients. It authenticates using an `X-API-Key` header (set `api_key` in the provider).",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Computed: true,
+				MarkdownDescription: "Device identifier.",
+				Computed:            true,
 			},
 			"site_id": schema.StringAttribute{
-				Optional: true,
+				MarkdownDescription: "Site identifier. Defaults to provider `site_id` when omitted. A local `site_id` overrides the provider setting.",
+				Optional:            true,
 			},
 			"device_id": schema.StringAttribute{
-				Required: true,
+				MarkdownDescription: "Device identifier.",
+				Required:            true,
 			},
 			"name": schema.StringAttribute{
-				Computed: true,
+				MarkdownDescription: "Device name.",
+				Computed:            true,
 			},
 			"mac_address": schema.StringAttribute{
-				Computed: true,
+				MarkdownDescription: "MAC address.",
+				Computed:            true,
 			},
 			"ip_address": schema.StringAttribute{
-				Computed: true,
+				MarkdownDescription: "IP address.",
+				Computed:            true,
 			},
 			"model": schema.StringAttribute{
-				Computed: true,
+				MarkdownDescription: "Device model.",
+				Computed:            true,
 			},
 			"state": schema.StringAttribute{
-				Computed: true,
+				MarkdownDescription: "Device state.",
+				Computed:            true,
 			},
 			"firmware_version": schema.StringAttribute{
-				Computed: true,
+				MarkdownDescription: "Firmware version.",
+				Computed:            true,
 			},
 			"firmware_updatable": schema.BoolAttribute{
-				Computed: true,
+				MarkdownDescription: "Firmware update available.",
+				Computed:            true,
 			},
 			"supported": schema.BoolAttribute{
-				Computed: true,
+				MarkdownDescription: "Device support status.",
+				Computed:            true,
 			},
 		},
 	}

@@ -37,25 +37,32 @@ func (d *firewallZoneDataSource) Metadata(ctx context.Context, req datasource.Me
 
 func (d *firewallZoneDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
+		MarkdownDescription: "Reads a single firewall zone by name.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Computed: true,
+				MarkdownDescription: "Firewall zone identifier.",
+				Computed:            true,
 			},
 			"site_id": schema.StringAttribute{
-				Optional: true,
+				MarkdownDescription: "Site identifier. Defaults to provider `site_id` when omitted. A local `site_id` overrides the provider setting.",
+				Optional:            true,
 			},
 			"name": schema.StringAttribute{
-				Required: true,
+				MarkdownDescription: "Firewall zone name.",
+				Required:            true,
 			},
 			"zone_id": schema.StringAttribute{
-				Computed: true,
+				MarkdownDescription: "Firewall zone identifier.",
+				Computed:            true,
 			},
 			"network_ids": schema.ListAttribute{
-				Computed:    true,
-				ElementType: types.StringType,
+				MarkdownDescription: "Attached network IDs.",
+				Computed:            true,
+				ElementType:         types.StringType,
 			},
 			"origin": schema.StringAttribute{
-				Computed: true,
+				MarkdownDescription: "Zone origin metadata.",
+				Computed:            true,
 			},
 		},
 	}

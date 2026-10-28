@@ -41,32 +41,41 @@ func (d *firewallZonesDataSource) Metadata(ctx context.Context, req datasource.M
 
 func (d *firewallZonesDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
+		MarkdownDescription: "Lists firewall zones for a site, with an optional name filter.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Computed: true,
+				MarkdownDescription: "Data source identifier (site ID).",
+				Computed:            true,
 			},
 			"site_id": schema.StringAttribute{
-				Optional: true,
+				MarkdownDescription: "Site identifier. Defaults to provider `site_id` when omitted. A local `site_id` overrides the provider setting.",
+				Optional:            true,
 			},
 			"name": schema.StringAttribute{
-				Optional: true,
+				MarkdownDescription: "Case-insensitive firewall zone name filter.",
+				Optional:            true,
 			},
 			"zones": schema.ListNestedAttribute{
-				Computed: true,
+				MarkdownDescription: "Matching firewall zones.",
+				Computed:            true,
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
 						"id": schema.StringAttribute{
-							Computed: true,
+							MarkdownDescription: "Firewall zone identifier.",
+							Computed:            true,
 						},
 						"name": schema.StringAttribute{
-							Computed: true,
+							MarkdownDescription: "Firewall zone name.",
+							Computed:            true,
 						},
 						"network_ids": schema.ListAttribute{
-							Computed:    true,
-							ElementType: types.StringType,
+							MarkdownDescription: "Attached network IDs.",
+							Computed:            true,
+							ElementType:         types.StringType,
 						},
 						"origin": schema.StringAttribute{
-							Computed: true,
+							MarkdownDescription: "Zone origin metadata.",
+							Computed:            true,
 						},
 					},
 				},

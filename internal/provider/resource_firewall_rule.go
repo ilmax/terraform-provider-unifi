@@ -65,47 +65,62 @@ func (r *firewallResource) Metadata(ctx context.Context, req resource.MetadataRe
 
 func (r *firewallResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Manages an ACL firewall rule. source_filter/destination_filter model the real API's " +
-			"discriminated union of match criteria as native attributes (one shared shape covering every " +
-			"variant, validated per the chosen type) rather than a raw JSON string.",
+		MarkdownDescription: "Manages an ACL firewall rule. source_filter/destination_filter model the real API's discriminated union of match criteria as native attributes (one shared shape covering every variant, validated per the chosen type) rather than a raw JSON string.\n" +
+			"\n" +
+			"## Notes\n" +
+			"\n" +
+			"- `source_filter`/`destination_filter` model the real API's discriminated union of match criteria as native attributes rather than a raw JSON string: one shared shape covers every variant (`ip_addresses_or_subnets`, `network_ids`, `port_filter`, `mac_addresses`, `prefix_length`), and only the field(s) matching the chosen `type` may be set — the provider validates the rest are omitted.\n" +
+			"- For an `IPV4` rule, `type` is `IP_ADDRESSES_OR_SUBNETS`, `NETWORKS`, or `PORTS`. `port_filter` is required when `type = PORTS`, and optional as an extra restriction on the other two — but only when `protocol_filter` is also set on the rule (the real API rejects a port filter without one).\n" +
+			"- For a `MAC` rule, `type` is always `MAC_ADDRESSES`; `prefix_length` (1-48) is optional and narrows the match to a MAC address prefix instead of full addresses.\n" +
+			"- `network_id_filter` is required by the API when `type = MAC`; unused for `IPV4`.\n" +
+			"- Rules are evaluated by index (lower numbers are evaluated first). For explicit ordering management, use `unifi_acl_rule_ordering`.\n" +
+			"- The UniFi Network API provides configuration and real-time status for sites, devices, and clients. It authenticates using an `X-API-Key` header (set `api_key` in the provider).",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Computed: true,
+				MarkdownDescription: "ACL rule identifier.",
+				Computed:            true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
 			"site_id": schema.StringAttribute{
-				Optional: true,
-				Computed: true,
+				MarkdownDescription: "Site identifier. Defaults to provider `site_id` when omitted. A local `site_id` overrides the provider setting.",
+				Optional:            true,
+				Computed:            true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
 			"type": schema.StringAttribute{
-				Required: true,
+				MarkdownDescription: "ACL rule type. Example: `IPV4`, `MAC`.",
+				Required:            true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
 			"name": schema.StringAttribute{
-				Required: true,
+				MarkdownDescription: "Rule name.",
+				Required:            true,
 			},
 			"description": schema.StringAttribute{
-				Optional: true,
+				MarkdownDescription: "Rule description.",
+				Optional:            true,
 			},
 			"action": schema.StringAttribute{
-				Required: true,
+				MarkdownDescription: "Rule action. Example: `ALLOW`, `DENY`.",
+				Required:            true,
 			},
 			"enabled": schema.BoolAttribute{
-				Optional: true,
-				Computed: true,
-				Default:  booldefault.StaticBool(true),
+				MarkdownDescription: "Enable or disable the rule.",
+				Optional:            true,
+				Computed:            true,
+				Default:             booldefault.StaticBool(true),
 			},
 			"index": schema.Int64Attribute{
-				Optional: true,
-				Computed: true,
+				MarkdownDescription: "Rule priority (lower is higher priority).",
+				Optional:            true,
+				Computed:            true,
 			},
 			"source_filter": schema.SingleNestedAttribute{
 				Optional:    true,

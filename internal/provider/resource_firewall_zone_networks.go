@@ -39,36 +39,42 @@ func (r *firewallZoneNetworksResource) Metadata(ctx context.Context, req resourc
 
 func (r *firewallZoneNetworksResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Assigns networks to a firewall zone. Only a GATEWAY-managed network can belong to a zone " +
-			"at all; the real API rejects any other management type with a misleading " +
-			"\"Configured network does not exist\" error. Deleting this resource unassigns every network it " +
-			"listed (the real API falls back to the site's Internal zone, since a GATEWAY network's zone " +
-			"assignment is mandatory once Zone Based Firewall is enabled) rather than leaving them pointed at a " +
-			"zone Terraform is about to destroy.",
+		MarkdownDescription: "Manages network assignments for an existing firewall zone.\n" +
+			"\n" +
+			"## Notes\n" +
+			"\n" +
+			"- This resource updates only the zone's `network_ids`.\n" +
+			"- The zone name/lifecycle should be managed by `unifi_firewall_zone`.\n" +
+			"- Only a GATEWAY-managed network can belong to a zone at all — the real API rejects any other management type with a misleading `\"Configured network does not exist\"` error, even though the network genuinely exists.\n" +
+			"- Deleting this resource unassigns every network it listed via the real API (the real API falls back to the site's Internal zone, since a GATEWAY network's zone assignment is mandatory once Zone Based Firewall is enabled), rather than only forgetting them in Terraform state — a zone whose `network_ids` still names a network Terraform is about to destroy next can't itself be deleted afterward.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Computed: true,
+				MarkdownDescription: "Resource identifier in the form `<site_id>/<zone_id>`.",
+				Computed:            true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
 			"site_id": schema.StringAttribute{
-				Optional: true,
-				Computed: true,
+				MarkdownDescription: "Site identifier. Defaults to provider `site_id` when omitted. A local `site_id` overrides the provider setting.",
+				Optional:            true,
+				Computed:            true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
 			"zone_id": schema.StringAttribute{
-				Required: true,
+				MarkdownDescription: "Firewall zone identifier.",
+				Required:            true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
 			"network_ids": schema.ListAttribute{
-				Required:    true,
-				ElementType: types.StringType,
+				MarkdownDescription: "Network IDs to attach to the zone.",
+				Required:            true,
+				ElementType:         types.StringType,
 			},
 		},
 	}

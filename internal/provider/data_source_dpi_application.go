@@ -35,18 +35,26 @@ func (d *dpiApplicationDataSource) Metadata(ctx context.Context, req datasource.
 
 func (d *dpiApplicationDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "A Deep Packet Inspection application identifier, e.g. for referencing in traffic rules. " +
-			"This is global reference data (not scoped to a site) and GET-only in the real API, so it's a data " +
-			"source rather than a resource.",
+		MarkdownDescription: "A Deep Packet Inspection application identifier, e.g. for referencing in traffic rules. This is global reference data (not scoped to a site) and GET-only in the real API, so it's a data source rather than a resource.\n" +
+			"\n" +
+			"## Notes\n" +
+			"\n" +
+			"- This is global reference data (not scoped to a site) and GET-only in the real API, so it's a data source rather than a resource.\n" +
+			"- Unlike most other identifiers in this API, `application_id` is a small integer, not a UUID.\n" +
+			"- There is no lookup-by-name; `application_id` must be the exact ID.\n" +
+			"- The UniFi Network API provides configuration and real-time status for sites, devices, and clients. It authenticates using an `X-API-Key` header (set `api_key` in the provider).",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Computed: true,
+				MarkdownDescription: "Data source identifier (string form of `application_id`).",
+				Computed:            true,
 			},
 			"application_id": schema.Int64Attribute{
-				Required: true,
+				MarkdownDescription: "DPI application identifier.",
+				Required:            true,
 			},
 			"name": schema.StringAttribute{
-				Computed: true,
+				MarkdownDescription: "Application name.",
+				Computed:            true,
 			},
 		},
 	}

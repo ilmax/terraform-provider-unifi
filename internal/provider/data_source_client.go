@@ -46,37 +46,53 @@ func (d *clientDataSource) Metadata(ctx context.Context, req datasource.Metadata
 
 func (d *clientDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
+		MarkdownDescription: "Reads details about a connected client.\n" +
+			"\n" +
+			"## Notes\n" +
+			"\n" +
+			"- Clients can represent wired, wireless, VPN, or teleport connections depending on the UniFi Network API response.\n" +
+			"- The UniFi Network API provides configuration and real-time status for sites, devices, and clients. It authenticates using an `X-API-Key` header (set `api_key` in the provider).",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Computed: true,
+				MarkdownDescription: "Client identifier.",
+				Computed:            true,
 			},
 			"site_id": schema.StringAttribute{
-				Optional: true,
+				MarkdownDescription: "Site identifier. Defaults to provider `site_id` when omitted. A local `site_id` overrides the provider setting.",
+				Optional:            true,
 			},
 			"client_id": schema.StringAttribute{
-				Optional: true,
+				MarkdownDescription: "Client identifier.",
+				Optional:            true,
 			},
 			"name": schema.StringAttribute{
-				Computed: true,
+				MarkdownDescription: "Client name.",
+				Computed:            true,
 			},
 			"type": schema.StringAttribute{
-				Computed: true,
+				MarkdownDescription: "Client type.",
+				Computed:            true,
 			},
 			"connected_at": schema.StringAttribute{
-				Computed: true,
+				MarkdownDescription: "RFC3339 timestamp when the client connected.",
+				Computed:            true,
 			},
 			"ip_address": schema.StringAttribute{
-				Computed: true,
+				MarkdownDescription: "Client IP address.",
+				Computed:            true,
 			},
 			"access_type": schema.StringAttribute{
-				Computed: true,
+				MarkdownDescription: "Access type reported by the UniFi API.",
+				Computed:            true,
 			},
 			"mac_address": schema.StringAttribute{
-				Optional: true,
-				Computed: true,
+				MarkdownDescription: "Client MAC address (wired/wireless clients).",
+				Optional:            true,
+				Computed:            true,
 			},
 			"uplink_device_id": schema.StringAttribute{
-				Computed: true,
+				MarkdownDescription: "Uplink device identifier (wired/wireless clients).",
+				Computed:            true,
 			},
 		},
 	}

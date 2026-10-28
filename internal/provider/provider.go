@@ -50,22 +50,28 @@ func (p *unifiProvider) Metadata(ctx context.Context, req provider.MetadataReque
 
 func (p *unifiProvider) Schema(ctx context.Context, req provider.SchemaRequest, resp *provider.SchemaResponse) {
 	resp.Schema = schema.Schema{
+		MarkdownDescription: "The UniFi provider manages UniFi Cloud (Site Manager API) resources via API key authentication.",
 		Attributes: map[string]schema.Attribute{
 			"api_key": schema.StringAttribute{
-				Required:  true,
-				Sensitive: true,
+				MarkdownDescription: "API key for UniFi Cloud.",
+				Required:            true,
+				Sensitive:           true,
 			},
 			"api_url": schema.StringAttribute{
-				Optional: true,
+				MarkdownDescription: "Override the UniFi API base URL.",
+				Optional:            true,
 			},
 			"site_id": schema.StringAttribute{
-				Optional: true,
+				MarkdownDescription: "Default site identifier used by site-scoped resources, data sources, and actions. A local `site_id` overrides this provider value.",
+				Optional:            true,
 			},
 			"user_agent": schema.StringAttribute{
-				Optional: true,
+				MarkdownDescription: "Custom user agent string.",
+				Optional:            true,
 			},
 			"allow_insecure": schema.BoolAttribute{
-				Optional: true,
+				MarkdownDescription: "Skip TLS certificate verification.",
+				Optional:            true,
 			},
 		},
 	}

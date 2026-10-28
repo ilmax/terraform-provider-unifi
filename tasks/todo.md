@@ -1,24 +1,26 @@
 # Todo
 
 ## Working Notes
-- Expose `reportFlowEnabled` (new in Network 11.0.97) on `unifi_firewall_policy` as `report_flow_enabled`.
-- Official spec: optional on create/update ("defaults to true when omitted"), required in responses, and always false for the predefined Allow Return Traffic and multicast / IPv6 neighbor discovery policies. Patch ignores it for those.
-- So: optional + computed, no schema default (a fixed `true` default would show a permanent diff on an imported predefined policy), `UseStateForUnknown`, and send it only when set.
+- Move `docs/` from hand-written Markdown to tfplugindocs output so the docs cannot drift from the schema.
+- tfplugindocs builds the provider from the repository root, but `main` is in `cmd/terraform-provider-unifi`, so `scripts/generate-docs.sh` builds it, exports the schema with the Terraform CLI (dev override) and passes it with `--providers-schema`. tfplugindocs runs at a pinned version.
+- 300 of 314 attributes already had text in the hand-written pages (the Go schemas had descriptions for only 40); that text moved into the schemas. 2 attributes were missing from the hand-written pages and appear now.
+- Examples moved to `examples/`; notes and the DNS policy types list to the end of each schema's `MarkdownDescription` (the default tfplugindocs layout is used, no per-page templates); the provider page to `templates/index.md.tmpl`.
+- Import sections held only the ID format, so each became a real `terraform import` command in `import.sh`.
 
 ## Plan
-- [x] Add `ReportFlowEnabled` to the `sdkcompat` policy response model.
-- [x] Add the attribute, payload and state mapping to `unifi_firewall_policy`.
-- [x] Unit tests: payload (unset/unknown omitted, true/false sent), state mapping, schema shape.
-- [x] Acceptance test: unset -> true, false, unset keeps false, true, import.
-- [x] Update `docs/resources/firewall_policy.md`.
-- [x] Verify: build, vet, unit tests, firewall policy acceptance tests on Network 11.0.97.
+- [x] Add `scripts/generate-docs.sh` and `make docs`.
+- [x] Put the attribute text from the pages into the Go schemas (shared DNS helpers included).
+- [x] Move examples, imports and notes into `examples/` and the schema descriptions.
+- [x] Regenerate `docs/` and compare every attribute text with the old pages.
+- [x] CI check that fails when `docs/` is stale.
+- [x] Update AGENTS.md.
+- [x] Verify: build, vet, tests, deterministic regeneration.
 
 ## Acceptance Criteria
-- `report_flow_enabled` can be set to true or false and is read back.
-- Leaving it out never sends a value, and never resets one the controller already stores.
-- Tests cover the behavior.
+- `make docs` regenerates all of `docs/` (except `api-versioning-and-promotion.md` and `releasing.md`) with no diff when run twice.
+- No attribute text is lost compared with the hand-written pages.
+- CI fails when a schema change is not reflected in `docs/`.
 
 ## Results
-- Added `report_flow_enabled` to `unifi_firewall_policy` (optional, computed, state-preserving).
-- Unit tests pass and fail when the payload logic is broken; `TestAccFirewallPolicy_reportFlow` and the other firewall policy acceptance tests pass on Network 11.0.97.
-- Not covered: the PATCH endpoint (the provider does not use it) and predefined policies (no fixture creates one).
+- Regeneration is deterministic. Of 343 attribute texts, 7 differ from the old pages: the Go schemas already had slightly different wording (richer or with fewer backticks), and the generator adds links to nested schemas.
+- Dropped on purpose: the hand-written lists of resources and data sources on the provider page, which only duplicated what the registry shows and went stale.

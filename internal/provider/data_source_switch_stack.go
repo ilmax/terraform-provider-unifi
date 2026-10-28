@@ -62,51 +62,68 @@ func (d *switchStackDataSource) Metadata(ctx context.Context, req datasource.Met
 
 func (d *switchStackDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "A stack of physically linked switches acting as one logical switch. Requires stackable " +
-			"switch hardware to have anything to read. This endpoint is GET-only in the real API, so it's a data " +
-			"source rather than a resource.",
+		MarkdownDescription: "A stack of physically linked switches acting as one logical switch. Requires stackable switch hardware to have anything to read. This endpoint is GET-only in the real API, so it's a data source rather than a resource.\n" +
+			"\n" +
+			"## Notes\n" +
+			"\n" +
+			"- Requires stackable switch hardware to have anything to read.\n" +
+			"- This endpoint is GET-only in the real API (no create/update/delete), so it's a data source rather than a resource.\n" +
+			"- The UniFi Network API provides configuration and real-time status for sites, devices, and clients. It authenticates using an `X-API-Key` header (set `api_key` in the provider).",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Computed: true,
+				MarkdownDescription: "Switch stack identifier.",
+				Computed:            true,
 			},
 			"site_id": schema.StringAttribute{
-				Optional: true,
+				MarkdownDescription: "Site identifier. Defaults to provider `site_id` when omitted. A local `site_id` overrides the provider setting.",
+				Optional:            true,
 			},
 			"switch_stack_id": schema.StringAttribute{
-				Required: true,
+				MarkdownDescription: "Switch stack identifier.",
+				Required:            true,
 			},
 			"name": schema.StringAttribute{
-				Computed: true,
+				MarkdownDescription: "Switch stack name.",
+				Computed:            true,
 			},
 			"device_id": schema.StringAttribute{
-				Computed: true,
+				MarkdownDescription: "Primary device ID for this stack, if reported.",
+				Computed:            true,
 			},
 			"origin": schema.StringAttribute{
-				Computed: true,
+				MarkdownDescription: "Entity origin metadata.",
+				Computed:            true,
 			},
 			"lags": schema.ListNestedAttribute{
-				Computed: true,
+				MarkdownDescription: "LAGs local to this stack.",
+				Computed:            true,
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
 						"id": schema.StringAttribute{
-							Computed: true,
+							MarkdownDescription: "LAG identifier.",
+							Computed:            true,
 						},
 						"origin": schema.StringAttribute{
-							Computed: true,
+							MarkdownDescription: "Entity origin metadata.",
+							Computed:            true,
 						},
 						"members": schema.ListNestedAttribute{
-							Computed: true,
+							MarkdownDescription: "LAG member ports.",
+							Computed:            true,
 							NestedObject: schema.NestedAttributeObject{
 								Attributes: map[string]schema.Attribute{
 									"port_idxs": schema.ListAttribute{
-										Computed:    true,
-										ElementType: types.Int64Type,
+										MarkdownDescription: "Port indexes making up this member.",
+										Computed:            true,
+										ElementType:         types.Int64Type,
 									},
 									"unit_id": schema.Int64Attribute{
-										Computed: true,
+										MarkdownDescription: "Stack unit ID this member port belongs to.",
+										Computed:            true,
 									},
 									"unit_mac_address": schema.StringAttribute{
-										Computed: true,
+										MarkdownDescription: "MAC address of the stack unit this member port belongs to.",
+										Computed:            true,
 									},
 								},
 							},
@@ -115,20 +132,25 @@ func (d *switchStackDataSource) Schema(ctx context.Context, req datasource.Schem
 				},
 			},
 			"units": schema.ListNestedAttribute{
-				Computed: true,
+				MarkdownDescription: "Physical switch units making up this stack.",
+				Computed:            true,
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
 						"id": schema.Int64Attribute{
-							Computed: true,
+							MarkdownDescription: "Stack unit ID.",
+							Computed:            true,
 						},
 						"mac_address": schema.StringAttribute{
-							Computed: true,
+							MarkdownDescription: "Unit MAC address.",
+							Computed:            true,
 						},
 						"order": schema.Int64Attribute{
-							Computed: true,
+							MarkdownDescription: "Unit's position in the stack, if reported.",
+							Computed:            true,
 						},
 						"role": schema.StringAttribute{
-							Computed: true,
+							MarkdownDescription: "Unit role (e.g. master/member), if reported.",
+							Computed:            true,
 						},
 					},
 				},

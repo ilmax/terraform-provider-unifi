@@ -1,0 +1,25 @@
+---
+page_title: "Provider: unifi"
+description: |-
+{{ .Description | plainmarkdown | trimspace | prefixlines "  " }}
+---
+
+# unifi Provider
+
+{{ .Description | trimspace }}
+
+## Authentication
+
+Only API key authentication is supported.
+
+{{ tffile "examples/provider/provider.tf" }}
+
+## Site ID Precedence
+
+For every site-scoped resource, data source, and action:
+
+1. a local `site_id` wins if set on that block
+2. otherwise the provider-level `site_id` is used
+3. if neither is set, the provider returns an error
+
+{{ .SchemaMarkdown | trimspace }}

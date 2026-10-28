@@ -38,24 +38,33 @@ func (r *aclRuleOrderingResource) Metadata(ctx context.Context, req resource.Met
 
 func (r *aclRuleOrderingResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
+		MarkdownDescription: "Manages ACL rule ordering for a site.\n" +
+			"\n" +
+			"## Notes\n" +
+			"\n" +
+			"- This resource controls ordering via `PUT /v1/sites/{siteId}/acl-rules/ordering`.\n" +
+			"- Deleting this resource removes it from Terraform state only; it does not reset ACL ordering in UniFi.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Computed: true,
+				MarkdownDescription: "Resource identifier (site ID).",
+				Computed:            true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
 			"site_id": schema.StringAttribute{
-				Optional: true,
-				Computed: true,
+				MarkdownDescription: "Site identifier. Defaults to provider `site_id` when omitted. A local `site_id` overrides the provider setting.",
+				Optional:            true,
+				Computed:            true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
 			"ordered_acl_rule_ids": schema.ListAttribute{
-				Required:    true,
-				ElementType: types.StringType,
+				MarkdownDescription: "Ordered ACL rule IDs.",
+				Required:            true,
+				ElementType:         types.StringType,
 			},
 		},
 	}

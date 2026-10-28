@@ -33,13 +33,17 @@ func (r *dnsForwardDomainPolicyResource) Metadata(ctx context.Context, req resou
 
 func (r *dnsForwardDomainPolicyResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
+		MarkdownDescription: "Manages a UniFi DNS forward-domain policy.",
 		Attributes: map[string]schema.Attribute{
-			"id":         dnsPolicyIDAttribute(),
-			"site_id":    dnsPolicySiteIDAttribute(),
-			"enabled":    dnsPolicyEnabledAttribute(),
-			"domain":     dnsPolicyDomainAttribute(true),
-			"origin":     dnsPolicyOriginAttribute(),
-			"ip_address": schema.StringAttribute{Required: true},
+			"id":      dnsPolicyIDAttribute(),
+			"site_id": dnsPolicySiteIDAttribute(),
+			"enabled": dnsPolicyEnabledAttribute(),
+			"domain":  dnsPolicyDomainAttribute(true, "Domain suffix to forward."),
+			"origin":  dnsPolicyOriginAttribute(),
+			"ip_address": schema.StringAttribute{
+				Required:            true,
+				MarkdownDescription: "DNS server IP address used for forwarding.",
+			},
 		},
 	}
 }

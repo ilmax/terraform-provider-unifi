@@ -39,25 +39,37 @@ func (d *vpnSiteToSiteTunnelDataSource) Metadata(ctx context.Context, req dataso
 
 func (d *vpnSiteToSiteTunnelDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "A configured VPN site-to-site tunnel. This endpoint is GET-only in the real API, so it's a data source rather than a resource.",
+		MarkdownDescription: "A configured VPN site-to-site tunnel. This endpoint is GET-only in the real API, so it's a data source rather than a resource.\n" +
+			"\n" +
+			"## Notes\n" +
+			"\n" +
+			"- This endpoint is GET-only in the real API (no create/update/delete), so it's a data source rather than a resource.\n" +
+			"- There is no lookup-by-name; `tunnel_id` must be the exact ID.\n" +
+			"- The UniFi Network API provides configuration and real-time status for sites, devices, and clients. It authenticates using an `X-API-Key` header (set `api_key` in the provider).",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Computed: true,
+				MarkdownDescription: "VPN site-to-site tunnel identifier.",
+				Computed:            true,
 			},
 			"site_id": schema.StringAttribute{
-				Optional: true,
+				MarkdownDescription: "Site identifier. Defaults to provider `site_id` when omitted. A local `site_id` overrides the provider setting.",
+				Optional:            true,
 			},
 			"tunnel_id": schema.StringAttribute{
-				Required: true,
+				MarkdownDescription: "VPN site-to-site tunnel identifier.",
+				Required:            true,
 			},
 			"name": schema.StringAttribute{
-				Computed: true,
+				MarkdownDescription: "Tunnel name.",
+				Computed:            true,
 			},
 			"type": schema.StringAttribute{
-				Computed: true,
+				MarkdownDescription: "Tunnel type.",
+				Computed:            true,
 			},
 			"origin": schema.StringAttribute{
-				Computed: true,
+				MarkdownDescription: "Entity origin metadata.",
+				Computed:            true,
 			},
 		},
 	}

@@ -36,7 +36,7 @@ func (a *executePortAction) Metadata(ctx context.Context, req action.MetadataReq
 
 func (a *executePortAction) Schema(ctx context.Context, req action.SchemaRequest, resp *action.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Executes an action on a switch port.",
+		MarkdownDescription: "Executes an action on a switch port. Actions are experimental in Terraform and require Terraform v1.14 or later.",
 		Attributes: map[string]schema.Attribute{
 			"site_id": schema.StringAttribute{
 				Optional:    true,

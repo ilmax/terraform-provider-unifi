@@ -44,44 +44,60 @@ func (d *pendingDevicesDataSource) Metadata(ctx context.Context, req datasource.
 
 func (d *pendingDevicesDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "All devices that have sent an inform to the controller but haven't been adopted into any " +
-			"site yet. This is global (not scoped to a site) and GET-only in the real API.",
+		MarkdownDescription: "All devices that have sent an inform to the controller but haven't been adopted into any site yet. This is global (not scoped to a site) and GET-only in the real API.\n" +
+			"\n" +
+			"## Notes\n" +
+			"\n" +
+			"- This is global (not scoped to a site) and GET-only in the real API — there's no way to adopt a device through this provider; adoption happens through the console UI or the `adoptDevice` API.\n" +
+			"- Always returns `200` with a list, which may be empty (a console with no devices currently pending adoption).\n" +
+			"- The UniFi Network API provides configuration and real-time status for sites, devices, and clients. It authenticates using an `X-API-Key` header (set `api_key` in the provider).",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Computed: true,
+				MarkdownDescription: "Data source identifier.",
+				Computed:            true,
 			},
 			"devices": schema.ListNestedAttribute{
-				Computed: true,
+				MarkdownDescription: "Devices currently pending adoption.",
+				Computed:            true,
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
 						"mac_address": schema.StringAttribute{
-							Computed: true,
+							MarkdownDescription: "Device MAC address.",
+							Computed:            true,
 						},
 						"ip_address": schema.StringAttribute{
-							Computed: true,
+							MarkdownDescription: "Device IP address.",
+							Computed:            true,
 						},
 						"model": schema.StringAttribute{
-							Computed: true,
+							MarkdownDescription: "Device model.",
+							Computed:            true,
 						},
 						"state": schema.StringAttribute{
-							Computed: true,
+							MarkdownDescription: "Adoption state.",
+							Computed:            true,
 						},
 						"firmware_version": schema.StringAttribute{
-							Computed: true,
+							MarkdownDescription: "Firmware version, if reported.",
+							Computed:            true,
 						},
 						"firmware_updatable": schema.BoolAttribute{
-							Computed: true,
+							MarkdownDescription: "Whether firmware can be updated before adoption.",
+							Computed:            true,
 						},
 						"supported": schema.BoolAttribute{
-							Computed: true,
+							MarkdownDescription: "Whether this model is supported.",
+							Computed:            true,
 						},
 						"adoption_target_site_ids": schema.ListAttribute{
-							Computed:    true,
-							ElementType: types.StringType,
+							MarkdownDescription: "Site IDs this device can be adopted into.",
+							Computed:            true,
+							ElementType:         types.StringType,
 						},
 						"features": schema.ListAttribute{
-							Computed:    true,
-							ElementType: types.StringType,
+							MarkdownDescription: "Device feature flags.",
+							Computed:            true,
+							ElementType:         types.StringType,
 						},
 					},
 				},

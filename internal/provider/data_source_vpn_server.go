@@ -39,28 +39,41 @@ func (d *vpnServerDataSource) Metadata(ctx context.Context, req datasource.Metad
 
 func (d *vpnServerDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "A configured VPN server. This endpoint is GET-only in the real API, so it's a data source rather than a resource.",
+		MarkdownDescription: "A configured VPN server. This endpoint is GET-only in the real API, so it's a data source rather than a resource.\n" +
+			"\n" +
+			"## Notes\n" +
+			"\n" +
+			"- This endpoint is GET-only in the real API (no create/update/delete), so it's a data source rather than a resource.\n" +
+			"- There is no lookup-by-name; `vpn_server_id` must be the exact ID.\n" +
+			"- The UniFi Network API provides configuration and real-time status for sites, devices, and clients. It authenticates using an `X-API-Key` header (set `api_key` in the provider).",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Computed: true,
+				MarkdownDescription: "VPN server identifier.",
+				Computed:            true,
 			},
 			"site_id": schema.StringAttribute{
-				Optional: true,
+				MarkdownDescription: "Site identifier. Defaults to provider `site_id` when omitted. A local `site_id` overrides the provider setting.",
+				Optional:            true,
 			},
 			"vpn_server_id": schema.StringAttribute{
-				Required: true,
+				MarkdownDescription: "VPN server identifier.",
+				Required:            true,
 			},
 			"name": schema.StringAttribute{
-				Computed: true,
+				MarkdownDescription: "VPN server name.",
+				Computed:            true,
 			},
 			"type": schema.StringAttribute{
-				Computed: true,
+				MarkdownDescription: "VPN server type.",
+				Computed:            true,
 			},
 			"enabled": schema.BoolAttribute{
-				Computed: true,
+				MarkdownDescription: "Whether the VPN server is enabled.",
+				Computed:            true,
 			},
 			"origin": schema.StringAttribute{
-				Computed: true,
+				MarkdownDescription: "Entity origin metadata.",
+				Computed:            true,
 			},
 		},
 	}
