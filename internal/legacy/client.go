@@ -182,3 +182,13 @@ func (c *Client) Command(ctx context.Context, siteID, manager string, body any) 
 	}
 	return c.call(ctx, "POST", fmt.Sprintf("/api/s/%s/cmd/%s", site, manager), body, nil)
 }
+
+// Stat reads a stat/<name> report (e.g. "device"); live state is only listed
+// there, rest/device does not support GET.
+func (c *Client) Stat(ctx context.Context, siteID, name string, out any) error {
+	site, err := c.SiteName(ctx, siteID)
+	if err != nil {
+		return err
+	}
+	return c.call(ctx, "GET", fmt.Sprintf("/api/s/%s/stat/%s", site, name), nil, out)
+}

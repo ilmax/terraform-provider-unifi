@@ -99,7 +99,7 @@ func (p *legacyProvider) Configure(ctx context.Context, req provider.ConfigureRe
 }
 
 func (p *legacyProvider) Resources(context.Context) []func() resource.Resource {
-	return []func() resource.Resource{NewIPReservationResource, NewTeleportResource}
+	return []func() resource.Resource{NewDeviceEtherLightingResource, NewEtherLightingSettingsResource, NewIPReservationResource, NewTeleportResource}
 }
 
 func (p *legacyProvider) DataSources(context.Context) []func() datasource.DataSource {

@@ -17,7 +17,7 @@
 3. [x] **Mini client** `internal/legacy` (thin layer over `internal/unifi.Client`: `{meta,data}` envelope, site UUID -> name via `/api/self/sites`, `GetSetting`/`UpdateSetting`). Unit tested with httptest.
 4. [~] **Resource 1: Teleport site toggle** (`unifilegacy_teleport` resource + data source, setting `{enabled, subnet_cidr}`). NOT the many-field form: that is the WireGuard/OpenVPN VPN server entry (see Findings). Awaiting owner answer on which one "Teleport" meant. Unit + acceptance tests pass (3/3 repeated runs, full `make ci-test` 75 pass, 0 fail).
 5. [ ] **Resource 2: switch port PoE** (`port_overrides` read-merge-write; one resource per port). Console has an adopted USM8P to test against. Need the real UI body first (or diff device state).
-6. [ ] **Resource 3: EtherLighting.** Site setting `ether_lighting` (network/speed defaults + overrides) is implementable now; per-device `ether_lighting` is blocked (see below).
+6. [x] **Resource 3: EtherLighting** (`unifilegacy_ether_lighting_settings` site overrides, `unifilegacy_device_ether_lighting` per switch; acceptance tests pass 3/3). UI exposure still being worked on (see below). Original note: Site setting `ether_lighting` (network/speed defaults + overrides) is implementable now; per-device `ether_lighting` is blocked (see below).
 7. [~] **Provider shell** `cmd/terraform-provider-unifi-legacy` + `internal/legacyprovider` (type name `unifilegacy`, so both providers can coexist). Done; README/dev_overrides instructions not written.
 8. [ ] **Docs + CI.** No tfplugindocs for the legacy provider yet; CI already runs its acceptance test via `make ci-test`.
 9. [~] **Verify:** build, unit tests, `make ci-test` from a clean console all pass. Advisor audit of the diff not done; nothing committed.
@@ -80,3 +80,7 @@
 - `restore_zbf.sh` now waits for every device to be ONLINE (state 1) after the restart.
 - Verified: `make docs` leaves `docs/` clean; no golangci/staticcheck available or configured; two clean `console-reset` + `make ci-test` runs: 75 pass, 0 fail each.
 - Still open: docs for the legacy provider (AGENTS.md requires per-resource docs; tfplugindocs only covers the main provider), README section for the legacy provider, nothing committed.
+
+## EtherLighting in the UI (2026-10-28)
+- Resources done: site `ether_lighting` setting (only the override lists are writable; defaults are controller-owned) and per-device `ether_lighting {led_mode, mode, brightness, behavior}` via `PUT rest/device/{_id}`; devices are listed from `stat/device` (`GET rest/device` is 404).
+- Capability gate is `switch_caps.feature_caps & 4194304` (+ `etherlight_caps`) on the in-memory device. Every inform replaces it, so the DB trigger approach failed. Working route: stop the `uos-test-emu` container (devices go offline, no informs), set `dynamic_part.switch_caps.feature_caps=4194304` and `etherlight_caps=7` on the USM8P row in Postgres, restart `unifi.service`; the API then shows the bits and `ether_lighting` on the (offline) switch. Whether the UI renders the EtherLighting controls for an offline device is being checked next (needs a signed-in Chrome tab).
