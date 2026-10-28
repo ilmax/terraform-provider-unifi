@@ -97,10 +97,17 @@ adopt-fleet:
 enable-zbf:
 	@$(CONSOLE_DIR)/enable_zbf.sh
 
+# restore-zbf puts the Zone Based Firewall zones back after adopt-fleet: adopting
+# the emulated gateway makes Network 11 disable ZBF for the site. See
+# test-infra/unifi/restore_zbf.sh and README.md. Idempotent.
+.PHONY: restore-zbf
+restore-zbf:
+	@set -a; . ./$(CONSOLE_ENV); set +a; $(CONSOLE_DIR)/restore_zbf.sh
+
 # ci-test is the single entry point a CI job runs against an already-running,
 # already-onboarded console (see README.md — the one-time human setup that
 # creates it is not automated here on purpose; see its "Zone Based Firewall"
 # and "Adopted device fleet" sections for why). Every step is idempotent, so
 # re-running this against the same long-lived console is always safe.
 .PHONY: ci-test
-ci-test: adopt-fleet testacc
+ci-test: adopt-fleet restore-zbf testacc

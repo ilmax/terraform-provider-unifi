@@ -135,15 +135,23 @@ docs name this provider as one of the projects it exists for.
 make adopt-fleet   # from the repo root; needs test-infra/unifi/.env
 ```
 
-**There is deliberately no gateway in the fleet on Network 11.** A fresh Network
-11 console already has the six default firewall zones and the Integrations API
-zone endpoints work. Adopting the emulator's gateway (its gateway models report
-firmware capabilities older than the zone-based firewall) makes Network 11 drop
-the site's zones, after which every zone call answers `Zone Based Firewall is
-not configured`, and removing the gateway again does not bring them back. The
-tests that need an adopted gateway (`TestAccNetwork_gatewayBasic`,
-`TestAccFirewallZoneNetworks_basic`, and the device/WAN data sources) skip with a
-reason.
+**The fleet has a gateway, and ZBF has to be restored after adopting it.** On
+Network 11 a fresh console already has the six default firewall zones. Adopting
+the emulated gateway makes Network 11 drop them (`Zone-Based Firewall is being
+disabled for Site[..] because it is not supported` in
+`/data/unifi/logs/server.log`), after which every zone call answers `Zone Based
+Firewall is not configured`. The cause, found by disassembling `ace.jar` with
+`javap`: a gateway counts as ZBF-capable only when its inform payload carries
+`udapi_version.versionDetail["firewall/filter"] >= 4` and
+`["firewall/mangle"] >= 6`, and `unifi-emu` sends `udapi_version` as a plain
+string, so no emulated gateway can pass (`fwcaps`, firmware version and model
+choice make no difference). `make restore-zbf` (`restore_zbf.sh`, run by
+`ci-test` right after `adopt-fleet`) writes back what the controller removed
+in the console's Postgres (`unifi-network` database, port 5434): the six
+`config.firewall_zone` rows and the `config.site_feature_migration`
+`ZONE_BASED_FIREWALL` row, then restarts the Network application to clear its
+zone cache. It is idempotent. If `unifi-emu` ever emits `versionDetail`, the
+script becomes a no-op and can be deleted.
 
 `adopt-fleet` (`adopt_fleet.py`) waits for pending devices, then adopts each
 one with nothing but the API key, via the modern
