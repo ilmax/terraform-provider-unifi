@@ -135,15 +135,52 @@ docs name this provider as one of the projects it exists for.
 make adopt-fleet   # from the repo root; needs test-infra/unifi/.env
 ```
 
-**There is deliberately no gateway in the fleet on Network 11.** A fresh Network
-11 console already has the six default firewall zones and the Integrations API
-zone endpoints work. Adopting the emulator's gateway (its gateway models report
-firmware capabilities older than the zone-based firewall) makes Network 11 drop
-the site's zones, after which every zone call answers `Zone Based Firewall is
-not configured`, and removing the gateway again does not bring them back. The
-tests that need an adopted gateway (`TestAccNetwork_gatewayBasic`,
-`TestAccFirewallZoneNetworks_basic`, and the device/WAN data sources) skip with a
-reason.
+**The fleet has a gateway, and ZBF has to be restored after adopting it.** On
+Network 11 a fresh console already has the six default firewall zones. Adopting
+the emulated gateway makes Network 11 drop them (`Zone-Based Firewall is being
+disabled for Site[..] because it is not supported` in
+`/data/unifi/logs/server.log`), after which every zone call answers `Zone Based
+Firewall is not configured`. The cause, found by disassembling `ace.jar` with
+`javap`: a gateway counts as ZBF-capable only when its inform payload carries
+`udapi_version.versionDetail["firewall/filter"] >= 4` and
+`["firewall/mangle"] >= 6`, and `unifi-emu` sends `udapi_version` as a plain
+string, so no emulated gateway can pass (`fwcaps`, firmware version and model
+choice make no difference). `make restore-zbf` (`restore_zbf.sh`, run by
+`ci-test` right after `adopt-fleet`) writes back what the controller removed
+in the console's Postgres (`unifi-network` database, port 5434): the six
+`config.firewall_zone` rows and the `config.site_feature_migration`
+`ZONE_BASED_FIREWALL` row, then restarts the Network application to clear its
+zone cache. It is idempotent. If `unifi-emu` ever emits `versionDetail`, the
+script becomes a no-op and can be deleted.
+
+### Patched emulator (optional): gateway with ZBF, and an EtherLighting switch
+
+`unifi-emu` builds its inform payload from fixed model profiles, so it cannot
+claim a capability a profile lacks. `emu/extra-fields.patch` adds a per-device
+`extra` map to fleet files; its keys are merged into every inform payload
+(nested maps merge, everything else replaces). Two things need it:
+
+- **Zone Based Firewall survives gateway adoption** when the gateway reports
+  `udapi_version.versionDetail` with `firewall/filter >= 4` and
+  `firewall/mangle >= 6` (see above), so `restore_zbf.sh` is not needed.
+- **EtherLighting shows up in the UI** when a switch reports
+  `switch_caps.feature_caps` with bit 22 (4194304) and `switch_caps.etherlight_caps`.
+  The controller shows the "Etherlighting" section (mode, colors, brightness,
+  breathing) in that switch's settings; with the stock emulator no emulated
+  device has it.
+
+```sh
+test-infra/unifi/emu/build.sh                 # clones upstream, applies the patch, builds unifi-emu:extra
+export COMPOSE_FILE=docker-compose.yml:docker-compose.extra.yml
+make console-reset console-up adopt-fleet     # fleet: UXG, USW Pro Max 24 PoE, U7 Pro, USW Ultra
+make testacc                                  # 79 pass, no restore-zbf step
+```
+
+`docker-compose.extra.yml` swaps the fleet for explicit devices and the image for
+`unifi-emu:extra`. Stopping and restarting the emulator container loses its
+adoption keys (devices answer 400 and sit in state 9), so reset the console
+instead. The default setup (stock image, `restore-zbf`) is unchanged; moving CI
+to the patched image needs the image published or built in the workflow.
 
 `adopt-fleet` (`adopt_fleet.py`) waits for pending devices, then adopts each
 one with nothing but the API key, via the modern

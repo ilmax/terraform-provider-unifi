@@ -1,0 +1,14 @@
+# Overlay for a locally patched unifi-emu that accepts `extra` inform fields
+# (see README.md, "Patched emulator"). Use: UNIFI_COMPOSE_FILES="-f docker-compose.yml -f docker-compose.extra.yml".
+services:
+  unifi-emu:
+    image: ${UNIFI_EMU_IMAGE:-unifi-emu:extra}
+    environment:
+      SIM_MODELS: ""
+      SIM_DEVICES: |
+        - {mac: "00:27:22:e0:00:01", model: UXG, ip: 192.168.1.100, name: gateway,
+           extra: {udapi_version: {version: "2.0.0", versionDetail: {"firewall/filter": 4, "firewall/mangle": 6}}}}
+        - {mac: "00:27:22:e0:00:02", model: USPM24P, ip: 192.168.1.101, name: switch,
+           extra: {switch_caps: {vlan_caps: 7, feature_caps: 4194304, etherlight_caps: 7}}}
+        - {mac: "00:27:22:e0:00:03", model: U7PRO, ip: 192.168.1.102, name: ap}
+        - {mac: "00:27:22:e0:00:04", model: USM8P, ip: 192.168.1.103, name: switch-ultra}

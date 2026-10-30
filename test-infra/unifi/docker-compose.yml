@@ -69,15 +69,14 @@ services:
       unifi-os-server:
         condition: service_healthy
     environment:
-      # One switch and one AP, and deliberately no gateway: the emulator's
-      # gateways report firmware capabilities older than the zone-based
-      # firewall, and adopting one makes UniFi Network 11 drop the site's
-      # firewall zones (the Integrations API then answers "Zone Based Firewall
-      # is not configured"). Tests that need an adopted gateway skip. MAC/IP
+      # A gateway ("Gateway Lite"), a switch and an AP. unifi-emu's gateways
+      # report no udapi_version.versionDetail, so adopting one makes Network 11
+      # disable Zone Based Firewall for the site; `make restore-zbf` (run by
+      # ci-test after adopt-fleet) puts the zones back. See README.md. MAC/IP
       # for each device are derived from SIM_MAC_BASE/SIM_IP_BASE (left at their
       # defaults — informational fields in each device's inform payload).
       - SIM_CONTROLLER=http://unifi-os-server:8080/inform
-      - SIM_MODELS=USM8P,U7PRO
+      - SIM_MODELS=UXG,USM8P,U7PRO
 
 volumes:
   uos_persistent:

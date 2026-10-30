@@ -1,0 +1,132 @@
+diff --git a/descriptor.go b/descriptor.go
+index 57aa086..c18b9af 100644
+--- a/descriptor.go
++++ b/descriptor.go
+@@ -26,6 +26,7 @@ func buildDescriptor(spec DeviceSpec, profile ModelProfile) inform.Descriptor {
+ 		Ports:        resolvePorts(spec, profile),
+ 		Radios:       profile.Radios,
+ 		SSIDs:        spec.SSIDs,
++		Extra:        spec.Extra,
+ 	}
+ }
+ 
+diff --git a/device.go b/device.go
+index 244dd9f..08f2215 100644
+--- a/device.go
++++ b/device.go
+@@ -74,6 +74,12 @@ type DeviceSpec struct {
+ 	// faithful value would change before any is adopted as a default.
+ 	// Nil leaves the built-in alone; 0 reports the key as zero.
+ 	FWCaps *int `json:"fwcaps" yaml:"fwcaps"`
++	// Extra is merged into every inform payload after the built-in fields
++	// (maps merge recursively, anything else replaces). It lets a fleet file
++	// claim capabilities the model profiles do not carry, for example
++	// switch_caps.feature_caps, etherlight_caps or
++	// udapi_version.versionDetail, without a code change per capability.
++	Extra map[string]any `json:"extra" yaml:"extra"`
+ }
+ 
+ // deviceSpecKeys is the set of accepted fleet-file keys. A mapping entry
+@@ -83,7 +89,7 @@ type DeviceSpec struct {
+ var deviceSpecKeys = map[string]bool{
+ 	"mac": true, "serial": true, "type": true, "model": true,
+ 	"modeldisplay": true, "version": true, "name": true, "ip": true,
+-	"ports": true, "ssids": true, "fwcaps": true,
++	"ports": true, "ssids": true, "fwcaps": true, "extra": true,
+ }
+ 
+ // UnmarshalYAML lets a fleet-list entry be a bare model string ("U7PRO") or
+diff --git a/inform/descriptor.go b/inform/descriptor.go
+index c224f2e..1880238 100644
+--- a/inform/descriptor.go
++++ b/inform/descriptor.go
+@@ -44,6 +44,8 @@ type Descriptor struct {
+ 	Ports        []Port
+ 	Radios       []Radio
+ 	SSIDs        []string // non-empty opts an AP into emitting vaps
++	// Extra is merged into every payload (see emu.DeviceSpec.Extra).
++	Extra map[string]any
+ }
+ 
+ // PlaceholderFWCaps is what a device reports when no real bitmap was captured
+diff --git a/inform/extra_test.go b/inform/extra_test.go
+new file mode 100644
+index 0000000..58d5fc9
+--- /dev/null
++++ b/inform/extra_test.go
+@@ -0,0 +1,37 @@
++package inform
++
++import (
++	"encoding/json"
++	"testing"
++	"time"
++)
++
++func TestBuildPayloadExtraMergesOverBuiltins(t *testing.T) {
++	s := NewSession(Descriptor{
++		MAC: "00:27:22:e0:00:01", Model: "UXGENT", Type: "uxg",
++		UDAPIVersion: "2.0.0", UDAPICaps: 5,
++		Extra: map[string]any{
++			"etherlight_caps": 7,
++			"switch_caps":     map[string]any{"feature_caps": 4194304},
++			"udapi_version":   map[string]any{"versionDetail": map[string]any{"firewall/filter": 4}},
++		},
++	}, "http://x/inform", time.Unix(0, 0))
++
++	var got map[string]any
++	if err := json.Unmarshal(s.BuildPayload(time.Unix(0, 0)), &got); err != nil {
++		t.Fatal(err)
++	}
++	if got["etherlight_caps"] != float64(7) {
++		t.Errorf("etherlight_caps = %v", got["etherlight_caps"])
++	}
++	if got["switch_caps"].(map[string]any)["feature_caps"] != float64(4194304) {
++		t.Errorf("switch_caps = %v", got["switch_caps"])
++	}
++	u := got["udapi_version"].(map[string]any)
++	if u["version"] != "2.0.0" || u["versionDetail"].(map[string]any)["firewall/filter"] != float64(4) {
++		t.Errorf("udapi_version must keep the built-in version and gain versionDetail, got %v", u)
++	}
++	if got["udapi_caps"] != float64(5) {
++		t.Errorf("built-in udapi_caps was lost: %v", got["udapi_caps"])
++	}
++}
+diff --git a/inform/session.go b/inform/session.go
+index 9c14fbe..775b325 100644
+--- a/inform/session.go
++++ b/inform/session.go
+@@ -136,6 +136,7 @@ func (s *Session) BuildPayload(now time.Time) []byte {
+ 			m["port_table"] = portTable(s.desc)
+ 		}
+ 	}
++	mergeExtra(m, s.desc.Extra)
+ 	// Echo back provisioned config the controller pushed via setstate.
+ 	for k, v := range s.setstate {
+ 		m[k] = v
+@@ -300,3 +301,25 @@ func (s *Session) applySetstate(body []byte, cfgversion string) []Effect {
+ 	}
+ 	return nil
+ }
++
++// mergeExtra copies extra into dst: nested maps merge recursively, every other
++// value replaces what the payload already holds.
++func mergeExtra(dst map[string]any, extra map[string]any) {
++	for k, v := range extra {
++		src, ok := v.(map[string]any)
++		if !ok {
++			dst[k] = v
++			continue
++		}
++		cur, ok := dst[k].(map[string]any)
++		if !ok {
++			cur = map[string]any{}
++		}
++		merged := make(map[string]any, len(cur)+len(src))
++		for ck, cv := range cur {
++			merged[ck] = cv
++		}
++		mergeExtra(merged, src)
++		dst[k] = merged
++	}
++}
